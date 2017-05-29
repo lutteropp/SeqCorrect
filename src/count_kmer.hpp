@@ -35,8 +35,8 @@ namespace count_kmer {
 
 	FMIndex buildIndex(const std::string &text);
 	FMIndex buildIndex(const std::vector<std::string> &filepaths);
-	FMIndex buildIndex(const io::FASTARead &read);
-	FMIndex buildIndex(const std::vector<io::FASTARead> &reads);
+	FMIndex buildIndex(const io::Read &read);
+	FMIndex buildIndex(const std::vector<io::Read> &reads);
 
 	FMIndex loadIndex(const std::string &filepath);
 	bool storeIndex(const std::string &filepath, const FMIndex &index);

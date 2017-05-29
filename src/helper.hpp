@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "sequence_io.hpp"
+
 namespace helper {
 
 	enum class ErrorType {
@@ -30,6 +32,8 @@ namespace helper {
 	};
 
 	std::string reverseComplementString(const std::string& text);
-	double gcContent(const std::string &kmer);
+	io::Read reverseComplementRead(const io::Read& read);
+	double gcContent(const std::string& kmer);
 	std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type);
-}
+
+} // end of namespace helper

@@ -24,6 +24,8 @@
 #pragma once
 
 #include <vector>
+#include "pusm.hpp"
+#include "sequence_io.hpp"
 
 namespace coverage_bias {
 
@@ -43,11 +45,12 @@ private:
 	double _bias;
 };
 
-std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::vector<io::FASTARead> &reads); // TODO: this needs the PUSM
-std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::vector<io::FASTARead> &reads, const std::string &genome);
-std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::vector<std::string> &filepaths); // TODO: this needs the PUSM
+// some of these functions here need the PUSM... does
+std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::vector<io::Read> &reads, pusm::PerfectUniformSequencingModel &pusm);
+std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::vector<io::Read> &reads, const std::string &genome);
+std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::vector<std::string> &filepaths, pusm::PerfectUniformSequencingModel &pusm);
 std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::vector<std::string> &filepaths, const std::string &genome);
-std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::string &filepath); // TODO: this needs the PUSM
+std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::string &filepath, pusm::PerfectUniformSequencingModel &pusm);
 std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::string &filepath, const std::string &genome);
 
 // TODO: I would like to hide stuff like medianCoverageBiases and buffered data from the user and reduce the function arguments... how do I do this without classes?

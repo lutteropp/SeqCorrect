@@ -30,7 +30,7 @@ std::string reverseComplementString(const std::string& text) {
 	throw std::runtime_error("not implemented yet");
 }
 
-double gcContent(const std::string &kmer) {
+double gcContent(const std::string& kmer) {
 	throw std::runtime_error("not implemented yet");
 }
 

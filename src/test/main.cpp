@@ -30,7 +30,7 @@
 
 using namespace helper;
 
-TEST(HelperTest, ReverseComplement) {
+TEST(HelperTest, ReverseComplementString) {
     ASSERT_EQ("A", reverseComplementString("T"));
     ASSERT_EQ("C", reverseComplementString("G"));
     ASSERT_EQ("G", reverseComplementString("C"));

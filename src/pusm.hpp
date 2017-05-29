@@ -1,30 +1,56 @@
 /*
-    SeqCorrect - A toolkit for correcting Next Generation Sequencing data.
-    Copyright (C) 2017 Sarah Lutteropp
+ SeqCorrect - A toolkit for correcting Next Generation Sequencing data.
+ Copyright (C) 2017 Sarah Lutteropp
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-    Contact:
-    Sarah Lutteropp <sarah.lutteropp@h-its.org>
-    Exelixis Lab, Heidelberg Institute for Theoretical Studies
-    Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
-*/
+ Contact:
+ Sarah Lutteropp <sarah.lutteropp@h-its.org>
+ Exelixis Lab, Heidelberg Institute for Theoretical Studies
+ Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
+ */
 
 #pragma once
 
 #include <unordered_map>
+#include <algorithm>
 #include "info.hpp"
+
+namespace pusm {
+
+/**
+ * A class that stores standard deviation and expected count of a k-mer in the read dataset.
+ */
+class PusmData {
+public:
+	PusmData() :
+			_stdev(0), _expectation(0) {
+	}
+	PusmData(double stdev, double expectation) :
+			_stdev(stdev), _expectation(expectation) {
+	}
+	PusmData& operator=(PusmData&& other) {
+		std::swap(_stdev, other._stdev);
+		std::swap(_expectation, other._expectation);
+		return *this;
+	}
+	double stdev();
+	double expectation();
+private:
+	double _stdev;
+	double _expectation;
+};
 
 /**
  * Perfect Uniform Sequencing Model (PUSM). Computes the expected count and standard deviation of a DNA-sequence of
@@ -36,26 +62,22 @@
  * - there is no coverage bias
  * - the reads map perfectly to the genome, without any errors or non-genomic content
  */
-
-namespace pusm {
-
-// TODO: Or is it better to just use an std::pair<double, double>?
-// TODO: Is this the right way to go if I want to avoid confusing a standard deviation with an expected count?
-class PusmData {
+class PerfectUniformSequencingModel {
 public:
-	PusmData(double stdev, double expectation) :
-			_stdev(stdev), _expectation(expectation) {
+	PerfectUniformSequencingModel(info::GenomeType type, size_t genomeSize,
+			const std::unordered_map<size_t, size_t>& readLengths) :
+			_type(type), _genomeSize(genomeSize), _readLengths(readLengths) {
 	}
-	double stdev();
-	double expectation();
+	PusmData expectedCount(size_t k);
 private:
-	double _stdev;
-	double _expectation;
+	info::GenomeType _type;
+	size_t _genomeSize;
+	const std::unordered_map<size_t, size_t>& _readLengths;
+	std::unordered_map<size_t, PusmData> _pusmBuffer; // buffer storing already computed answers for given k-mer lengths
 };
 
-// TODO: where to put this one? Global variable seems bad...
-std::unordered_map<size_t, PusmData> pusmBuffer; // buffer storing already computed answers for given k-mer lengths
-
-PusmData expectedCount(info::GenomeType type, size_t genomeSize, const std::unordered_map<size_t, size_t> &readLengths, size_t k);
+// TODO: Decide on whether these functions should be hidden (this is, only defined in the .cpp file) or not
+PusmData expectedCountLinear(size_t genomeSize, const std::unordered_map<size_t, size_t>& readLengths, size_t k);
+PusmData expectedCountCircular(size_t genomeSize, const std::unordered_map<size_t, size_t>& readLengths, size_t k);
 
 } // end of namespace pusm

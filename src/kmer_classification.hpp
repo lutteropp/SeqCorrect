@@ -29,5 +29,5 @@ namespace kmer_classification {
 		UNTRUSTED, UNIQUE, REPEAT
 	};
 
-	KmerType classifyKmer(const std::string &kmer, const pusm::PusmData &pusmData, size_t observedCount);
+	KmerType classifyKmer(const std::string& kmer, const pusm::PusmData& pusmData, size_t observedCount);
 }

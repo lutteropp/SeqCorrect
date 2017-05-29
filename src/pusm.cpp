@@ -22,23 +22,30 @@
  */
 
 #include "pusm.hpp"
+#include "info.hpp"
 #include <stdexcept>
 
 using namespace pusm;
 
-PusmData expectedCountLinear(size_t genomeSize, const std::unordered_map<size_t, size_t> &readLengths, size_t k) {
+PusmData expectedCountLinear(size_t genomeSize, const std::unordered_map<size_t, size_t>& readLengths, size_t k) {
 	throw std::runtime_error("not implemented yet");
 }
 
-PusmData expectedCountCircular(size_t genomeSize, const std::unordered_map<size_t, size_t> &readLengths, size_t k) {
+PusmData expectedCountCircular(size_t genomeSize, const std::unordered_map<size_t, size_t>& readLengths, size_t k) {
 	throw std::runtime_error("not implemented yet");
 }
 
-PusmData expectedCount(info::GenomeType type, size_t genomeSize, const std::unordered_map<size_t, size_t> &readLengths,
-		size_t k) {
-	if (type == info::GenomeType::CIRCULAR) {
-		return expectedCountCircular(genomeSize, readLengths, k);
-	} else {
-		return expectedCountLinear(genomeSize, readLengths, k);
+PusmData PerfectUniformSequencingModel::expectedCount(size_t k) {
+	if (_pusmBuffer.find(k) != _pusmBuffer.end()) {
+		return _pusmBuffer[k];
 	}
+
+	PusmData res;
+	if (_type == info::GenomeType::CIRCULAR) {
+		res = expectedCountCircular(_genomeSize, _readLengths, k);
+	} else {
+		res = expectedCountLinear(_genomeSize, _readLengths, k);
+	}
+	_pusmBuffer[k] = res;
+	return res;
 }

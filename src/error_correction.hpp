@@ -23,6 +23,15 @@
 
 #pragma once
 
+#include <vector>
+#include "sequence_io.hpp"
+#include "helper.hpp"
+
 namespace error_correction {
 
+	enum class ErrorCorrectionMethod {
+		KMER_BASED, SUFFIX_TREE_BASED, MSA_BASED
+	};
+
+	io::Read correctRead(const io::Read& read, bool correctSingleIndels = true, bool correctMultidels = false);
 }

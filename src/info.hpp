@@ -37,7 +37,7 @@ enum class GenomeType {
 
 class Dataset {
 public:
-	Dataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string> &readFiles);
+	Dataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string>& readFiles);
 private:
 	GenomeType _genomeType;
 	size_t _genomeSize;
@@ -47,11 +47,11 @@ private:
 
 class ReferenceDataset: public Dataset {
 public:
-	ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string> &readFiles,
-			const std::string &referenceGenomePath);
+	ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string>& readFiles,
+			const std::string& referenceGenomePath);
 private:
 	std::string _referenceGenomePath;
 	std::string _referenceGenome;
 };
 
-}
+} // end of namespace info

@@ -27,17 +27,17 @@
 #include "sequence_io.hpp"
 using namespace info;
 
-std::unordered_map<size_t, size_t> countReadLengths(const std::vector<std::string> &readFiles) {
+std::unordered_map<size_t, size_t> countReadLengths(const std::vector<std::string>& readFiles) {
 	throw std::runtime_error("not implemented yet");
 }
 
-Dataset::Dataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string> &readFiles) :
+Dataset::Dataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string>& readFiles) :
 		_genomeType(genomeType), _genomeSize(genomeSize), _readFiles(readFiles) {
 	_readLengths = countReadLengths(readFiles);
 }
 
-ReferenceDataset::ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string> &readFiles,
-		const std::string &referenceGenomePath) :
+ReferenceDataset::ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string>& readFiles,
+		const std::string& referenceGenomePath) :
 		Dataset(genomeType, genomeSize, readFiles), _referenceGenomePath(referenceGenomePath) {
 	_referenceGenome = io::readReferenceGenome(referenceGenomePath);
 }
