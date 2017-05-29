@@ -21,13 +21,19 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#pragma once
+#include <stdexcept>
+#include "helper.hpp"
 
-namespace kmer_classification {
+using namespace helper;
 
-	enum class KmerType {
-		UNTRUSTED, UNIQUE, REPEAT
-	};
+std::string reverseComplementString(const std::string& text) {
+	throw std::runtime_error("not implemented yet");
+}
 
-	KmerType classifyKmer(const std::string &kmer, const pusm::PusmData &pusmData, size_t observedCount);
+double gcContent(const std::string &kmer) {
+	throw std::runtime_error("not implemented yet");
+}
+
+std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type) {
+	throw std::runtime_error("not implemented yet");
 }

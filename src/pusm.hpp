@@ -21,11 +21,10 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#include <unordered_map>
-
-#include "info.hpp"
-
 #pragma once
+
+#include <unordered_map>
+#include "info.hpp"
 
 /**
  * Perfect Uniform Sequencing Model (PUSM). Computes the expected count and standard deviation of a DNA-sequence of
@@ -42,9 +41,9 @@ namespace pusm {
 
 // TODO: Or is it better to just use an std::pair<double, double>?
 // TODO: Is this the right way to go if I want to avoid confusing a standard deviation with an expected count?
-class Data {
+class PusmData {
 public:
-	Data(double stdev, double expectation) :
+	PusmData(double stdev, double expectation) :
 			_stdev(stdev), _expectation(expectation) {
 	}
 	double stdev();
@@ -55,12 +54,8 @@ private:
 };
 
 // TODO: where to put this one? Global variable seems bad...
-std::unordered_map<size_t, Data> pusmBuffer; // buffer storing already computed answers for given k-mer lengths
+std::unordered_map<size_t, PusmData> pusmBuffer; // buffer storing already computed answers for given k-mer lengths
 
-Data expectedCount(info::GenomeType type, size_t genomeSize, const std::unordered_map<size_t, size_t> &readLengths, size_t k);
-
-// TODO: Hide these two functions... only have them in the .cpp file, not here in the .h file
-Data expectedCountLinear(size_t genomeSize, const std::unordered_map<size_t, size_t> &readLengths, size_t k);
-Data expectedCountCircular(size_t genomeSize, const std::unordered_map<size_t, size_t> &readLengths, size_t k);
+PusmData expectedCount(info::GenomeType type, size_t genomeSize, const std::unordered_map<size_t, size_t> &readLengths, size_t k);
 
 } // end of namespace pusm

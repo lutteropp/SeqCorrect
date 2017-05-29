@@ -23,6 +23,24 @@
 
 #pragma once
 
-namespace count_kmer {
+#include "sequence_io.hpp"
 
+namespace count_kmer {
+	class FMIndex {
+	public:
+		// TODO
+	private:
+		// TODO
+	};
+
+	FMIndex buildIndex(const std::string &text);
+	FMIndex buildIndex(const std::vector<std::string> &filepaths);
+	FMIndex buildIndex(const io::FASTARead &read);
+	FMIndex buildIndex(const std::vector<io::FASTARead> &reads);
+
+	FMIndex loadIndex(const std::string &filepath);
+	bool storeIndex(const std::string &filepath, const FMIndex &index);
+
+	size_t countKmer(const std::string &kmer, FMIndex &index);
+	size_t countKmerNoRC(const std::string &kmer, FMIndex &index);
 }

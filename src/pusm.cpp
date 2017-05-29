@@ -21,37 +21,24 @@
  Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
  */
 
-#pragma once
+#include "pusm.hpp"
+#include <stdexcept>
 
-#include <unordered_map>
-#include <vector>
-#include <string>
+using namespace pusm;
 
-#include "sequence_io.hpp"
+PusmData expectedCountLinear(size_t genomeSize, const std::unordered_map<size_t, size_t> &readLengths, size_t k) {
+	throw std::runtime_error("not implemented yet");
+}
 
-namespace info {
+PusmData expectedCountCircular(size_t genomeSize, const std::unordered_map<size_t, size_t> &readLengths, size_t k) {
+	throw std::runtime_error("not implemented yet");
+}
 
-enum class GenomeType {
-	CIRCULAR, LINEAR
-};
-
-class Dataset {
-public:
-	Dataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string> &readFiles);
-private:
-	GenomeType _genomeType;
-	size_t _genomeSize;
-	std::unordered_map<size_t, size_t> _readLengths;
-	std::vector<std::string> &_readFiles;
-};
-
-class ReferenceDataset: public Dataset {
-public:
-	ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string> &readFiles,
-			const std::string &referenceGenomePath);
-private:
-	std::string _referenceGenomePath;
-	std::string _referenceGenome;
-};
-
+PusmData expectedCount(info::GenomeType type, size_t genomeSize, const std::unordered_map<size_t, size_t> &readLengths,
+		size_t k) {
+	if (type == info::GenomeType::CIRCULAR) {
+		return expectedCountCircular(genomeSize, readLengths, k);
+	} else {
+		return expectedCountLinear(genomeSize, readLengths, k);
+	}
 }

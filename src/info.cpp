@@ -21,37 +21,23 @@
  Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
  */
 
-#pragma once
-
-#include <unordered_map>
-#include <vector>
-#include <string>
+#include <stdexcept>
+#include "info.hpp"
 
 #include "sequence_io.hpp"
+using namespace info;
 
-namespace info {
+std::unordered_map<size_t, size_t> countReadLengths(const std::vector<std::string> &readFiles) {
+	throw std::runtime_error("not implemented yet");
+}
 
-enum class GenomeType {
-	CIRCULAR, LINEAR
-};
+Dataset::Dataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string> &readFiles) :
+		_genomeType(genomeType), _genomeSize(genomeSize), _readFiles(readFiles) {
+	_readLengths = countReadLengths(readFiles);
+}
 
-class Dataset {
-public:
-	Dataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string> &readFiles);
-private:
-	GenomeType _genomeType;
-	size_t _genomeSize;
-	std::unordered_map<size_t, size_t> _readLengths;
-	std::vector<std::string> &_readFiles;
-};
-
-class ReferenceDataset: public Dataset {
-public:
-	ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string> &readFiles,
-			const std::string &referenceGenomePath);
-private:
-	std::string _referenceGenomePath;
-	std::string _referenceGenome;
-};
-
+ReferenceDataset::ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string> &readFiles,
+		const std::string &referenceGenomePath) :
+		Dataset(genomeType, genomeSize, readFiles), _referenceGenomePath(referenceGenomePath) {
+	_referenceGenome = io::readReferenceGenome(referenceGenomePath);
 }

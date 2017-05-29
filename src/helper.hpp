@@ -23,11 +23,13 @@
 
 #pragma once
 
-namespace kmer_classification {
+namespace helper {
 
-	enum class KmerType {
-		UNTRUSTED, UNIQUE, REPEAT
+	enum class ErrorType {
+		INSERTION, SUB_OF_A, SUB_OF_C, SUB_OF_G, SUB_OF_T, DEL_OF_A, DEL_OF_C, DEL_OF_G, DEL_OF_T, MULTIDEL
 	};
 
-	KmerType classifyKmer(const std::string &kmer, const pusm::PusmData &pusmData, size_t observedCount);
+	std::string reverseComplementString(const std::string& text);
+	double gcContent(const std::string &kmer);
+	std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type);
 }

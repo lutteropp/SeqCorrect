@@ -22,3 +22,27 @@
 */
 
 #pragma once
+
+#include <iostream>
+#include <string>
+#include <gtest/gtest.h>
+#include "../seq_correct.hpp"
+
+using namespace helper;
+
+TEST(HelperTest, ReverseComplement) {
+    ASSERT_EQ("A", reverseComplementString("T"));
+    ASSERT_EQ("C", reverseComplementString("G"));
+    ASSERT_EQ("G", reverseComplementString("C"));
+    ASSERT_EQ("T", reverseComplementString("A"));
+    ASSERT_EQ("N", reverseComplementString("N"));
+    ASSERT_EQ("AT", reverseComplementString("AT")); // reverse-complement of itself
+    ASSERT_EQ("CG", reverseComplementString("CG")); // reverse-complement of itself
+    ASSERT_EQ("GA", reverseComplementString("TC"));
+    ASSERT_EQ("TG", reverseComplementString("CA"));
+}
+
+int main(int argc, char **argv) {
+	testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
+}

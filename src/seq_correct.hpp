@@ -22,18 +22,23 @@
 */
 
 /**
- * @brief This header includes all other SeqCorrect headers (*.h).
+ * @brief This header includes all other SeqCorrect headers (*.hpp).
  * This makes it easy to integrate the code as a library, as all
  * symbols of SeqCorrect are available after including this header.
  */
 
 #pragma once
 
+namespace seq_correct {
+
 #include "count_kmer.hpp"
 #include "coverage_bias.hpp"
 #include "error_correction.hpp"
 #include "error_profile.hpp"
+#include "helper.hpp"
 #include "info.hpp"
-#include "io/sequence.hpp"
 #include "kmer_classification.hpp"
 #include "pusm.hpp"
+#include "sequence_io.hpp"
+
+}
