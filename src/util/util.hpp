@@ -24,8 +24,9 @@
 #pragma once
 
 #include <unordered_map>
+
+#include "../external/const_string_ptr.hpp"
 #include "../io/sequence_io.hpp"
-#include "../external/constStringPtr.hpp"
 
 namespace seq_correct {
 namespace util {

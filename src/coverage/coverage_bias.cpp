@@ -26,7 +26,8 @@
 #include <algorithm>
 #include <iostream>
 #include "coverage_bias.hpp"
-#include "../external/constStringPtr.hpp"
+#include "../external/const_string_ptr.hpp"
+#include "../external/bloom_filter.hpp"
 #include "../counting/count_kmer.hpp"
 #include "../util/util.hpp"
 
@@ -82,8 +83,29 @@ double inferBias(const external::ConstStringPtr& kmerPtr, counting::FMIndex& rea
 	return countObserved / (double) countGenome;
 }
 
-std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, pusm::PerfectUniformSequencingModel &pusm) {
+std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::string &filepath,
+		counting::FMIndex& readsIndex, pusm::PerfectUniformSequencingModel &pusm) {
 	throw std::runtime_error("not implemented yet");
+	// TODO: use a bloom filter to keep track of which k-mers have already been visited
+
+	size_t offset = 0; // index of the first character of the current k-mer in a read
+	bloom_parameters parameters;
+	parameters.projected_element_count = std::pow(4, k); // expected number of k-mer to insert into the bloom filter
+	parameters.false_positive_probability = 0.0001;
+	parameters.random_seed = 0xA5A5A5A5;
+	parameters.compute_optimal_parameters();
+	bloom_filter filter(parameters);
+
+	// a test
+	std::string testString;
+	for (size_t i = 0; i < k; ++k) {
+		testString += ".";
+	}
+	external::ConstStringPtr kmerPtr(&testString);
+	filter.insert(kmerPtr.dataU(offset), k);
+	if (filter.contains(kmerPtr.dataU(offset), k)) {
+
+	}
 }
 
 std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& genome, counting::FMIndex& readsIndex,
@@ -124,7 +146,7 @@ std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& 
 
 void CoverageBiasUnit::preprocess(size_t k, const std::string &filepath, counting::FMIndex& readsIndex,
 		pusm::PerfectUniformSequencingModel& pusm) {
-	_medianCoverageBiases = preprocessWithoutGenome(k, pusm);
+	_medianCoverageBiases = preprocessWithoutGenome(k, filepath, readsIndex, pusm);
 }
 
 void CoverageBiasUnit::preprocess(size_t k, const std::string &genome, counting::FMIndex& readsIndex,
@@ -132,6 +154,10 @@ void CoverageBiasUnit::preprocess(size_t k, const std::string &genome, counting:
 	_medianCoverageBiases = preprocessWithGenome(k, genome, readsIndex, genomeIndex);
 }
 
+/**
+ * Computes the expected coverage bias of a k-mer.
+ * @param gc The GC-content of the k-mer
+ */
 double CoverageBiasUnit::computeCoverageBias(double gc) {
 	size_t idxMin = std::floor(gc / _gcStep);
 	size_t idxMax = idxMin + 1;

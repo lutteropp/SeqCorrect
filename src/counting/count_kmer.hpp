@@ -24,7 +24,7 @@
 #pragma once
 
 #include "../io/sequence_io.hpp"
-#include "../external/constStringPtr.hpp"
+#include "../external/const_string_ptr.hpp"
 
 namespace seq_correct {
 namespace counting {
