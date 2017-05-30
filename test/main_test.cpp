@@ -29,18 +29,15 @@
 using namespace seq_correct::util;
 
 TEST(HelperTest, ReverseComplementString) {
-	const std::string s1 = "A";
-	const std::string s2 = "T";
-    ASSERT_EQ(s1, reverseComplementString(s2));
-    /*s1 = "C"; s2 = "G";
-    ASSERT_EQ(s1, reverseComplementString(s2));
+    ASSERT_EQ("A", reverseComplementString("T"));
+    ASSERT_EQ("C", reverseComplementString("G"));
     ASSERT_EQ("G", reverseComplementString("C"));
     ASSERT_EQ("T", reverseComplementString("A"));
     ASSERT_EQ("N", reverseComplementString("N"));
     ASSERT_EQ("AT", reverseComplementString("AT")); // reverse-complement of itself
     ASSERT_EQ("CG", reverseComplementString("CG")); // reverse-complement of itself
     ASSERT_EQ("GA", reverseComplementString("TC"));
-    ASSERT_EQ("TG", reverseComplementString("CA"));*/
+    ASSERT_EQ("TG", reverseComplementString("CA"));
 }
 
 int main(int argc, char **argv) {
