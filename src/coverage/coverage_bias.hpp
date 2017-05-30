@@ -30,36 +30,33 @@
 namespace seq_correct {
 namespace coverage {
 
-class CoverageBiasData {
-public:
+/**
+ * A struct holding gc-content and median coverage bias data.
+ */
+struct CoverageBiasData {
 	CoverageBiasData(double gc, double bias) :
-			_gc(gc), _bias(bias) {
+			gc(gc), bias(bias) {
 	}
-	double gc() {
-		return _gc;
-	}
-	double bias() {
-		return _bias;
-	}
-private:
-	double _gc;
-	double _bias;
+	double gc; //!< gc-content
+	double bias; //!< median coverage bias for the given gc-content
 };
 
+/**
+ * Computes the median coverage biases from the dataset, then uses linear interpolation to respond to coverage bias queries.
+ */
 class CoverageBiasUnit {
 public:
-	CoverageBiasUnit();
-	void preprocess(const std::vector<io::Read> &reads, pusm::PerfectUniformSequencingModel &pusm);
-	void preprocess(const std::vector<io::Read> &reads, const std::string &genome);
-	void preprocess(const std::vector<std::string> &filepaths, pusm::PerfectUniformSequencingModel &pusm);
-	void preprocess(const std::vector<std::string> &filepaths, const std::string &genome);
-	void preprocess(const std::string &filepath, pusm::PerfectUniformSequencingModel &pusm);
-	void preprocess(const std::string &filepath, const std::string &genome);
-
+	CoverageBiasUnit() : _gcStep(0) {};
+	// preprocessing without a reference genome
+	void preprocess(size_t k, const std::string &filepath, pusm::PerfectUniformSequencingModel &pusm);
+	// preprocessing with a reference genome
+	void preprocess(size_t k, const std::string &filepath, const std::string &genome);
+	// using linear interpolation to compute coverage bias factor
 	double computeCoverageBias(const std::string &kmer);
-	double computeCoverageBias(size_t k, double gc);
+	double computeCoverageBias(double gc);
 private:
 	std::vector<CoverageBiasData> _medianCoverageBiases;
+	double _gcStep;
 };
 
 } // end of namespace seq_correct::coverage
