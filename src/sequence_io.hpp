@@ -27,6 +27,7 @@
 #include <vector>
 #include <fstream>
 
+namespace seq_correct {
 namespace io {
 
 /**
@@ -69,3 +70,4 @@ private:
 };
 
 } // end of namespace seq_correct::io
+} // end of namespace seq_correct

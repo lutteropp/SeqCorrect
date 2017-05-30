@@ -25,6 +25,7 @@
 
 #include "sequence_io.hpp"
 
+namespace seq_correct {
 namespace helper {
 
 	enum class ErrorType {
@@ -36,4 +37,5 @@ namespace helper {
 	double gcContent(const std::string& kmer);
 	std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type);
 
-} // end of namespace helper
+} // end of namespace seq_correct::helper
+} // end of namespace seq_correct

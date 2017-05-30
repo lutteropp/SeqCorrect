@@ -21,30 +21,13 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#pragma once
-
-#include "sequence_io.hpp"
+#include <stdexcept>
+#include "error_correction.hpp"
 
 namespace seq_correct {
-namespace counting {
+namespace correction {
 
-	class FMIndex {
-	public:
-		// TODO
-	private:
-		// TODO
-	};
 
-	FMIndex buildIndex(const std::string &text);
-	FMIndex buildIndex(const std::vector<std::string> &filepaths);
-	FMIndex buildIndex(const io::Read &read);
-	FMIndex buildIndex(const std::vector<io::Read> &reads);
 
-	FMIndex loadIndex(const std::string &filepath);
-	bool storeIndex(const std::string &filepath, const FMIndex &index);
-
-	size_t countKmer(const std::string &kmer, FMIndex &index);
-	size_t countKmerNoRC(const std::string &kmer, FMIndex &index);
-
-} // end of namespace seq_correct::counting
+} // end of namespace seq_correct::correction
 } // end of namespace seq_correct

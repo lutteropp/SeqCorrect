@@ -29,8 +29,6 @@
 
 #pragma once
 
-namespace seq_correct {
-
 #include "count_kmer.hpp"
 #include "coverage_bias.hpp"
 #include "error_correction.hpp"
@@ -40,5 +38,3 @@ namespace seq_correct {
 #include "kmer_classification.hpp"
 #include "pusm.hpp"
 #include "sequence_io.hpp"
-
-}

@@ -27,6 +27,7 @@
 #include <algorithm>
 #include "info.hpp"
 
+namespace seq_correct {
 namespace pusm {
 
 /**
@@ -39,11 +40,6 @@ public:
 	}
 	PusmData(double stdev, double expectation) :
 			_stdev(stdev), _expectation(expectation) {
-	}
-	PusmData& operator=(PusmData&& other) {
-		std::swap(_stdev, other._stdev);
-		std::swap(_expectation, other._expectation);
-		return *this;
 	}
 	double stdev();
 	double expectation();
@@ -80,4 +76,5 @@ private:
 PusmData expectedCountLinear(size_t genomeSize, const std::unordered_map<size_t, size_t>& readLengths, size_t k);
 PusmData expectedCountCircular(size_t genomeSize, const std::unordered_map<size_t, size_t>& readLengths, size_t k);
 
-} // end of namespace pusm
+} // end of namespace seq_correct::pusm
+} // end of namespace seq_correct

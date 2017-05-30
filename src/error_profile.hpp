@@ -23,6 +23,8 @@
 
 #pragma once
 
-namespace error_profile {
+namespace seq_correct {
+namespace profile {
 
-}
+} // end of namespace seq_correct::profile
+} // end of namespace seq_correct

@@ -23,11 +23,16 @@
 
 #pragma once
 
-namespace kmer_classification {
+#include "pusm.hpp"
+
+namespace seq_correct {
+namespace kmer {
 
 	enum class KmerType {
 		UNTRUSTED, UNIQUE, REPEAT
 	};
 
 	KmerType classifyKmer(const std::string& kmer, const pusm::PusmData& pusmData, size_t observedCount);
-}
+
+} // end of namespace seq_correct::kmer
+} // end of namespace seq_correct

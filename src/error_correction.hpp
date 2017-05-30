@@ -27,11 +27,14 @@
 #include "sequence_io.hpp"
 #include "helper.hpp"
 
-namespace error_correction {
+namespace seq_correct {
+namespace correction {
 
 	enum class ErrorCorrectionMethod {
 		KMER_BASED, SUFFIX_TREE_BASED, MSA_BASED
 	};
 
 	io::Read correctRead(const io::Read& read, bool correctSingleIndels = true, bool correctMultidels = false);
-}
+
+} // end of namespace seq_correct::correction
+} // end of namespace seq_correct

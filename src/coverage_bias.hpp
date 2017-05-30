@@ -27,7 +27,8 @@
 #include "pusm.hpp"
 #include "sequence_io.hpp"
 
-namespace coverage_bias {
+namespace seq_correct {
+namespace coverage {
 
 class CoverageBiasData {
 public:
@@ -45,17 +46,21 @@ private:
 	double _bias;
 };
 
-// some of these functions here need the PUSM... does
-std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::vector<io::Read> &reads, pusm::PerfectUniformSequencingModel &pusm);
-std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::vector<io::Read> &reads, const std::string &genome);
-std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::vector<std::string> &filepaths, pusm::PerfectUniformSequencingModel &pusm);
-std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::vector<std::string> &filepaths, const std::string &genome);
-std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::string &filepath, pusm::PerfectUniformSequencingModel &pusm);
-std::vector<CoverageBiasData> retrieveMedianCoverageBiases(const std::string &filepath, const std::string &genome);
+class CoverageBiasUnit {
+public:
+	CoverageBiasUnit();
+	void preprocess(const std::vector<io::Read> &reads, pusm::PerfectUniformSequencingModel &pusm);
+	void preprocess(const std::vector<io::Read> &reads, const std::string &genome);
+	void preprocess(const std::vector<std::string> &filepaths, pusm::PerfectUniformSequencingModel &pusm);
+	void preprocess(const std::vector<std::string> &filepaths, const std::string &genome);
+	void preprocess(const std::string &filepath, pusm::PerfectUniformSequencingModel &pusm);
+	void preprocess(const std::string &filepath, const std::string &genome);
 
-// TODO: I would like to hide stuff like medianCoverageBiases and buffered data from the user and reduce the function arguments... how do I do this without classes?
+	double computeCoverageBias(const std::string &kmer);
+	double computeCoverageBias(size_t k, double gc);
+private:
+	std::vector<CoverageBiasData> _medianCoverageBiases;
+};
 
-double computeCoverageBias(const std::string &kmer, const std::vector<CoverageBiasData> &medianCoverageBiases);
-double computeCoverageBias(size_t k, double gc, const std::vector<CoverageBiasData> &medianCoverageBiases);
-
-} // end of namespace coverage_bias
+} // end of namespace seq_correct::coverage
+} // end of namespace seq_correct

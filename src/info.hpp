@@ -29,6 +29,7 @@
 
 #include "sequence_io.hpp"
 
+namespace seq_correct {
 namespace info {
 
 enum class GenomeType {
@@ -42,7 +43,7 @@ private:
 	GenomeType _genomeType;
 	size_t _genomeSize;
 	std::unordered_map<size_t, size_t> _readLengths;
-	std::vector<std::string> &_readFiles;
+	const std::vector<std::string> &_readFiles;
 };
 
 class ReferenceDataset: public Dataset {
@@ -54,4 +55,5 @@ private:
 	std::string _referenceGenome;
 };
 
-} // end of namespace info
+} // end of namespace seq_correct::info
+} // end of namespace seq_correct

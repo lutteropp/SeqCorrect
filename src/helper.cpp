@@ -24,7 +24,8 @@
 #include <stdexcept>
 #include "helper.hpp"
 
-using namespace helper;
+namespace seq_correct {
+namespace helper {
 
 std::string reverseComplementString(const std::string& text) {
 	throw std::runtime_error("not implemented yet");
@@ -34,6 +35,9 @@ double gcContent(const std::string& kmer) {
 	throw std::runtime_error("not implemented yet");
 }
 
-std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type) {
+std::string kmerAfterError(const std::string& kmer, size_t pos, helper::ErrorType type) {
 	throw std::runtime_error("not implemented yet");
 }
+
+} // end of namespace seq_correct::helper
+} // end of namespace seq_correct
