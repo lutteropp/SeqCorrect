@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "pusm.hpp"
+#include "../pusm/pusm.hpp"
 
 namespace seq_correct {
 namespace kmer {

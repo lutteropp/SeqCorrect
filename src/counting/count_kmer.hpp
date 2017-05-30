@@ -23,18 +23,26 @@
 
 #pragma once
 
-#include <vector>
-#include "sequence_io.hpp"
-#include "helper.hpp"
+#include "../io/sequence_io.hpp"
 
 namespace seq_correct {
-namespace correction {
+namespace counting {
 
-	enum class ErrorCorrectionMethod {
-		KMER_BASED, SUFFIX_TREE_BASED, MSA_BASED
+	class FMIndex {
+	public:
+		size_t countKmer(const std::string &kmer);
+		size_t countKmerNoRC(const std::string &kmer);
+	private:
+		// TODO
 	};
 
-	io::Read correctRead(const io::Read& read, bool correctSingleIndels = true, bool correctMultidels = false);
+	FMIndex buildIndex(const std::string &text);
+	FMIndex buildIndex(const std::vector<std::string> &filepaths);
+	FMIndex buildIndex(const io::Read &read);
+	FMIndex buildIndex(const std::vector<io::Read> &reads);
 
-} // end of namespace seq_correct::correction
+	FMIndex loadIndex(const std::string &filepath);
+	bool storeIndex(const std::string &filepath, const FMIndex &index);
+
+} // end of namespace seq_correct::counting
 } // end of namespace seq_correct

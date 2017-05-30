@@ -22,7 +22,6 @@
  */
 
 #include "pusm.hpp"
-#include "info.hpp"
 #include <stdexcept>
 
 namespace seq_correct{
@@ -42,7 +41,7 @@ PusmData PerfectUniformSequencingModel::expectedCount(size_t k) {
 	}
 
 	PusmData res;
-	if (_type == info::GenomeType::CIRCULAR) {
+	if (_type == util::GenomeType::CIRCULAR) {
 		res = expectedCountCircular(_genomeSize, _readLengths, k);
 	} else {
 		res = expectedCountLinear(_genomeSize, _readLengths, k);

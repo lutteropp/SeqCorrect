@@ -21,20 +21,29 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-/**
- * @brief This header includes all other SeqCorrect headers (*.hpp).
- * This makes it easy to integrate the code as a library, as all
- * symbols of SeqCorrect are available after including this header.
- */
+#include <iostream>
+#include <string>
+#include <gtest/gtest.h>
+#include "../src/seq_correct.hpp"
 
-#pragma once
+using namespace seq_correct::util;
 
-#include "counting/count_kmer.hpp"
-#include "coverage/coverage_bias.hpp"
-#include "correction/error_correction.hpp"
-#include "profile/error_profile.hpp"
-#include "util/util.hpp"
-#include "kmer/kmer_classification.hpp"
-#include "pusm/pusm.hpp"
-#include "io/sequence_io.hpp"
-#include "util/util.hpp"
+TEST(HelperTest, ReverseComplementString) {
+	const std::string s1 = "A";
+	const std::string s2 = "T";
+    ASSERT_EQ(s1, reverseComplementString(s2));
+    /*s1 = "C"; s2 = "G";
+    ASSERT_EQ(s1, reverseComplementString(s2));
+    ASSERT_EQ("G", reverseComplementString("C"));
+    ASSERT_EQ("T", reverseComplementString("A"));
+    ASSERT_EQ("N", reverseComplementString("N"));
+    ASSERT_EQ("AT", reverseComplementString("AT")); // reverse-complement of itself
+    ASSERT_EQ("CG", reverseComplementString("CG")); // reverse-complement of itself
+    ASSERT_EQ("GA", reverseComplementString("TC"));
+    ASSERT_EQ("TG", reverseComplementString("CA"));*/
+}
+
+int main(int argc, char **argv) {
+	testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
+}

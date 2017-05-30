@@ -21,29 +21,35 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#include <iostream>
-#include <string>
-#include <gtest/gtest.h>
-#include "../seq_correct.hpp"
+#include <stdexcept>
+#include "count_kmer.hpp"
 
-using namespace seq_correct::helper;
+namespace seq_correct {
+namespace counting {
 
-TEST(HelperTest, ReverseComplementString) {
-	const std::string s1 = "A";
-	const std::string s2 = "T";
-    ASSERT_EQ(s1, reverseComplementString(s2));
-    /*s1 = "C"; s2 = "G";
-    ASSERT_EQ(s1, reverseComplementString(s2));
-    ASSERT_EQ("G", reverseComplementString("C"));
-    ASSERT_EQ("T", reverseComplementString("A"));
-    ASSERT_EQ("N", reverseComplementString("N"));
-    ASSERT_EQ("AT", reverseComplementString("AT")); // reverse-complement of itself
-    ASSERT_EQ("CG", reverseComplementString("CG")); // reverse-complement of itself
-    ASSERT_EQ("GA", reverseComplementString("TC"));
-    ASSERT_EQ("TG", reverseComplementString("CA"));*/
+FMIndex buildIndex(const std::string &text) {
+	throw std::runtime_error("not implemented yet");
 }
 
-int main(int argc, char **argv) {
-	testing::InitGoogleTest(&argc, argv);
-	return RUN_ALL_TESTS();
+FMIndex buildIndex(const std::vector<std::string> &filepaths) {
+	throw std::runtime_error("not implemented yet");
 }
+
+FMIndex buildIndex(const io::Read &read) {
+	throw std::runtime_error("not implemented yet");
+}
+
+FMIndex buildIndex(const std::vector<io::Read> &reads) {
+	throw std::runtime_error("not implemented yet");
+}
+
+FMIndex loadIndex(const std::string &filepath) {
+	throw std::runtime_error("not implemented yet");
+}
+
+bool storeIndex(const std::string &filepath, const FMIndex &index) {
+	throw std::runtime_error("not implemented yet");
+}
+
+} // end of namespace seq_correct::counting
+} // end of namespace seq_correct

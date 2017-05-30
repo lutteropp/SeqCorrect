@@ -25,7 +25,7 @@
 
 #include <unordered_map>
 #include <algorithm>
-#include "info.hpp"
+#include "../util/util.hpp"
 
 namespace seq_correct {
 namespace pusm {
@@ -60,13 +60,13 @@ private:
  */
 class PerfectUniformSequencingModel {
 public:
-	PerfectUniformSequencingModel(info::GenomeType type, size_t genomeSize,
+	PerfectUniformSequencingModel(util::GenomeType type, size_t genomeSize,
 			const std::unordered_map<size_t, size_t>& readLengths) :
 			_type(type), _genomeSize(genomeSize), _readLengths(readLengths) {
 	}
 	PusmData expectedCount(size_t k);
 private:
-	info::GenomeType _type;
+	util::GenomeType _type;
 	size_t _genomeSize;
 	const std::unordered_map<size_t, size_t>& _readLengths;
 	std::unordered_map<size_t, PusmData> _pusmBuffer; // buffer storing already computed answers for given k-mer lengths

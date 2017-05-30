@@ -21,23 +21,21 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#include <stdexcept>
-#include "helper.hpp"
+#pragma once
+
+#include <vector>
+
+#include "../util/util.hpp"
+#include "../io/sequence_io.hpp"
 
 namespace seq_correct {
-namespace helper {
+namespace correction {
 
-std::string reverseComplementString(const std::string& text) {
-	throw std::runtime_error("not implemented yet");
-}
+	enum class ErrorCorrectionMethod {
+		KMER_BASED, SUFFIX_TREE_BASED, MSA_BASED
+	};
 
-double gcContent(const std::string& kmer) {
-	throw std::runtime_error("not implemented yet");
-}
+	io::Read correctRead(const io::Read& read, bool correctSingleIndels = true, bool correctMultidels = false);
 
-std::string kmerAfterError(const std::string& kmer, size_t pos, helper::ErrorType type) {
-	throw std::runtime_error("not implemented yet");
-}
-
-} // end of namespace seq_correct::helper
+} // end of namespace seq_correct::correction
 } // end of namespace seq_correct

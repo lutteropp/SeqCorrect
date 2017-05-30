@@ -24,8 +24,8 @@
 #pragma once
 
 #include <vector>
-#include "pusm.hpp"
-#include "sequence_io.hpp"
+#include "../pusm/pusm.hpp"
+#include "../io/sequence_io.hpp"
 
 namespace seq_correct {
 namespace coverage {
