@@ -31,21 +31,17 @@ namespace seq_correct {
 namespace pusm {
 
 /**
- * A class that stores standard deviation and expected count of a k-mer in the read dataset.
+ * A struct that stores standard deviation and expected count of a k-mer in the read dataset.
  */
-class PusmData {
-public:
+struct PusmData {
 	PusmData() :
-			_stdev(0), _expectation(0) {
+			stdev(0), expectation(0) {
 	}
 	PusmData(double stdev, double expectation) :
-			_stdev(stdev), _expectation(expectation) {
+			stdev(stdev), expectation(expectation) {
 	}
-	double stdev();
-	double expectation();
-private:
-	double _stdev;
-	double _expectation;
+	double stdev;
+	double expectation;
 };
 
 /**

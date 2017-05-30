@@ -28,7 +28,17 @@ namespace seq_correct {
 namespace kmer {
 
 KmerType classifyKmer(const std::string& kmer, const pusm::PusmData& pusmData, size_t observedCount) {
-	throw std::runtime_error("not implemented yet");
+	if (kmer.empty()) {
+		throw std::runtime_error("The kmer is empty");
+	}
+
+	if (observedCount < 0.5 * pusmData.expectation) {
+		return KmerType::UNTRUSTED;
+	} else if (observedCount <= 1.5 * pusmData.expectation) {
+		return KmerType::UNIQUE;
+	} else {
+		return KmerType::REPEAT;
+	}
 }
 
 } // end of namespace seq_correct::kmer
