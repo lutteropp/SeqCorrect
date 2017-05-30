@@ -24,6 +24,7 @@
 #pragma once
 
 #include "../io/sequence_io.hpp"
+#include "../external/constStringPtr.hpp"
 
 namespace seq_correct {
 namespace counting {
@@ -31,18 +32,20 @@ namespace counting {
 	class FMIndex {
 	public:
 		size_t countKmer(const std::string &kmer);
+		size_t countKmer(const external::ConstStringPtr& kmerPtr);
 		size_t countKmerNoRC(const std::string &kmer);
+		size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr);
 	private:
 		// TODO
 	};
 
-	FMIndex buildIndex(const std::string &text);
-	FMIndex buildIndex(const std::vector<std::string> &filepaths);
-	FMIndex buildIndex(const io::Read &read);
-	FMIndex buildIndex(const std::vector<io::Read> &reads);
+	FMIndex buildIndex(const std::string& text);
+	FMIndex buildIndex(const std::vector<std::string>& filepaths);
+	FMIndex buildIndex(const io::Read& read);
+	FMIndex buildIndex(const std::vector<io::Read>& reads);
 
-	FMIndex loadIndex(const std::string &filepath);
-	bool storeIndex(const std::string &filepath, const FMIndex &index);
+	FMIndex loadIndex(const std::string& filepath);
+	bool storeIndex(const std::string& filepath, const FMIndex& index);
 
 } // end of namespace seq_correct::counting
 } // end of namespace seq_correct

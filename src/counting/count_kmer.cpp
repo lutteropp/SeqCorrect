@@ -27,6 +27,22 @@
 namespace seq_correct {
 namespace counting {
 
+size_t FMIndex::countKmer(const std::string& kmer) {
+	throw std::runtime_error("not implemented yet");
+}
+
+size_t FMIndex::countKmer(const external::ConstStringPtr& kmer) {
+	throw std::runtime_error("not implemented yet");
+}
+
+size_t FMIndex::countKmerNoRC(const std::string& kmer) {
+	throw std::runtime_error("not implemented yet");
+}
+
+size_t FMIndex::countKmerNoRC(const external::ConstStringPtr& kmer) {
+	throw std::runtime_error("not implemented yet");
+}
+
 FMIndex buildIndex(const std::string &text) {
 	throw std::runtime_error("not implemented yet");
 }

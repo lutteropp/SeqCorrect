@@ -25,6 +25,7 @@
 
 #include <unordered_map>
 #include "../io/sequence_io.hpp"
+#include "../external/constStringPtr.hpp"
 
 namespace seq_correct {
 namespace util {
@@ -36,6 +37,18 @@ namespace util {
 	std::string reverseComplementString(const std::string& text);
 	io::Read reverseComplementRead(const io::Read& read);
 	double gcContent(const std::string& kmer);
+
+	template <typename T>
+	size_t countGC(const T& kmer) {
+		size_t gcCount = 0;
+		for (size_t i = 0; i < kmer.size(); ++i) {
+			if (kmer[i] == 'G' || kmer[i] == 'C') {
+				gcCount++;
+			}
+		}
+		return gcCount;
+	}
+
 	std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type);
 
 	enum class GenomeType {
