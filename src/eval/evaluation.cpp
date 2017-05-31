@@ -27,12 +27,12 @@
 namespace seq_correct {
 namespace eval {
 
-std::unordered_map<util::ErrorType, EvaluationData> evaluateCorrections(const std::string& originalReadsFilepath,
+EvaluationData evaluateCorrections(const std::string& originalReadsFilepath,
 		const std::string& correctedReadsFilepath, const std::string& genomeFilepath) {
 	throw std::runtime_error("not implemented yet");
 }
 
-std::unordered_map<util::ErrorType, EvaluationData> evaluateCorrections(const std::string& alignmentFilepath,
+EvaluationData evaluateCorrections(const std::string& alignmentFilepath,
 		const std::string& correctedReadsFilepath) {
 	throw std::runtime_error("not implemented yet");
 }

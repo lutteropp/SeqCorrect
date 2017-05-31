@@ -29,39 +29,37 @@
 namespace seq_correct {
 namespace eval {
 
+using namespace util;
+
 class ConfusionMatrix {
 public:
 private:
 };
 
-class EvaluationData {
-public:
-	double computeAccuracy();
-	double computePrecision();
-	double computeRecall();
-	double computeFScore();
-
-	double getTruePositives();
-	double getFalsePositives();
-	double getTrueNegatives();
-	double getFalseNegatives();
-	void setTruePositives(size_t truePositives);
-	void setFalsePositives(size_t falsePositives);
-	void setTrueNegatives(size_t trueNegatives);
-	void setFalseNegatives(size_t falseNegatives);
-private:
-	size_t truePositives;
-	size_t falsePositives;
-	size_t trueNegatives;
-	size_t falseNegatives;
+struct EvaluationData {
+	std::unordered_map<ErrorType, size_t> truePositives;
+	std::unordered_map<ErrorType, size_t> falsePositives;
+	std::unordered_map<ErrorType, size_t> trueNegatives;
+	std::unordered_map<ErrorType, size_t> falseNegatives;
 	ConfusionMatrix baseConfusionMatrix;
 	ConfusionMatrix gapConfusionMatrix;
 };
 
-std::unordered_map<util::ErrorType, EvaluationData> evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
+double computeAccuracy(ErrorType type, const EvaluationData& data);
+double computePrecision(ErrorType type, const EvaluationData& data);
+double computeRecall(ErrorType type, const EvaluationData& data);
+double computeFScore(ErrorType type, const EvaluationData& data);
+double computeBaseNMIScore(const EvaluationData& data);
+double computeGapNMIScore(const EvaluationData& data);
+double computeUnbalancedAverageBaseFScore(const EvaluationData& data);
+double computeUnbalancedAverageGapFScore(const EvaluationData& data);
+double computeBalancedAverageBaseFScore(const EvaluationData& data);
+double computeBalancedAverageGapFScore(const EvaluationData& data);
+
+EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
 		const std::string& genomeFilepath);
 
-std::unordered_map<util::ErrorType, EvaluationData> evaluateCorrections(const std::string& alignmentFilepath, const std::string& correctedReadsFilepath);
+EvaluationData evaluateCorrections(const std::string& alignmentFilepath, const std::string& correctedReadsFilepath);
 
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct
