@@ -52,6 +52,15 @@ std::string reverseComplementString(const std::string& text) {
 	return revComp;
 }
 
+io::Read reverseComplementRead(const io::Read& read) {
+	io::Read rcRead;
+	rcRead.name = read.name;
+	rcRead.seq = reverseComplementString(read.seq);
+	rcRead.qual = read.qual;
+	std::reverse(rcRead.qual.begin(), rcRead.qual.end());
+	return rcRead;
+}
+
 double gcContent(const std::string& kmer) {
 	size_t gcCount = std::count_if(kmer.begin(), kmer.end(), [](char c) {return (c=='C') || (c=='G');});
 	return gcCount / (double) kmer.size();
