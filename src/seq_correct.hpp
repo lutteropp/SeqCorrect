@@ -38,3 +38,4 @@
 #include "pusm/pusm.hpp"
 #include "io/sequence_io.hpp"
 #include "util/util.hpp"
+#include "eval/evaluation.hpp"

@@ -22,35 +22,19 @@
  */
 
 #include <stdexcept>
-#include "sequence_io.hpp"
+#include "evaluation.hpp"
 
 namespace seq_correct {
-namespace io {
+namespace eval {
 
-std::string readReferenceGenome(const std::string& filepath) {
+void evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
+		const std::string& genomeFilepath) {
 	throw std::runtime_error("not implemented yet");
 }
 
-bool ReadInput::hasNext() {
+void evaluateCorrections(const std::string& alignmentFilepath, const std::string& correctedReadsFilepath) {
 	throw std::runtime_error("not implemented yet");
 }
 
-bool ReadInput::openFile(const std::string& filepath) {
-	throw std::runtime_error("not implemented yet");
-}
-
-// TODO: Don't forget to convert all DNA sequences to upper case
-Read ReadInput::readNext(bool readSequence, bool readQuality, bool readName) {
-	throw std::runtime_error("not implemented yet");
-}
-
-bool ReadOutput::openFile(const std::string& filepath) {
-	throw std::runtime_error("not implemented yet");
-}
-
-bool ReadOutput::write(const Read& read) {
-	throw std::runtime_error("not implemented yet");
-}
-
-} // end of namespace seq_correct::io
+} // end of namespace seq_correct::eval
 } // end of namespace seq_correct
