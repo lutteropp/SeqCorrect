@@ -67,7 +67,44 @@ double gcContent(const std::string& kmer) {
 }
 
 std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type) {
-	throw std::runtime_error("not implemented yet");
+	std::string newKmer;
+	switch (type) {
+	case ErrorType::INSERTION:
+		newKmer = kmer.substr(0, pos) + kmer.substr(pos + 1, std::string::npos);
+		break;
+	case ErrorType::SUB_OF_A:
+		newKmer = kmer;
+		newKmer[pos] = 'A';
+		break;
+	case ErrorType::SUB_OF_C:
+		newKmer = kmer;
+		newKmer[pos] = 'C';
+		break;
+	case ErrorType::SUB_OF_G:
+		newKmer = kmer;
+		newKmer[pos] = 'G';
+		break;
+	case ErrorType::SUB_OF_T:
+		newKmer = kmer;
+		newKmer[pos] = 'T';
+		break;
+	case ErrorType::DEL_OF_A:
+		newKmer = kmer.substr(0, pos) + "A" + kmer.substr(pos, std::string::npos);
+		break;
+	case ErrorType::DEL_OF_C:
+		newKmer = kmer.substr(0, pos) + "C" + kmer.substr(pos, std::string::npos);
+		break;
+	case ErrorType::DEL_OF_G:
+		newKmer = kmer.substr(0, pos) + "G" + kmer.substr(pos, std::string::npos);
+		break;
+	case ErrorType::DEL_OF_T:
+		newKmer = kmer.substr(0, pos) + "T" + kmer.substr(pos, std::string::npos);
+		break;
+	case ErrorType::MULTIDEL:
+		newKmer = kmer.substr(0, pos) + "_" + kmer.substr(pos, std::string::npos);
+		break;
+	}
+	return newKmer;
 }
 
 std::unordered_map<size_t, size_t> countReadLengths(const std::string& readFilepath) {
