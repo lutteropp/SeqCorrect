@@ -58,17 +58,17 @@ namespace util {
 
 	class Dataset {
 	public:
-		Dataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string>& readFiles);
+		Dataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath);
 	private:
 		GenomeType _genomeType;
 		size_t _genomeSize;
 		std::unordered_map<size_t, size_t> _readLengths;
-		const std::vector<std::string> &_readFiles;
+		const std::string& _readFilepath;
 	};
 
 	class ReferenceDataset: public Dataset {
 	public:
-		ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string>& readFiles,
+		ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath,
 				const std::string& referenceGenomePath);
 	private:
 		std::string _referenceGenomePath;

@@ -70,18 +70,29 @@ std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type) 
 	throw std::runtime_error("not implemented yet");
 }
 
-std::unordered_map<size_t, size_t> countReadLengths(const std::vector<std::string>& readFiles) {
-	throw std::runtime_error("not implemented yet");
+std::unordered_map<size_t, size_t> countReadLengths(const std::string& readFilepath) {
+	std::unordered_map<size_t, size_t> res;
+	io::ReadInput reader;
+	reader.openFile(readFilepath);
+	while (reader.hasNext()) {
+		io::Read read = reader.readNext(true, false, false);
+		if (res.find(read.seq.size()) == res.end()) {
+			res[read.seq.size()] = 1;
+		} else {
+			res[read.seq.size()]++;
+		}
+	}
+	return res;
 }
 
-Dataset::Dataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string>& readFiles) :
-		_genomeType(genomeType), _genomeSize(genomeSize), _readFiles(readFiles) {
-	_readLengths = countReadLengths(readFiles);
+Dataset::Dataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath) :
+		_genomeType(genomeType), _genomeSize(genomeSize), _readFilepath(readFilepath) {
+	_readLengths = countReadLengths(readFilepath);
 }
 
-ReferenceDataset::ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::vector<std::string>& readFiles,
+ReferenceDataset::ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath,
 		const std::string& referenceGenomePath) :
-		Dataset(genomeType, genomeSize, readFiles), _referenceGenomePath(referenceGenomePath) {
+		Dataset(genomeType, genomeSize, readFilepath), _referenceGenomePath(referenceGenomePath) {
 	_referenceGenome = io::readReferenceGenome(referenceGenomePath);
 }
 
