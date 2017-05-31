@@ -238,6 +238,7 @@ std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& 
  */
 void CoverageBiasUnit::preprocess(size_t k, const std::string &filepath, counting::FMIndex& readsIndex,
 		pusm::PerfectUniformSequencingModel& pusm) {
+	_gcStep = 1 / (double) k;
 	_medianCoverageBiases = preprocessWithoutGenome(k, filepath, readsIndex, pusm);
 }
 
@@ -250,6 +251,7 @@ void CoverageBiasUnit::preprocess(size_t k, const std::string &filepath, countin
  */
 void CoverageBiasUnit::preprocess(size_t k, const std::string &genome, counting::FMIndex& readsIndex,
 		counting::FMIndex& genomeIndex) {
+	_gcStep = 1 / (double) k;
 	_medianCoverageBiases = preprocessWithGenome(k, genome, readsIndex, genomeIndex);
 }
 

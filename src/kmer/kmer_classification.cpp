@@ -27,11 +27,16 @@
 namespace seq_correct {
 namespace kmer {
 
+/**
+ * Classify a k-mer as either UNTRUSTED, UNIQUE, or REPETITIVE.
+ * @param kmer The k-mer
+ * @param pusmData The expected count and standard deviation of the k-mer in an idealized sequencing setting
+ * @param observedCount Count of the k-mer in the read dataset
+ */
 KmerType classifyKmer(const std::string& kmer, const pusm::PusmData& pusmData, size_t observedCount) {
 	if (kmer.empty()) {
 		throw std::runtime_error("The kmer is empty");
 	}
-
 	if (observedCount < 0.5 * pusmData.expectation) {
 		return KmerType::UNTRUSTED;
 	} else if (observedCount <= 1.5 * pusmData.expectation) {
