@@ -37,9 +37,6 @@ struct PusmData {
 	PusmData() :
 			stdev(0), expectation(0) {
 	}
-	PusmData(double stdev, double expectation) :
-			stdev(stdev), expectation(expectation) {
-	}
 	double stdev;
 	double expectation;
 };
@@ -53,6 +50,7 @@ struct PusmData {
  * - the k-mer is unique in the genome
  * - there is no coverage bias
  * - the reads map perfectly to the genome, without any errors or non-genomic content
+ * - the reads contain no adapter sequences or other artificial sequences
  */
 class PerfectUniformSequencingModel {
 public:
