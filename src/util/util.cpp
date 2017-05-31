@@ -123,14 +123,14 @@ std::unordered_map<size_t, size_t> countReadLengths(const std::string& readFilep
 }
 
 Dataset::Dataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath) :
-		_genomeType(genomeType), _genomeSize(genomeSize), _readFilepath(readFilepath) {
-	_readLengths = countReadLengths(readFilepath);
+		genomeType(genomeType), genomeSize(genomeSize), readFilepath(readFilepath) {
+	readLengths = countReadLengths(readFilepath);
 }
 
 ReferenceDataset::ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath,
 		const std::string& referenceGenomePath) :
-		Dataset(genomeType, genomeSize, readFilepath), _referenceGenomePath(referenceGenomePath) {
-	_referenceGenome = io::readReferenceGenome(referenceGenomePath);
+		Dataset(genomeType, genomeSize, readFilepath), referenceGenomePath(referenceGenomePath) {
+	referenceGenome = io::readReferenceGenome(referenceGenomePath);
 }
 
 } // end of namespace seq_correct::util

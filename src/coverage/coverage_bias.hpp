@@ -47,7 +47,7 @@ struct CoverageBiasData {
  */
 class CoverageBiasUnit {
 public:
-	CoverageBiasUnit() : _gcStep(0) {};
+	CoverageBiasUnit() : gcStep(0) {};
 	// preprocessing without a reference genome
 	void preprocess(size_t k, const std::string &filepath, counting::FMIndex& readsIndex, pusm::PerfectUniformSequencingModel &pusm);
 	// preprocessing with a reference genome
@@ -56,8 +56,8 @@ public:
 	double computeCoverageBias(const std::string &kmer);
 	double computeCoverageBias(double gc);
 private:
-	std::vector<CoverageBiasData> _medianCoverageBiases;
-	double _gcStep;
+	std::vector<CoverageBiasData> medianCoverageBiases;
+	double gcStep;
 };
 
 } // end of namespace seq_correct::coverage

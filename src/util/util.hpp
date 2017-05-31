@@ -35,6 +35,39 @@ namespace util {
 		INSERTION, SUB_OF_A, SUB_OF_C, SUB_OF_G, SUB_OF_T, DEL_OF_A, DEL_OF_C, DEL_OF_G, DEL_OF_T, MULTIDEL
 	};
 
+	// code from http://stackoverflow.com/questions/261963/how-can-i-iterate-over-an-enum
+	template<typename C, C beginVal, C endVal>
+	class Iterator {
+		typedef typename std::underlying_type<C>::type val_t;
+		int val;
+	public:
+		Iterator(const C & f) :
+				val(static_cast<val_t>(f)) {
+		}
+		Iterator() :
+				val(static_cast<val_t>(beginVal)) {
+		}
+		Iterator operator++() {
+			++val;
+			return *this;
+		}
+		C operator*() {
+			return static_cast<C>(val);
+		}
+		Iterator begin() {
+			return *this;
+		} //default ctor is good
+		Iterator end() {
+			static const Iterator endIter = ++Iterator(endVal); // cache it
+			return endIter;
+		}
+		bool operator!=(const Iterator& i) {
+			return val != i.val;
+		}
+	};
+
+	typedef Iterator<ErrorType, ErrorType::INSERTION, ErrorType::MULTIDEL> ErrorTypeIterator;
+
 	std::string reverseComplementString(const std::string& text);
 	io::Read reverseComplementRead(const io::Read& read);
 	double gcContent(const std::string& kmer);
@@ -60,10 +93,10 @@ namespace util {
 	public:
 		Dataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath);
 	private:
-		GenomeType _genomeType;
-		size_t _genomeSize;
-		std::unordered_map<size_t, size_t> _readLengths;
-		const std::string& _readFilepath;
+		GenomeType genomeType;
+		size_t genomeSize;
+		std::unordered_map<size_t, size_t> readLengths;
+		const std::string& readFilepath;
 	};
 
 	class ReferenceDataset: public Dataset {
@@ -71,8 +104,8 @@ namespace util {
 		ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath,
 				const std::string& referenceGenomePath);
 	private:
-		std::string _referenceGenomePath;
-		std::string _referenceGenome;
+		std::string referenceGenomePath;
+		std::string referenceGenome;
 	};
 
 } // end of namespace seq_correct::util

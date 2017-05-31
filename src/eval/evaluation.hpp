@@ -23,14 +23,45 @@
 
 #pragma once
 #include <string>
+#include <unordered_map>
+#include "../util/util.hpp"
 
 namespace seq_correct {
 namespace eval {
 
-void evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
+class ConfusionMatrix {
+public:
+private:
+};
+
+class EvaluationData {
+public:
+	double computeAccuracy();
+	double computePrecision();
+	double computeRecall();
+	double computeFScore();
+
+	double getTruePositives();
+	double getFalsePositives();
+	double getTrueNegatives();
+	double getFalseNegatives();
+	void setTruePositives(size_t truePositives);
+	void setFalsePositives(size_t falsePositives);
+	void setTrueNegatives(size_t trueNegatives);
+	void setFalseNegatives(size_t falseNegatives);
+private:
+	size_t truePositives;
+	size_t falsePositives;
+	size_t trueNegatives;
+	size_t falseNegatives;
+	ConfusionMatrix baseConfusionMatrix;
+	ConfusionMatrix gapConfusionMatrix;
+};
+
+std::unordered_map<util::ErrorType, EvaluationData> evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
 		const std::string& genomeFilepath);
 
-void evaluateCorrections(const std::string& alignmentFilepath, const std::string& correctedReadsFilepath);
+std::unordered_map<util::ErrorType, EvaluationData> evaluateCorrections(const std::string& alignmentFilepath, const std::string& correctedReadsFilepath);
 
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct

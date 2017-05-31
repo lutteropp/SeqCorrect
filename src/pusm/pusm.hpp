@@ -56,14 +56,14 @@ class PerfectUniformSequencingModel {
 public:
 	PerfectUniformSequencingModel(util::GenomeType type, size_t genomeSize,
 			const std::unordered_map<size_t, size_t>& readLengths) :
-			_type(type), _genomeSize(genomeSize), _readLengths(readLengths) {
+			type(type), genomeSize(genomeSize), readLengths(readLengths) {
 	}
 	PusmData expectedCount(size_t k);
 private:
-	util::GenomeType _type;
-	size_t _genomeSize;
-	const std::unordered_map<size_t, size_t>& _readLengths;
-	std::unordered_map<size_t, PusmData> _pusmBuffer; // buffer storing already computed answers for given k-mer lengths
+	util::GenomeType type;
+	size_t genomeSize;
+	const std::unordered_map<size_t, size_t>& readLengths;
+	std::unordered_map<size_t, PusmData> pusmBuffer; // buffer storing already computed answers for given k-mer lengths
 };
 
 // TODO: Decide on whether these functions should be hidden (this is, only defined in the .cpp file) or not

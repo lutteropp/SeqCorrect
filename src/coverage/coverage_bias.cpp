@@ -238,8 +238,8 @@ std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& 
  */
 void CoverageBiasUnit::preprocess(size_t k, const std::string &filepath, counting::FMIndex& readsIndex,
 		pusm::PerfectUniformSequencingModel& pusm) {
-	_gcStep = 1 / (double) k;
-	_medianCoverageBiases = preprocessWithoutGenome(k, filepath, readsIndex, pusm);
+	gcStep = 1 / (double) k;
+	medianCoverageBiases = preprocessWithoutGenome(k, filepath, readsIndex, pusm);
 }
 
 /**
@@ -251,8 +251,8 @@ void CoverageBiasUnit::preprocess(size_t k, const std::string &filepath, countin
  */
 void CoverageBiasUnit::preprocess(size_t k, const std::string &genome, counting::FMIndex& readsIndex,
 		counting::FMIndex& genomeIndex) {
-	_gcStep = 1 / (double) k;
-	_medianCoverageBiases = preprocessWithGenome(k, genome, readsIndex, genomeIndex);
+	gcStep = 1 / (double) k;
+	medianCoverageBiases = preprocessWithGenome(k, genome, readsIndex, genomeIndex);
 }
 
 /**
@@ -260,12 +260,12 @@ void CoverageBiasUnit::preprocess(size_t k, const std::string &genome, counting:
  * @param gc The GC-content of the k-mer
  */
 double CoverageBiasUnit::computeCoverageBias(double gc) {
-	size_t idxMin = std::floor(gc / _gcStep);
+	size_t idxMin = std::floor(gc / gcStep);
 	size_t idxMax = idxMin + 1;
-	double gcMin = idxMin * _gcStep;
-	double gcMax = idxMax * _gcStep;
-	double biasMin = _medianCoverageBiases[idxMin].bias;
-	double biasMax = _medianCoverageBiases[idxMax].bias;
+	double gcMin = idxMin * gcStep;
+	double gcMax = idxMax * gcStep;
+	double biasMin = medianCoverageBiases[idxMin].bias;
+	double biasMax = medianCoverageBiases[idxMax].bias;
 	// linear interpolation, see https://en.wikipedia.org/wiki/Interpolation
 	return biasMin + (biasMax - biasMin) / (gcMax - gcMin) * (gc - gcMin);
 }

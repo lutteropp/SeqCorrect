@@ -97,16 +97,16 @@ PusmData expectedCountCircular(size_t genomeSize, const std::unordered_map<size_
  * @param k The k-mer size
  */
 PusmData PerfectUniformSequencingModel::expectedCount(size_t k) {
-	if (_pusmBuffer.find(k) != _pusmBuffer.end()) {
-		return _pusmBuffer[k];
+	if (pusmBuffer.find(k) != pusmBuffer.end()) {
+		return pusmBuffer[k];
 	}
 	PusmData res;
-	if (_type == util::GenomeType::CIRCULAR) {
-		res = expectedCountCircular(_genomeSize, _readLengths, k);
+	if (type == util::GenomeType::CIRCULAR) {
+		res = expectedCountCircular(genomeSize, readLengths, k);
 	} else {
-		res = expectedCountLinear(_genomeSize, _readLengths, k);
+		res = expectedCountLinear(genomeSize, readLengths, k);
 	}
-	_pusmBuffer[k] = res;
+	pusmBuffer[k] = res;
 	return res;
 }
 

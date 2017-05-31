@@ -55,7 +55,7 @@ public:
 	Read readNext(bool readSequence = true, bool readQuality = false, bool readName = false);
 	bool hasNext();
 private:
-	std::ifstream _file;
+	std::ifstream file;
 };
 
 class ReadOutput {
@@ -63,7 +63,7 @@ public:
 	bool openFile(const std::string& filepath);
 	bool write(const Read& read);
 private:
-	std::ofstream _file;
+	std::ofstream file;
 };
 
 } // end of namespace seq_correct::io
