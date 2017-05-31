@@ -31,5 +31,25 @@ std::string readReferenceGenome(const std::string& filepath) {
 	throw std::runtime_error("not implemented yet");
 }
 
+bool ReadInput::hasNext() {
+	throw std::runtime_error("not implemented yet");
+}
+
+bool ReadInput::openFile(const std::string& filepath) {
+	throw std::runtime_error("not implemented yet");
+}
+
+Read ReadInput::readNext(bool readSequence, bool readQuality, bool readName) {
+	throw std::runtime_error("not implemented yet");
+}
+
+bool ReadOutput::openFile(const std::string& filepath) {
+	throw std::runtime_error("not implemented yet");
+}
+
+bool ReadOutput::write(const Read& read) {
+	throw std::runtime_error("not implemented yet");
+}
+
 } // end of namespace seq_correct::io
 } // end of namespace seq_correct

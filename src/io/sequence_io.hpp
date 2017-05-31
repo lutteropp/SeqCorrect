@@ -36,19 +36,16 @@ namespace io {
  */
 std::string readReferenceGenome(const std::string& filepath);
 
-class Read {
+struct Read {
 public:
 	Read() :
-			_seq(""), _qual(""), _name("") {
+			seq(""), qual(""), name("") {
 	}
 	Read(std::string&& seq);
-	void setSeq(const std::string& seq);
-	void setQual(const std::string& qual);
-	void setName(const std::string& name);
-private:
-	std::string _seq;
-	std::string _qual;
-	std::string _name;
+
+	std::string seq;
+	std::string qual;
+	std::string name;
 };
 
 // TODO: Don't forget to convert all DNA sequences to upper case
