@@ -65,9 +65,41 @@ bool ReadInput::openFile(const std::string& filepath) {
 	return (file.good());
 }
 
-// TODO: Don't forget to convert all DNA sequences to upper case
+/**
+ * Read the next read in the input file.
+ * @param readSequence Read the DNA sequence
+ * @param readQuality Read the quality scores
+ * @param readName Read the sequence name
+ */
 Read ReadInput::readNext(bool readSequence, bool readQuality, bool readName) {
-	throw std::runtime_error("not implemented yet");
+	bool isFASTA = true;
+	std::string line;
+	std::getline(file, line);
+	if (line[0] == '@') {
+		isFASTA = false;
+	} else if (line[0] != '>') {
+		throw std::runtime_error("the sequence is neither in FASTA nor in FASTQ format");
+	}
+	if (readQuality && isFASTA) {
+		throw std::runtime_error("cannot read quality scores");
+	}
+	Read read;
+	if (readName) {
+		read.name = line.substr(1, std::string::npos);
+	}
+	std::getline(file, line);
+	if (readSequence) {
+		read.seq = line;
+		std::transform(read.seq.begin(), read.seq.end(), read.seq.begin(), ::toupper);
+	}
+	if (!isFASTA) {
+		std::getline(file, line); // the '+'
+		std::getline(file, line); // the quality scores
+		if (readQuality) {
+			read.qual = line;
+		}
+	}
+	return read;
 }
 
 /**

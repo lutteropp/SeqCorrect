@@ -52,7 +52,7 @@ public:
 class ReadInput {
 public:
 	bool openFile(const std::string& filepath);
-	Read readNext(bool readSequence = true, bool readQuality = false, bool readName = false);
+	Read readNext(bool readSequence = true, bool readQuality = false, bool readName = true);
 	bool hasNext();
 private:
 	std::ifstream file;
