@@ -45,16 +45,17 @@ struct EvaluationData {
 	ConfusionMatrix gapConfusionMatrix;
 };
 
-double computeAccuracy(ErrorType type, const EvaluationData& data);
-double computePrecision(ErrorType type, const EvaluationData& data);
-double computeRecall(ErrorType type, const EvaluationData& data);
-double computeFScore(ErrorType type, const EvaluationData& data);
-double computeBaseNMIScore(const EvaluationData& data);
-double computeGapNMIScore(const EvaluationData& data);
-double computeUnbalancedAverageBaseFScore(const EvaluationData& data);
-double computeUnbalancedAverageGapFScore(const EvaluationData& data);
-double computeBalancedAverageBaseFScore(const EvaluationData& data);
-double computeBalancedAverageGapFScore(const EvaluationData& data);
+double computeAccuracy(ErrorType type, EvaluationData& data);
+double computePrecision(ErrorType type, EvaluationData& data);
+double computeRecall(ErrorType type, EvaluationData& data);
+double computeSpecificity(ErrorType type, EvaluationData& data);
+double computeF1Score(ErrorType type, EvaluationData& data);
+double computeBaseNMIScore(EvaluationData& data);
+double computeGapNMIScore(EvaluationData& data);
+double computeUnbalancedAverageBaseFScore(EvaluationData& data);
+double computeUnbalancedAverageGapFScore(EvaluationData& data);
+double computeBalancedAverageBaseFScore(EvaluationData& data);
+double computeBalancedAverageGapFScore(EvaluationData& data);
 
 EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
 		const std::string& genomeFilepath);

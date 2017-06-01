@@ -27,13 +27,60 @@
 namespace seq_correct {
 namespace eval {
 
-EvaluationData evaluateCorrections(const std::string& originalReadsFilepath,
-		const std::string& correctedReadsFilepath, const std::string& genomeFilepath) {
+EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
+		const std::string& genomeFilepath) {
 	throw std::runtime_error("not implemented yet");
 }
 
-EvaluationData evaluateCorrections(const std::string& alignmentFilepath,
-		const std::string& correctedReadsFilepath) {
+EvaluationData evaluateCorrections(const std::string& alignmentFilepath, const std::string& correctedReadsFilepath) {
+	throw std::runtime_error("not implemented yet");
+}
+
+double computeAccuracy(ErrorType type, EvaluationData& data) {
+	return (data.truePositives[type] + data.falsePositives[type])
+			/ (double) (data.truePositives[type] + data.falsePositives[type] + data.falsePositives[type]
+					+ data.falseNegatives[type]);
+}
+
+double computePrecision(ErrorType type, EvaluationData& data) {
+	return data.truePositives[type] / (double) (data.truePositives[type] + data.falsePositives[type]);
+}
+
+double computeRecall(ErrorType type, EvaluationData& data) {
+	return data.truePositives[type] / (double) (data.truePositives[type] + data.falseNegatives[type]);
+}
+
+double computeSpecificity(ErrorType type, EvaluationData& data) {
+	return data.trueNegatives[type] / (double) (data.trueNegatives[type] + data.falseNegatives[type]);
+}
+
+double computeF1Score(ErrorType type, EvaluationData& data) {
+	double precision = computePrecision(type, data);
+	double recall = computeRecall(type, data);
+	return 2 * (precision * recall) / (precision + recall);
+}
+
+double computeBaseNMIScore(EvaluationData& data) {
+	throw std::runtime_error("not implemented yet");
+}
+
+double computeGapNMIScore(EvaluationData& data) {
+	throw std::runtime_error("not implemented yet");
+}
+
+double computeUnbalancedAverageBaseFScore(EvaluationData& data) {
+	throw std::runtime_error("not implemented yet");
+}
+
+double computeUnbalancedAverageGapFScore(EvaluationData& data) {
+	throw std::runtime_error("not implemented yet");
+}
+
+double computeBalancedAverageBaseFScore(EvaluationData& data) {
+	throw std::runtime_error("not implemented yet");
+}
+
+double computeBalancedAverageGapFScore(EvaluationData& data) {
 	throw std::runtime_error("not implemented yet");
 }
 

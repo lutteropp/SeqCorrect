@@ -37,6 +37,6 @@ int main() {
 	// compute the coverage biases
 	pusm::PerfectUniformSequencingModel pusm(dataset.getGenomeType(), dataset.getGenomeSize(), dataset.getReadLengths());
 	coverage::CoverageBiasUnit biasUnit;
-	biasUnit.preprocess(13, dataset.getReadFilepath(), matcher, pusm);
+	biasUnit.preprocess(21, dataset.getReadFilepath(), matcher, pusm);
 	biasUnit.printMedianCoverageBiases();
 }
