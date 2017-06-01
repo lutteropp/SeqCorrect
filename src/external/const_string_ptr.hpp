@@ -27,7 +27,6 @@
 #include <cassert>
 
 namespace seq_correct {
-
 namespace external {
 
 class ConstStringPtr

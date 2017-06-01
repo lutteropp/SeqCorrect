@@ -48,7 +48,6 @@ public:
 	std::string name;
 };
 
-// TODO: Don't forget to convert all DNA sequences to upper case
 class ReadInput {
 public:
 	bool openFile(const std::string& filepath);

@@ -21,40 +21,30 @@
     Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
 */
 
-#pragma once
-
-#include "../io/sequence_io.hpp"
+#include <array>
 #include "../external/const_string_ptr.hpp"
 
 namespace seq_correct {
 namespace counting {
 
-	class FMIndex {
-	public:
-		size_t countKmer(const std::string &kmer);
-		size_t countKmer(const external::ConstStringPtr& kmerPtr);
-		size_t countKmerNoRC(const std::string &kmer);
-		size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr);
-	private:
-		// TODO
-	};
+#define ALPHABET_SIZE 5
 
-	FMIndex buildIndex(const std::string& text);
-	FMIndex buildIndex(const std::vector<std::string>& filepaths);
-	FMIndex buildIndex(const io::Read& read);
-	FMIndex buildIndex(const std::vector<io::Read>& reads);
+struct Hash3PreprocessInfo {
+	std::array<std::size_t, ALPHABET_SIZE> shift;
+	std::size_t shl;
+};
 
-	FMIndex loadIndex(const std::string& filepath);
-	bool storeIndex(const std::string& filepath, const FMIndex& index);
-
-
-	class SSEFMatcher {
-	public:
-		size_t countKmer(const std::string &kmer, const std::string& filepath);
-		size_t countKmer(const external::ConstStringPtr& kmerPtr, const std::string& filepath);
-		size_t countKmerNoRC(const std::string& kmer, const std::string& filepath);
-		size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr, const std::string& filepath);
-	};
+class Hash3StringMatcher {
+public:
+	size_t countKmer(const std::string& kmer, const std::string& filepath);
+	size_t countKmer(const external::ConstStringPtr& kmerPtr, const std::string& filepath);
+	size_t countKmerNoRC(const std::string& kmer, const std::string& filepath);
+	size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr, const std::string& filepath);
+private:
+	Hash3PreprocessInfo preprocessPattern(const external::ConstStringPtr& pattern);
+	size_t countString(const external::ConstStringPtr& pattern, const external::ConstStringPtr& string, const Hash3PreprocessInfo& info);
+	size_t countInFile(const external::ConstStringPtr& pattern, const std::string& filepath, bool alsoReverseComplement = true);
+};
 
 } // end of namespace seq_correct::counting
 } // end of namespace seq_correct

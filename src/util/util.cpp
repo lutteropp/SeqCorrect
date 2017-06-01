@@ -29,29 +29,6 @@
 namespace seq_correct {
 namespace util {
 
-char reverseComplementChar(char c) {
-	if (c == 'A') {
-		return 'T';
-	} else if (c == 'C') {
-		return 'G';
-	} else if (c == 'G') {
-		return 'C';
-	} else if (c == 'T') {
-		return 'A';
-	} else {
-		return c;
-	}
-}
-
-std::string reverseComplementString(const std::string& text) {
-	// TODO: maybe do a reverse complement iterator instead?
-	std::string revComp = "";
-	for (size_t i = 0; i < text.size(); ++i) {
-		revComp += reverseComplementChar(text[text.size() - i - 1]);
-	}
-	return revComp;
-}
-
 io::Read reverseComplementRead(const io::Read& read) {
 	io::Read rcRead;
 	rcRead.name = read.name;
