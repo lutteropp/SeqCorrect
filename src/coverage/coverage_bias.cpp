@@ -62,16 +62,16 @@ void fixMissingBiases(std::vector<CoverageBiasData>& data) {
 	// find last index of nonzero bias, then fix entries data[last + 1]...data[data.size()-1]
 	auto itLast = std::find_if(data.rbegin(), data.rend(), nonZeroBias);
 	size_t last = std::distance(itLast, data.rend());
-	if (last != data.size() - 1) {
-		for (size_t i = last + 1; i < data.size(); ++i) {
-			data[i].bias = data[last].bias;
+	if (last != data.size()) {
+		for (size_t i = last; i < data.size(); ++i) {
+			data[i].bias = data[last - 1].bias;
 		}
 	}
 	// fix remaining possible zeros between data[first+1] and data[last-1]
 	for (size_t i = first + 1; i < last; ++i) {
 		if (data[i].bias == 0) {
 			auto itLeft = std::find_if(data.rbegin(), data.rend() - i - 1, nonZeroBias);
-			size_t left = std::distance(itLeft, data.rend());
+			size_t left = std::distance(itLeft, data.rend()) - 1; // TODO: is the -1 correct here?
 			auto itRight = std::find_if(data.begin() + i, data.end(), nonZeroBias);
 			size_t right = std::distance(data.begin(), itRight);
 			data[i].bias = data[left].bias + (data[right].bias - data[left].bias) / (data[right].gc - data[left].gc);
