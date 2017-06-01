@@ -62,7 +62,7 @@ public:
 private:
 	util::GenomeType type;
 	size_t genomeSize;
-	const std::unordered_map<size_t, size_t>& readLengths;
+	std::unordered_map<size_t, size_t> readLengths;
 	std::unordered_map<size_t, PusmData> pusmBuffer; // buffer storing already computed answers for given k-mer lengths
 };
 
