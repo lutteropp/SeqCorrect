@@ -27,7 +27,15 @@
 namespace seq_correct {
 namespace correction {
 
-
+io::Read correctRead_kmer(const io::Read& read, bool correctSingleIndels, bool correctMultidels) {
+	throw std::runtime_error("not implemented yet");
+}
+io::Read correctRead_suffix_tree(const io::Read& read, bool correctSingleIndels, bool correctMultidels) {
+	throw std::runtime_error("not implemented yet");
+}
+io::Read correctRead_msa(const io::Read& read, bool correctSingleIndels, bool correctMultidels) {
+	throw std::runtime_error("not implemented yet");
+}
 
 } // end of namespace seq_correct::correction
 } // end of namespace seq_correct
