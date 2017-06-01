@@ -22,7 +22,8 @@
 */
 
 #include <stdexcept>
-#include "count_kmer.hpp"
+
+#include "fm_count.hpp"
 
 namespace seq_correct {
 namespace counting {

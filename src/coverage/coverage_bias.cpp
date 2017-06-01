@@ -28,7 +28,6 @@
 #include "coverage_bias.hpp"
 #include "../external/const_string_ptr.hpp"
 #include "../external/bloom_filter.hpp"
-#include "../counting/count_kmer.hpp"
 #include "../util/util.hpp"
 #include "../io/sequence_io.hpp"
 
@@ -109,8 +108,8 @@ std::vector<CoverageBiasData> computeMedianBiases(size_t k, std::vector<std::vec
  * @param readsIndex A structure for querying how often the k-mer occurs in the read dataset
  * @param genomeIndex A structure for querying how often the k-mer occurs in the genome
  */
-double inferBias(const external::ConstStringPtr& kmerPtr, counting::FMIndex& readsIndex,
-		counting::FMIndex& genomeIndex) {
+double inferBias(const external::ConstStringPtr& kmerPtr, counting::Matcher& readsIndex,
+		counting::Matcher& genomeIndex) {
 	size_t countObserved = readsIndex.countKmer(kmerPtr);
 	size_t countGenome = genomeIndex.countKmer(kmerPtr);
 	return countObserved / (double) countGenome;
@@ -125,7 +124,7 @@ double inferBias(const external::ConstStringPtr& kmerPtr, counting::FMIndex& rea
  * @param pusm A structure for computing the expected count of k-mers in the read dataset, in an idealized
  * sequencing setting
  */
-double inferBias(size_t k, const external::ConstStringPtr& kmerPtr, counting::FMIndex& readsIndex,
+double inferBias(size_t k, const external::ConstStringPtr& kmerPtr, counting::Matcher& readsIndex,
 		pusm::PerfectUniformSequencingModel &pusm) {
 	size_t countObserved = readsIndex.countKmer(kmerPtr);
 	double countExpected = pusm.expectedCount(k).expectation;
@@ -147,14 +146,14 @@ double inferBias(size_t k, const external::ConstStringPtr& kmerPtr, counting::FM
  * sequencing setting
  */
 std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::string &filepath,
-		counting::FMIndex& readsIndex, pusm::PerfectUniformSequencingModel &pusm) {
+		counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel &pusm) {
 	std::vector<std::vector<double> > biases;
 	biases.resize(k + 1);
 
 	// set up bloom filter for keeping track of already visited k-mers
 	bloom_parameters parameters;
-	parameters.projected_element_count = std::pow(4, k); // expected number of k-mer to insert into the bloom filter
-	parameters.false_positive_probability = 0.0001;
+	parameters.projected_element_count = 100000; // expected number of k-mer to insert into the bloom filter
+	parameters.false_positive_probability = 0.01;
 	parameters.random_seed = 0xA5A5A5A5;
 	parameters.compute_optimal_parameters();
 	bloom_filter filter(parameters);
@@ -171,7 +170,7 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 		if (bias > 0) {
 			biases[gcCount].push_back(bias);
 		}
-		filter.insert(kmerPtr.dataU(0), k);
+		filter.insert(readPtr.dataU(0), k);
 
 		for (size_t i = 1; i + k < readPtr.size(); ++i) {
 			if (kmerPtr[0] == 'G' || kmerPtr[0] == 'C') {
@@ -182,12 +181,12 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 				gcCount++;
 			}
 
-			if (!filter.contains(kmerPtr.dataU(i), k)) {
+			if (!filter.contains(readPtr.dataU(i), k)) {
 				double bias = inferBias(k, kmerPtr, readsIndex, pusm);
 				if (bias > 0) {
 					biases[gcCount].push_back(bias);
 				}
-				filter.insert(kmerPtr.dataU(i), k);
+				filter.insert(readPtr.dataU(i), k);
 			}
 		}
 	}
@@ -201,8 +200,8 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
  * @param readsIndex A structure for querying how often the k-mer occurs in the read dataset
  * @param genomeIndex A structure for querying how often the k-mer occurs in the genome
  */
-std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& genome, counting::FMIndex& readsIndex,
-		counting::FMIndex& genomeIndex) {
+std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& genome, counting::Matcher& readsIndex,
+		counting::Matcher& genomeIndex) {
 	std::vector<std::vector<double> > biases;
 	biases.resize(k + 1);
 	external::ConstStringPtr genomePtr(&genome);
@@ -236,7 +235,7 @@ std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& 
  * @param pusm A structure for computing the expected count of k-mers in the read dataset, in an idealized
  * sequencing setting
  */
-void CoverageBiasUnit::preprocess(size_t k, const std::string &filepath, counting::FMIndex& readsIndex,
+void CoverageBiasUnit::preprocess(size_t k, const std::string &filepath, counting::Matcher& readsIndex,
 		pusm::PerfectUniformSequencingModel& pusm) {
 	gcStep = 1 / (double) k;
 	medianCoverageBiases = preprocessWithoutGenome(k, filepath, readsIndex, pusm);
@@ -249,8 +248,8 @@ void CoverageBiasUnit::preprocess(size_t k, const std::string &filepath, countin
  * @param readsIndex A structure for querying how often the k-mer occurs in the read dataset
  * @param genomeIndex A structure for querying how often the k-mer occurs in the genome
  */
-void CoverageBiasUnit::preprocess(size_t k, const std::string &genome, counting::FMIndex& readsIndex,
-		counting::FMIndex& genomeIndex) {
+void CoverageBiasUnit::preprocess(size_t k, const std::string &genome, counting::Matcher& readsIndex,
+		counting::Matcher& genomeIndex) {
 	gcStep = 1 / (double) k;
 	medianCoverageBiases = preprocessWithGenome(k, genome, readsIndex, genomeIndex);
 }
@@ -276,6 +275,15 @@ double CoverageBiasUnit::computeCoverageBias(double gc) {
  */
 double CoverageBiasUnit::computeCoverageBias(const std::string &kmer) {
 	return computeCoverageBias(util::gcContent(kmer));
+}
+
+/**
+ * Print the median coverage bias factors.
+ */
+void CoverageBiasUnit::printMedianCoverageBiases() {
+	for (size_t i = 0; i < medianCoverageBiases.size(); ++i) {
+		std::cout << medianCoverageBiases[i].gc << " " << medianCoverageBiases[i].bias << "\n";
+	}
 }
 
 } // end of namespace seq_correct::coverage

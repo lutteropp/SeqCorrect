@@ -25,16 +25,17 @@
 
 #include "../io/sequence_io.hpp"
 #include "../external/const_string_ptr.hpp"
+#include "matcher.hpp"
 
 namespace seq_correct {
 namespace counting {
 
-	class FMIndex {
+	class FMIndex : public Matcher {
 	public:
-		size_t countKmer(const std::string &kmer);
-		size_t countKmer(const external::ConstStringPtr& kmerPtr);
-		size_t countKmerNoRC(const std::string &kmer);
-		size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr);
+		virtual size_t countKmer(const std::string &kmer) override;
+		virtual size_t countKmer(const external::ConstStringPtr& kmerPtr) override;
+		virtual size_t countKmerNoRC(const std::string &kmer) override;
+		virtual size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr) override;
 	private:
 		// TODO
 	};
@@ -46,15 +47,6 @@ namespace counting {
 
 	FMIndex loadIndex(const std::string& filepath);
 	bool storeIndex(const std::string& filepath, const FMIndex& index);
-
-
-	class SSEFMatcher {
-	public:
-		size_t countKmer(const std::string &kmer, const std::string& filepath);
-		size_t countKmer(const external::ConstStringPtr& kmerPtr, const std::string& filepath);
-		size_t countKmerNoRC(const std::string& kmer, const std::string& filepath);
-		size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr, const std::string& filepath);
-	};
 
 } // end of namespace seq_correct::counting
 } // end of namespace seq_correct

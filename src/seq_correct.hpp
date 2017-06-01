@@ -29,10 +29,12 @@
 
 #pragma once
 
-#include "counting/count_kmer.hpp"
 #include "counting/hash3_count.hpp"
 #include "coverage/coverage_bias.hpp"
 #include "correction/error_correction.hpp"
+#include "counting/matcher.hpp"
+#include "counting/fm_count.hpp"
+#include "counting/hash3_count.hpp"
 #include "profile/error_profile.hpp"
 #include "util/util.hpp"
 #include "kmer/kmer_classification.hpp"

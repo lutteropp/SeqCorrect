@@ -121,21 +121,21 @@ size_t Hash3StringMatcher::countInFile(const external::ConstStringPtr& pattern, 
 	return count;
 }
 
-size_t Hash3StringMatcher::countKmer(const std::string& kmer, const std::string& filepath) {
+size_t Hash3StringMatcher::countKmer(const std::string& kmer) {
 	external::ConstStringPtr kmerPtr(&kmer);
 	return countInFile(kmerPtr, filepath, true);
 }
 
-size_t Hash3StringMatcher::countKmer(const external::ConstStringPtr& kmerPtr, const std::string& filepath) {
+size_t Hash3StringMatcher::countKmer(const external::ConstStringPtr& kmerPtr) {
 	return countInFile(kmerPtr, filepath, true);
 }
 
-size_t Hash3StringMatcher::countKmerNoRC(const std::string& kmer, const std::string& filepath) {
+size_t Hash3StringMatcher::countKmerNoRC(const std::string& kmer) {
 	external::ConstStringPtr kmerPtr(&kmer);
 	return countInFile(kmerPtr, filepath, false);
 }
 
-size_t Hash3StringMatcher::countKmerNoRC(const external::ConstStringPtr& kmerPtr, const std::string& filepath) {
+size_t Hash3StringMatcher::countKmerNoRC(const external::ConstStringPtr& kmerPtr) {
 	return countInFile(kmerPtr, filepath, false);
 }
 

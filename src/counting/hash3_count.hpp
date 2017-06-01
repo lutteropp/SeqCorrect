@@ -23,6 +23,9 @@
 
 #include <array>
 #include "../external/const_string_ptr.hpp"
+#include "matcher.hpp"
+
+#pragma once
 
 namespace seq_correct {
 namespace counting {
@@ -34,13 +37,15 @@ struct Hash3PreprocessInfo {
 	std::size_t shl;
 };
 
-class Hash3StringMatcher {
+class Hash3StringMatcher : public Matcher {
 public:
-	size_t countKmer(const std::string& kmer, const std::string& filepath);
-	size_t countKmer(const external::ConstStringPtr& kmerPtr, const std::string& filepath);
-	size_t countKmerNoRC(const std::string& kmer, const std::string& filepath);
-	size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr, const std::string& filepath);
+	Hash3StringMatcher(const std::string& filepath) : filepath(filepath) {};
+	size_t countKmer(const std::string& kmer) override;
+	size_t countKmer(const external::ConstStringPtr& kmerPtr) override;
+	size_t countKmerNoRC(const std::string& kmer) override;
+	size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr) override;
 private:
+	std::string filepath;
 	Hash3PreprocessInfo preprocessPattern(const external::ConstStringPtr& pattern);
 	size_t countString(const external::ConstStringPtr& pattern, const external::ConstStringPtr& string, const Hash3PreprocessInfo& info);
 	size_t countInFile(const external::ConstStringPtr& pattern, const std::string& filepath, bool alsoReverseComplement = true);

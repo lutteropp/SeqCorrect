@@ -28,9 +28,15 @@ int main() {
 	}*/
 
 	// count the k-mer "ACGGT" in all the reads
-	counting::Hash3StringMatcher matcher;
-	size_t count = matcher.countKmerNoRC("ACGGT", dataset.getReadFilepath());
+	counting::Hash3StringMatcher matcher(dataset.getReadFilepath());
+	size_t count = matcher.countKmerNoRC("ACGGT");
 	std::cout << "The kmer 'ACGGT' occurs " << count << " times in the read dataset\n";
-	count = matcher.countKmer("ACGGT", dataset.getReadFilepath());
+	count = matcher.countKmer("ACGGT");
 	std::cout << "The kmer 'ACGGT' or its reverse-complement occurs " << count << " times in the read dataset\n";
+
+	// compute the coverage biases
+	pusm::PerfectUniformSequencingModel pusm(dataset.getGenomeType(), dataset.getGenomeSize(), dataset.getReadLengths());
+	coverage::CoverageBiasUnit biasUnit;
+	biasUnit.preprocess(13, dataset.getReadFilepath(), matcher, pusm);
+	biasUnit.printMedianCoverageBiases();
 }

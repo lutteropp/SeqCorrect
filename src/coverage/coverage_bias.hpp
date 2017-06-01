@@ -26,7 +26,7 @@
 #include <vector>
 #include "../pusm/pusm.hpp"
 #include "../io/sequence_io.hpp"
-#include "../counting/count_kmer.hpp"
+#include "../counting/matcher.hpp"
 
 namespace seq_correct {
 namespace coverage {
@@ -49,12 +49,13 @@ class CoverageBiasUnit {
 public:
 	CoverageBiasUnit() : gcStep(0) {};
 	// preprocessing without a reference genome
-	void preprocess(size_t k, const std::string &filepath, counting::FMIndex& readsIndex, pusm::PerfectUniformSequencingModel &pusm);
+	void preprocess(size_t k, const std::string &filepath, counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel &pusm);
 	// preprocessing with a reference genome
-	void preprocess(size_t k, const std::string& genome, counting::FMIndex& readsIndex, counting::FMIndex& genomeIndex);
+	void preprocess(size_t k, const std::string& genome, counting::Matcher& readsIndex, counting::Matcher& genomeIndex);
 	// using linear interpolation to compute coverage bias factor
 	double computeCoverageBias(const std::string &kmer);
 	double computeCoverageBias(double gc);
+	void printMedianCoverageBiases();
 private:
 	std::vector<CoverageBiasData> medianCoverageBiases;
 	double gcStep;
