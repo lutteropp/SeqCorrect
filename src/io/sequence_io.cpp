@@ -23,6 +23,8 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <experimental/filesystem>
+#include <sstream>
 #include "sequence_io.hpp"
 
 namespace seq_correct {
@@ -54,8 +56,13 @@ bool ReadInput::hasNext() {
 	throw std::runtime_error("not implemented yet");
 }
 
+/**
+ * Open a FASTA or FASTQ file containing the reads.
+ * @param filepath The file containing the reads
+ */
 bool ReadInput::openFile(const std::string& filepath) {
-	throw std::runtime_error("not implemented yet");
+	file.open(filepath);
+	return (file.good());
 }
 
 // TODO: Don't forget to convert all DNA sequences to upper case
@@ -63,12 +70,33 @@ Read ReadInput::readNext(bool readSequence, bool readQuality, bool readName) {
 	throw std::runtime_error("not implemented yet");
 }
 
-bool ReadOutput::openFile(const std::string& filepath) {
-	throw std::runtime_error("not implemented yet");
+/**
+ * Create a new file to write the reads to it.
+ * @param filepath The path to the newly created file
+ */
+bool ReadOutput::createFile(const std::string& filepath) {
+	if (std::experimental::filesystem::exists(filepath)) {
+		throw std::runtime_error("the file does already exist");
+	}
+	file.open(filepath);
+	return file.good();
 }
 
-bool ReadOutput::write(const Read& read) {
-	throw std::runtime_error("not implemented yet");
+/**
+ * Write a read to the output file.
+ * @param read The read
+ */
+void ReadOutput::write(const Read& read) {
+	if (!file.good()) {
+		throw std::runtime_error("can not access output file - did you create one?");
+	}
+	std::stringstream buffer;
+	if (read.qual.empty()) { // FASTA format
+		buffer << ">" << read.name << "\n" << read.seq << "\n";
+	} else { // FASTQ format
+		buffer << "@" << read.name << "\n" << read.seq << "\n+\n" << read.qual << "\n";
+	}
+	file << buffer.str();
 }
 
 } // end of namespace seq_correct::io

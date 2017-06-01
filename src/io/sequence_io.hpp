@@ -60,8 +60,8 @@ private:
 
 class ReadOutput {
 public:
-	bool openFile(const std::string& filepath);
-	bool write(const Read& read);
+	bool createFile(const std::string& filepath);
+	void write(const Read& read);
 private:
 	std::ofstream file;
 };
