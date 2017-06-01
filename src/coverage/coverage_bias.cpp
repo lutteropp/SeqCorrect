@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <algorithm>
+#include <unordered_set>
 #include <iostream>
 #include "coverage_bias.hpp"
 #include "../external/const_string_ptr.hpp"
@@ -33,6 +34,8 @@
 
 namespace seq_correct {
 namespace coverage {
+
+#define USE_BLOOM_FILTER 1
 
 /**
  * Fix biases with value 0 by applying linear interpolation. Zero-value biases occur if the dataset does not contain
@@ -150,6 +153,7 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 	std::vector<std::vector<double> > biases;
 	biases.resize(k + 1);
 
+#ifdef USE_BLOOM_FILTER
 	// set up bloom filter for keeping track of already visited k-mers
 	bloom_parameters parameters;
 	parameters.projected_element_count = 100000; // expected number of k-mer to insert into the bloom filter
@@ -157,12 +161,17 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 	parameters.random_seed = 0xA5A5A5A5;
 	parameters.compute_optimal_parameters();
 	bloom_filter filter(parameters);
+#else
+	std::unordered_set<std::string> visited;
+#endif
 
 	io::ReadInput reader;
 	reader.openFile(filepath);
 
 	while (reader.hasNext()) {
-		io::Read seqRead = reader.readNext(true, false, false);
+		io::Read seqRead = reader.readNext(true, false, true);
+		std::cout << seqRead.name << "\n";
+
 		external::ConstStringPtr readPtr(&seqRead.seq);
 		external::ConstStringPtr kmerPtr = readPtr.substr(0, k);
 		size_t gcCount = util::countGC(kmerPtr);
@@ -170,7 +179,11 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 		if (bias > 0) {
 			biases[gcCount].push_back(bias);
 		}
+#ifdef USE_BLOOM_FILTER
 		filter.insert(readPtr.dataU(0), k);
+#else
+		visited.insert(kmerPtr.toString());
+#endif
 
 		for (size_t i = 1; i + k < readPtr.size(); ++i) {
 			if (kmerPtr[0] == 'G' || kmerPtr[0] == 'C') {
@@ -181,12 +194,20 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 				gcCount++;
 			}
 
+#ifdef USE_BLOOM_FILTER
 			if (!filter.contains(readPtr.dataU(i), k)) {
+#else
+				if (visited.find(kmerPtr.toString()) == visited.end()) {
+#endif
 				double bias = inferBias(k, kmerPtr, readsIndex, pusm);
 				if (bias > 0) {
 					biases[gcCount].push_back(bias);
 				}
+#ifdef USE_BLOOM_FILTER
 				filter.insert(readPtr.dataU(i), k);
+#else
+				visited.insert(kmerPtr.toString());
+#endif
 			}
 		}
 	}
