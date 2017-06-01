@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <experimental/filesystem>
 #include <sstream>
+#include <ios>
 #include "sequence_io.hpp"
 
 namespace seq_correct {
@@ -52,8 +53,16 @@ std::string readReferenceGenome(const std::string& filepath) {
 	return genome;
 }
 
+/**
+ * Check if the file contains more reads.
+ */
 bool ReadInput::hasNext() {
-	throw std::runtime_error("not implemented yet");
+	int len = file.tellg(); // current position in the ifstream
+	std::string line;
+	getline(file, line);
+	bool res = file.good();
+	file.seekg(len, std::ios_base::beg); // return back to position before reading the line
+	return res;
 }
 
 /**
