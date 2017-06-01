@@ -10,22 +10,27 @@
 #include <algorithm>
 #include <iostream>
 
+using namespace seq_correct;
+
 int main() {
-	std::vector<int> vec = { 0, 1, 2, 3, 4, 5, 6 };
-	auto itBegin = vec.begin();
-	auto itEnd = vec.end();
-	auto itRBegin = vec.rbegin();
-	auto itREnd = vec.rend();
-	std::cout << "*itBegin: " << *itBegin << std::endl;
-	std::cout << "*itEnd: " << *itEnd << std::endl;
-	std::cout << "*itRBegin: " << *itRBegin << std::endl;
-	std::cout << "*itREnd: " << *itREnd << std::endl;
+	// Specify an example Ebola Illumina dataset
+	util::Dataset dataset(util::GenomeType::LINEAR, 18959,
+			"/home/sarah/Documents/Master Thesis Topic Extension/thesis_zipped/SOFTWARE_AND_DATA/data/Simulated Datasets/Ebola/Illumina/ebola_illumina_simulated.fastq",
+			"/home/sarah/Documents/Master Thesis Topic Extension/thesis_zipped/SOFTWARE_AND_DATA/data/Simulated Datasets/Ebola/Illumina/ebola_illumina_simulated.fastq.readsOnly.txt");
+	// Read the reads and write them
+	/*io::ReadInput reader;
+	reader.openFile(dataset.getReadFilepath());
+	io::ReadOutput writer;
+	writer.createFile("temp.txt");
+	while (reader.hasNext()) {
+		io::Read read = reader.readNext(true, false, true);
+		writer.write(read);
+	}*/
 
-	std::cout << "*itBegin + 3: " << *(itBegin + 3) << std::endl;
-	std::cout << "*itRBegin + 3: " << *(itRBegin + 3) << std::endl;
-	std::cout << "*itREnd + 3: " << *(itREnd + 3) << std::endl;
-
-	std::cout << "*itEnd - 3: " << *(itEnd - 3) << std::endl;
-	std::cout << "*itRBegin - 3: " << *(itRBegin - 3) << std::endl;
-	std::cout << "*itREnd - 2: " << *(itREnd - 2) << std::endl;
+	// count the k-mer "ACGGT" in all the reads
+	counting::Hash3StringMatcher matcher;
+	size_t count = matcher.countKmerNoRC("ACGGT", dataset.getReadFilepath());
+	std::cout << "The kmer 'ACGGT' occurs " << count << " times in the read dataset\n";
+	count = matcher.countKmer("ACGGT", dataset.getReadFilepath());
+	std::cout << "The kmer 'ACGGT' or its reverse-complement occurs " << count << " times in the read dataset\n";
 }

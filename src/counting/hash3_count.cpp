@@ -64,8 +64,8 @@ Hash3PreprocessInfo Hash3StringMatcher::preprocessPattern(const external::ConstS
 	return info;
 }
 
-size_t Hash3StringMatcher::countString(const external::ConstStringPtr& pattern,
-		const external::ConstStringPtr& string, const Hash3PreprocessInfo& info) {
+size_t Hash3StringMatcher::countString(const external::ConstStringPtr& pattern, const external::ConstStringPtr& string,
+		const Hash3PreprocessInfo& info) {
 	const size_t m = pattern.size();
 	const size_t n = string.size();
 	size_t count = 0;
@@ -101,20 +101,21 @@ size_t Hash3StringMatcher::countInFile(const external::ConstStringPtr& pattern, 
 		bool alsoReverseComplement) {
 	size_t count = 0;
 	Hash3PreprocessInfo infoPattern = preprocessPattern(pattern);
-	Hash3PreprocessInfo infoPatternRC;
-	std::string patternRC;
-	external::ConstStringPtr patternRCPtr(&patternRC);
-	if (alsoReverseComplement) {
-		patternRC = util::reverseComplementString(pattern);
-		infoPatternRC = preprocessPattern(patternRCPtr);
-	}
 	io::ReadInput reader;
 	reader.openFile(filepath);
-	while (reader.hasNext()) {
-		io::Read read = reader.readNext(true, false, false);
-		count += countString(pattern, external::ConstStringPtr(&read.seq), infoPattern);
-		if (alsoReverseComplement) {
+	if (alsoReverseComplement) {
+		std::string patternRC = util::reverseComplementString(pattern);
+		external::ConstStringPtr patternRCPtr(&patternRC);
+		Hash3PreprocessInfo infoPatternRC = preprocessPattern(patternRCPtr);
+		while (reader.hasNext()) {
+			io::Read read = reader.readNext(true, false, false);
+			count += countString(pattern, external::ConstStringPtr(&read.seq), infoPattern);
 			count += countString(patternRCPtr, external::ConstStringPtr(&read.seq), infoPatternRC);
+		}
+	} else {
+		while (reader.hasNext()) {
+			io::Read read = reader.readNext(true, false, false);
+			count += countString(pattern, external::ConstStringPtr(&read.seq), infoPattern);
 		}
 	}
 	return count;

@@ -30,6 +30,7 @@
 #pragma once
 
 #include "counting/count_kmer.hpp"
+#include "counting/hash3_count.hpp"
 #include "coverage/coverage_bias.hpp"
 #include "correction/error_correction.hpp"
 #include "profile/error_profile.hpp"
@@ -38,4 +39,7 @@
 #include "pusm/pusm.hpp"
 #include "io/sequence_io.hpp"
 #include "util/util.hpp"
+#include "util/producer_consumer_pattern.hpp"
 #include "eval/evaluation.hpp"
+#include "external/bloom_filter.hpp"
+#include "external/const_string_ptr.hpp"
