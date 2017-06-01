@@ -44,6 +44,9 @@ double gcContent(const std::string& kmer) {
 }
 
 std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type) {
+	if (pos >= kmer.size()) {
+		throw std::runtime_error("pos >= kmer.size()");
+	}
 	std::string newKmer;
 	switch (type) {
 	case ErrorType::INSERTION:
