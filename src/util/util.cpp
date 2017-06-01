@@ -25,6 +25,7 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <iostream>
 
 namespace seq_correct {
 namespace util {

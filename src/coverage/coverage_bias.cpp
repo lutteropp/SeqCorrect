@@ -85,7 +85,7 @@ void fixMissingBiases(std::vector<CoverageBiasData>& data) {
  * @param biases a vector containing vectors of bias factors as inferred from the dataset
  */
 std::vector<CoverageBiasData> computeMedianBiases(size_t k, std::vector<std::vector<double> >& biases) {
-	std::vector<CoverageBiasData> data;
+	std::vector<CoverageBiasData> data(k+1);
 	for (size_t i = 0; i < biases.size(); ++i) {
 		std::sort(biases[i].begin(), biases[i].end());
 		data[i].gc = i / (double) k;
@@ -169,9 +169,7 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 	reader.openFile(filepath);
 
 	while (reader.hasNext()) {
-		io::Read seqRead = reader.readNext(true, false, true);
-		std::cout << seqRead.name << "\n";
-
+		io::Read seqRead = reader.readNext(true, false, false);
 		external::ConstStringPtr readPtr(&seqRead.seq);
 		external::ConstStringPtr kmerPtr = readPtr.substr(0, k);
 		size_t gcCount = util::countGC(kmerPtr);

@@ -24,6 +24,7 @@
 #include "pusm.hpp"
 #include <stdexcept>
 #include <cmath>
+#include <iostream>
 
 namespace seq_correct {
 namespace pusm {
@@ -48,6 +49,7 @@ PusmData expectedCountLinear(size_t genomeSize, const std::unordered_map<size_t,
 		// had to be fixed, because in my Master thesis I forgot that the interval [a,b] contains
 		//  b-a+1 elements and not b-a elements. -.-
 		double p = ((l - k) * (genomeSize - l) + 1) / ((genomeSize - k + 1) * (genomeSize - l + 1));
+
 		if (p > 1.0 || p != p) {
 			throw std::runtime_error("Something is wrong with the probability");
 		};

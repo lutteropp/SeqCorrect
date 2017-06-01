@@ -35,9 +35,6 @@ namespace coverage {
  * A struct holding gc-content and median coverage bias data.
  */
 struct CoverageBiasData {
-	CoverageBiasData(double gc, double bias) :
-			gc(gc), bias(bias) {
-	}
 	double gc; //!< gc-content
 	double bias; //!< median coverage bias for the given gc-content
 };

@@ -28,7 +28,7 @@ int main() {
 	}*/
 
 	// count the k-mer "ACGGT" in all the reads
-	counting::Hash3StringMatcher matcher(dataset.getReadFilepath());
+	counting::FMIndexMatcher matcher(dataset.getReadFilepath());
 	size_t count = matcher.countKmerNoRC("ACGGT");
 	std::cout << "The kmer 'ACGGT' occurs " << count << " times in the read dataset\n";
 	count = matcher.countKmer("ACGGT");
