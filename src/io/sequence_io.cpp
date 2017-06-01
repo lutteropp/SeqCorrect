@@ -22,13 +22,32 @@
  */
 
 #include <stdexcept>
+#include <algorithm>
 #include "sequence_io.hpp"
 
 namespace seq_correct {
 namespace io {
 
+/**
+ * Read a genome in FASTA format. Convert all its bases to upper case.
+ * @param filepath Path to the FASTA file containig the reference genome
+ */
 std::string readReferenceGenome(const std::string& filepath) {
-	throw std::runtime_error("not implemented yet");
+	std::string genome;
+	std::ifstream infile(filepath);
+	std::string line;
+	std::getline(infile, line);
+	if (line.empty() || line[0] != '>') {
+		throw std::runtime_error("not a FASTA file");
+	}
+	while (std::getline(infile, line)) {
+		if (!line.empty() && line[0] == '>') {
+			throw std::runtime_error("multiple sequences in this file");
+		}
+		genome += line;
+	}
+	std::transform(genome.begin(), genome.end(), genome.begin(), ::toupper);
+	return genome;
 }
 
 bool ReadInput::hasNext() {
