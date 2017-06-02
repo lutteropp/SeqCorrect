@@ -68,19 +68,73 @@ double computeGapNMIScore(EvaluationData& data) {
 	throw std::runtime_error("not implemented yet");
 }
 
-double computeUnbalancedAverageBaseFScore(EvaluationData& data) {
+double computeUnbalancedAverageBaseF1Score(EvaluationData& data) {
+	double fscoreSum = 0.0;
+	int numValid = 0;
+	double fscore = computeF1Score(ErrorType::INSERTION, data);
+	if (fscore == fscore) { // check for NaN
+		fscoreSum += fscore;
+		numValid++;
+	}
+	fscore = computeF1Score(ErrorType::SUB_OF_A, data);
+	if (fscore == fscore) { // check for NaN
+		fscoreSum += fscore;
+		numValid++;
+	}
+	fscore = computeF1Score(ErrorType::SUB_OF_C, data);
+	if (fscore == fscore) { // check for NaN
+		fscoreSum += fscore;
+		numValid++;
+	}
+	fscore = computeF1Score(ErrorType::SUB_OF_G, data);
+	if (fscore == fscore) { // check for NaN
+		fscoreSum += fscore;
+		numValid++;
+	}
+	fscore = computeF1Score(ErrorType::SUB_OF_T, data);
+	if (fscore == fscore) { // check for NaN
+		fscoreSum += fscore;
+		numValid++;
+	}
+	return fscoreSum / (double) numValid;
+}
+
+double computeUnbalancedAverageGapF1Score(EvaluationData& data) {
+	double fscoreSum = 0.0;
+	int numValid = 0;
+	double fscore = computeF1Score(ErrorType::MULTIDEL, data);
+	if (fscore == fscore) { // check for NaN
+		fscoreSum += fscore;
+		numValid++;
+	}
+	fscore = computeF1Score(ErrorType::DEL_OF_A, data);
+	if (fscore == fscore) { // check for NaN
+		fscoreSum += fscore;
+		numValid++;
+	}
+	fscore = computeF1Score(ErrorType::DEL_OF_C, data);
+	if (fscore == fscore) { // check for NaN
+		fscoreSum += fscore;
+		numValid++;
+	}
+	fscore = computeF1Score(ErrorType::DEL_OF_G, data);
+	if (fscore == fscore) { // check for NaN
+		fscoreSum += fscore;
+		numValid++;
+	}
+	fscore = computeF1Score(ErrorType::DEL_OF_T, data);
+	if (fscore == fscore) { // check for NaN
+		fscoreSum += fscore;
+		numValid++;
+	}
+	return fscoreSum / (double) numValid;
+}
+
+double computeBalancedAverageBaseF1Score(EvaluationData& data) {
 	throw std::runtime_error("not implemented yet");
 }
 
-double computeUnbalancedAverageGapFScore(EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
-}
-
-double computeBalancedAverageBaseFScore(EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
-}
-
-double computeBalancedAverageGapFScore(EvaluationData& data) {
+double computeBalancedAverageGapF1Score(EvaluationData& data) {
 	throw std::runtime_error("not implemented yet");
 }
 

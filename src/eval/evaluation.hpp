@@ -52,10 +52,10 @@ double computeSpecificity(ErrorType type, EvaluationData& data);
 double computeF1Score(ErrorType type, EvaluationData& data);
 double computeBaseNMIScore(EvaluationData& data);
 double computeGapNMIScore(EvaluationData& data);
-double computeUnbalancedAverageBaseFScore(EvaluationData& data);
-double computeUnbalancedAverageGapFScore(EvaluationData& data);
-double computeBalancedAverageBaseFScore(EvaluationData& data);
-double computeBalancedAverageGapFScore(EvaluationData& data);
+double computeUnbalancedAverageBaseF1Score(EvaluationData& data);
+double computeUnbalancedAverageGapF1Score(EvaluationData& data);
+double computeBalancedAverageBaseF1Score(EvaluationData& data);
+double computeBalancedAverageGapF1Score(EvaluationData& data);
 
 EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
 		const std::string& genomeFilepath);
