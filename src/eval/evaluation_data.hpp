@@ -44,6 +44,8 @@ public:
 	size_t getEntry(ErrorType trueType, ErrorType predictedType) const;
 	size_t sumAllBaseEntries() const;
 	size_t sumAllGapEntries() const;
+	size_t sumTrue(ErrorType type) const; // row sum
+	size_t sumPredicted(ErrorType type) const; // column sum
 private:
 	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t, EnumClassPairHash> baseConfusionMatrix;
 	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t, EnumClassPairHash> gapConfusionMatrix;

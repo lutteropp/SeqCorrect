@@ -142,5 +142,33 @@ size_t EvaluationData::sumAllGapEntries() const {
 	return count;
 }
 
+size_t EvaluationData::sumTrue(ErrorType type) const {
+	size_t sum = 0;
+	if (isBaseErrorType(type)) {
+		for (ErrorType e : BaseTypeIterator()) {
+			sum += baseConfusionMatrix.at(std::make_pair(type, e));
+		}
+	} else {
+		for (ErrorType e : GapTypeIterator()) {
+			sum += gapConfusionMatrix.at(std::make_pair(type, e));
+		}
+	}
+	return sum;
+}
+
+size_t EvaluationData::sumPredicted(ErrorType type) const {
+	size_t sum = 0;
+	if (isBaseErrorType(type)) {
+		for (ErrorType e : BaseTypeIterator()) {
+			sum += baseConfusionMatrix.at(std::make_pair(e, type));
+		}
+	} else {
+		for (ErrorType e : GapTypeIterator()) {
+			sum += gapConfusionMatrix.at(std::make_pair(e, type));
+		}
+	}
+	return sum;
+}
+
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct
