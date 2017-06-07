@@ -65,16 +65,14 @@ size_t trueTotal(ErrorType type, const EvaluationData& data) {
 	return data.truePositives(type) + data.falseNegatives(type);
 }
 
-double computeBaseMutualInformation(const EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
-}
-
 double computeBaseEntropyTruth(const EvaluationData& data) {
 	double sum = 0;
 	size_t N = data.sumAllBaseEntries();
 	for (ErrorType e : BaseTypeIterator()) {
 		double val = data.sumTruth(e) / (double) N;
-		sum += val * std::log2(val);
+		if (val != 0) {
+			sum += val * std::log2(val);
+		}
 	}
 	sum *= -1;
 	return sum;
@@ -85,14 +83,12 @@ double computeBaseEntropyPredicted(const EvaluationData& data) {
 	size_t N = data.sumAllBaseEntries();
 	for (ErrorType e : BaseTypeIterator()) {
 		double val = data.sumPredicted(e) / (double) N;
-		sum += val * std::log2(val);
+		if (val != 0) {
+			sum += val * std::log2(val);
+		}
 	}
 	sum *= -1;
 	return sum;
-}
-
-double computeGapMutualInformation(const EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
 }
 
 double computeGapEntropyTruth(const EvaluationData& data) {
@@ -100,7 +96,9 @@ double computeGapEntropyTruth(const EvaluationData& data) {
 	size_t N = data.sumAllGapEntries();
 	for (ErrorType e : GapTypeIterator()) {
 		double val = data.sumTruth(e) / (double) N;
-		sum += val * std::log2(val);
+		if (val != 0) {
+			sum += val * std::log2(val);
+		}
 	}
 	sum *= -1;
 	return sum;
@@ -111,10 +109,44 @@ double computeGapEntropyPredicted(const EvaluationData& data) {
 	size_t N = data.sumAllGapEntries();
 	for (ErrorType e : GapTypeIterator()) {
 		double val = data.sumPredicted(e) / (double) N;
-		sum += val * std::log2(val);
+		if (val != 0) {
+			sum += val * std::log2(val);
+		}
 	}
 	sum *= -1;
 	return sum;
+}
+
+double computeGapMutualInformation(const EvaluationData& data) {
+	double mi = 0;
+	size_t N = data.sumAllGapEntries();
+	size_t NSquare = N * N;
+	for (ErrorType e : GapTypeIterator()) {
+		for (ErrorType f : GapTypeIterator()) {
+			double part1 = data.getEntry(e, f) / (double) N;
+			double part2 = data.sumTruth(e) * data.sumPredicted(f) / (double) (NSquare);
+			if (part1 != 0 && part2 != 0) {
+				mi += part1 * std::log2(part1 / part2);
+			}
+		}
+	}
+	return mi;
+}
+
+double computeBaseMutualInformation(const EvaluationData& data) {
+	double mi = 0;
+	size_t N = data.sumAllBaseEntries();
+	size_t NSquare = N * N;
+	for (ErrorType e : BaseTypeIterator()) {
+		for (ErrorType f : BaseTypeIterator()) {
+			double part1 = data.getEntry(e, f) / (double) N;
+			double part2 = data.sumTruth(e) * data.sumPredicted(f) / (double) (NSquare);
+			if (part1 != 0 && part2 != 0) {
+				mi += part1 * std::log2(part1 / part2);
+			}
+		}
+	}
+	return mi;
 }
 
 // Using the NMI_max formula I(U,V) / max(H(U), H(V))
@@ -125,8 +157,7 @@ double computeBaseNMIScore(const EvaluationData& data) {
 
 // Using the NMI_max formula I(U,V) / max(H(U), H(V))
 double computeGapNMIScore(const EvaluationData& data) {
-	return computeGapMutualInformation(data)
-				/ std::max(computeGapEntropyTruth(data), computeGapEntropyPredicted(data));
+	return computeGapMutualInformation(data) / std::max(computeGapEntropyTruth(data), computeGapEntropyPredicted(data));
 }
 
 double computeUnweightedAverageBaseF1Score(const EvaluationData& data) {
