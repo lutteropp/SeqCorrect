@@ -142,7 +142,7 @@ size_t EvaluationData::sumAllGapEntries() const {
 	return count;
 }
 
-size_t EvaluationData::sumTrue(ErrorType type) const {
+size_t EvaluationData::sumTruth(ErrorType type) const {
 	size_t sum = 0;
 	if (isBaseErrorType(type)) {
 		for (ErrorType e : BaseTypeIterator()) {

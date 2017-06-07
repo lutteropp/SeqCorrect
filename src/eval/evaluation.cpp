@@ -70,11 +70,25 @@ double computeBaseMutualInformation(const EvaluationData& data) {
 }
 
 double computeBaseEntropyTruth(const EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
+	double sum = 0;
+	size_t N = data.sumAllBaseEntries();
+	for (ErrorType e : BaseTypeIterator()) {
+		double val = data.sumTruth(e) / (double) N;
+		sum += val * std::log2(val);
+	}
+	sum *= -1;
+	return sum;
 }
 
 double computeBaseEntropyPredicted(const EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
+	double sum = 0;
+	size_t N = data.sumAllBaseEntries();
+	for (ErrorType e : BaseTypeIterator()) {
+		double val = data.sumPredicted(e) / (double) N;
+		sum += val * std::log2(val);
+	}
+	sum *= -1;
+	return sum;
 }
 
 double computeGapMutualInformation(const EvaluationData& data) {
@@ -82,11 +96,25 @@ double computeGapMutualInformation(const EvaluationData& data) {
 }
 
 double computeGapEntropyTruth(const EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
+	double sum = 0;
+	size_t N = data.sumAllGapEntries();
+	for (ErrorType e : GapTypeIterator()) {
+		double val = data.sumTruth(e) / (double) N;
+		sum += val * std::log2(val);
+	}
+	sum *= -1;
+	return sum;
 }
 
 double computeGapEntropyPredicted(const EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
+	double sum = 0;
+	size_t N = data.sumAllGapEntries();
+	for (ErrorType e : GapTypeIterator()) {
+		double val = data.sumPredicted(e) / (double) N;
+		sum += val * std::log2(val);
+	}
+	sum *= -1;
+	return sum;
 }
 
 // Using the NMI_max formula I(U,V) / max(H(U), H(V))
