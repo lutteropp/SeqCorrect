@@ -36,39 +36,43 @@ EvaluationData evaluateCorrections(const std::string& alignmentFilepath, const s
 	throw std::runtime_error("not implemented yet");
 }
 
-double computeAccuracy(ErrorType type, EvaluationData& data) {
+double computeAccuracy(ErrorType type, const EvaluationData& data) {
 	return (data.truePositives[type] + data.falsePositives[type])
 			/ (double) (data.truePositives[type] + data.falsePositives[type] + data.falsePositives[type]
 					+ data.falseNegatives[type]);
 }
 
-double computePrecision(ErrorType type, EvaluationData& data) {
+double computePrecision(ErrorType type, const EvaluationData& data) {
 	return data.truePositives[type] / (double) (data.truePositives[type] + data.falsePositives[type]);
 }
 
-double computeRecall(ErrorType type, EvaluationData& data) {
+double computeRecall(ErrorType type, const EvaluationData& data) {
 	return data.truePositives[type] / (double) (data.truePositives[type] + data.falseNegatives[type]);
 }
 
-double computeSpecificity(ErrorType type, EvaluationData& data) {
+double computeSpecificity(ErrorType type, const EvaluationData& data) {
 	return data.trueNegatives[type] / (double) (data.trueNegatives[type] + data.falseNegatives[type]);
 }
 
-double computeF1Score(ErrorType type, EvaluationData& data) {
+double computeF1Score(ErrorType type, const EvaluationData& data) {
 	double precision = computePrecision(type, data);
 	double recall = computeRecall(type, data);
 	return 2 * (precision * recall) / (precision + recall);
 }
 
-double computeBaseNMIScore(EvaluationData& data) {
+size_t trueTotal(ErrorType type, const EvaluationData& data) {
+	return data.truePositives[type] + data.falseNegatives[type];
+}
+
+double computeBaseNMIScore(const EvaluationData& data) {
 	throw std::runtime_error("not implemented yet");
 }
 
-double computeGapNMIScore(EvaluationData& data) {
+double computeGapNMIScore(const EvaluationData& data) {
 	throw std::runtime_error("not implemented yet");
 }
 
-double computeUnbalancedAverageBaseF1Score(EvaluationData& data) {
+double computeUnweightedAverageBaseF1Score(const EvaluationData& data) {
 	double fscoreSum = 0.0;
 	int numValid = 0;
 	double fscore = computeF1Score(ErrorType::INSERTION, data);
@@ -99,7 +103,7 @@ double computeUnbalancedAverageBaseF1Score(EvaluationData& data) {
 	return fscoreSum / (double) numValid;
 }
 
-double computeUnbalancedAverageGapF1Score(EvaluationData& data) {
+double computeUnweightedAverageGapF1Score(const EvaluationData& data) {
 	double fscoreSum = 0.0;
 	int numValid = 0;
 	double fscore = computeF1Score(ErrorType::MULTIDEL, data);
@@ -128,14 +132,6 @@ double computeUnbalancedAverageGapF1Score(EvaluationData& data) {
 		numValid++;
 	}
 	return fscoreSum / (double) numValid;
-}
-
-double computeBalancedAverageBaseF1Score(EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
-}
-
-double computeBalancedAverageGapF1Score(EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
 }
 
 } // end of namespace seq_correct::eval

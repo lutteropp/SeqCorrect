@@ -24,38 +24,50 @@
 #pragma once
 #include <string>
 #include <unordered_map>
-#include "../util/util.hpp"
+#include <utility>
+#include "../util/error_type.hpp"
 
 namespace seq_correct {
 namespace eval {
 
 using namespace util;
 
-class ConfusionMatrix {
-public:
-private:
-};
-
 struct EvaluationData {
+	EvaluationData() {
+		for (ErrorType e1 : AllBaseTypeIterator()) {
+			for (ErrorType e2 : AllBaseTypeIterator()) {
+				baseConfusionMatrix[std::make_pair(e1, e2)] = 0;
+			}
+		}
+		for (ErrorType e1 : AllGapTypeIterator()) {
+			for (ErrorType e2 : AllGapTypeIterator()) {
+				gapConfusionMatrix[std::make_pair(e1, e2)] = 0;
+			}
+		}
+		for (ErrorType e : AllErrorTypeIterator() ) {
+			truePositives[e] = 0;
+			falsePositives[e] = 0;
+			trueNegatives[e] = 0;
+			truePositives[e] = 0;
+		}
+	}
 	std::unordered_map<ErrorType, size_t> truePositives;
 	std::unordered_map<ErrorType, size_t> falsePositives;
 	std::unordered_map<ErrorType, size_t> trueNegatives;
 	std::unordered_map<ErrorType, size_t> falseNegatives;
-	ConfusionMatrix baseConfusionMatrix;
-	ConfusionMatrix gapConfusionMatrix;
+	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t > baseConfusionMatrix;
+	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t > gapConfusionMatrix;
 };
 
-double computeAccuracy(ErrorType type, EvaluationData& data);
-double computePrecision(ErrorType type, EvaluationData& data);
-double computeRecall(ErrorType type, EvaluationData& data);
-double computeSpecificity(ErrorType type, EvaluationData& data);
-double computeF1Score(ErrorType type, EvaluationData& data);
-double computeBaseNMIScore(EvaluationData& data);
-double computeGapNMIScore(EvaluationData& data);
-double computeUnbalancedAverageBaseF1Score(EvaluationData& data);
-double computeUnbalancedAverageGapF1Score(EvaluationData& data);
-double computeBalancedAverageBaseF1Score(EvaluationData& data);
-double computeBalancedAverageGapF1Score(EvaluationData& data);
+double computeAccuracy(ErrorType type, const EvaluationData& data);
+double computePrecision(ErrorType type, const EvaluationData& data);
+double computeRecall(ErrorType type, const EvaluationData& data);
+double computeSpecificity(ErrorType type, const EvaluationData& data);
+double computeF1Score(ErrorType type, const EvaluationData& data);
+double computeBaseNMIScore(const EvaluationData& data);
+double computeGapNMIScore(const EvaluationData& data);
+double computeUnweightedAverageBaseF1Score(const EvaluationData& data);
+double computeUnweightedAverageGapF1Score(const EvaluationData& data);
 
 EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
 		const std::string& genomeFilepath);

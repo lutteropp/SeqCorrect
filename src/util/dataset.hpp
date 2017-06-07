@@ -23,52 +23,40 @@
 
 #pragma once
 
+#include <string>
 #include <unordered_map>
+#include "genome_type.hpp"
 
-#include "../external/const_string_ptr.hpp"
-#include "../io/sequence_io.hpp"
 
 namespace seq_correct {
 namespace util {
 
-inline char reverseComplementChar(char c) {
-	if (c == 'A') {
-		return 'T';
-	} else if (c == 'C') {
-		return 'G';
-	} else if (c == 'G') {
-		return 'C';
-	} else if (c == 'T') {
-		return 'A';
-	} else {
-		return c;
-	}
-}
+class Dataset {
+public:
+	Dataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath, const std::string& readsOnlyFilepath = "");
+	std::string getReadFilepath();
+	std::string getReadsOnlyFilepath();
+	std::unordered_map<size_t, size_t> getReadLengths();
+	size_t getGenomeSize();
+	GenomeType getGenomeType();
+private:
+	GenomeType genomeType;
+	size_t genomeSize;
+	std::unordered_map<size_t, size_t> readLengths;
+	std::string readFilepath;
+	std::string readsOnlyFilepath;
+};
 
-template<typename T>
-inline std::string reverseComplementString(const T& text) {
-	std::string revComp = "";
-	for (size_t i = 0; i < text.size(); ++i) {
-		revComp += reverseComplementChar(text[text.size() - i - 1]);
-	}
-	return revComp;
-}
-
-io::Read reverseComplementRead(const io::Read& read);
-double gcContent(const std::string& kmer);
-
-template<typename T>
-inline size_t countGC(const T& kmer) {
-	size_t gcCount = 0;
-	for (size_t i = 0; i < kmer.size(); ++i) {
-		if (kmer[i] == 'G' || kmer[i] == 'C') {
-			gcCount++;
-		}
-	}
-	return gcCount;
-}
-
-std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type);
+class ReferenceDataset: public Dataset {
+public:
+	ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath,
+			const std::string& referenceGenomePath, const std::string& readsOnlyFilepath = "");
+	std::string getReferenceGenomePath();
+	std::string getReferenceGenome();
+private:
+	std::string referenceGenomePath;
+	std::string referenceGenome;
+};
 
 } // end of namespace seq_correct::util
 } // end of namespace seq_correct
