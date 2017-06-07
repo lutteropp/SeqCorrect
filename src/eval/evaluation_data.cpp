@@ -21,6 +21,7 @@
  Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
  */
 
+#include <stdexcept>
 #include "evaluation_data.hpp"
 
 namespace seq_correct {
@@ -29,13 +30,13 @@ namespace eval {
 using namespace util;
 
 EvaluationData::EvaluationData() {
-	for (ErrorType e1 : AllBaseTypeIterator()) {
-		for (ErrorType e2 : AllBaseTypeIterator()) {
+	for (ErrorType e1 : BaseTypeIterator()) {
+		for (ErrorType e2 : BaseTypeIterator()) {
 			baseConfusionMatrix[std::make_pair(e1, e2)] = 0;
 		}
 	}
-	for (ErrorType e1 : AllGapTypeIterator()) {
-		for (ErrorType e2 : AllGapTypeIterator()) {
+	for (ErrorType e1 : GapTypeIterator()) {
+		for (ErrorType e2 : GapTypeIterator()) {
 			gapConfusionMatrix[std::make_pair(e1, e2)] = 0;
 		}
 	}
@@ -52,13 +53,13 @@ size_t EvaluationData::truePositives(ErrorType type) const {
 size_t EvaluationData::falsePositives(ErrorType type) const {
 	size_t count = 0;
 	if (isBaseErrorType(type)) {
-		for (ErrorType e : AllBaseTypeIterator()) {
+		for (ErrorType e : BaseTypeIterator()) {
 			if (e != type) {
 				count += baseConfusionMatrix.at(std::make_pair(e, type));
 			}
 		}
 	} else {
-		for (ErrorType e : AllGapTypeIterator()) {
+		for (ErrorType e : GapTypeIterator()) {
 			if (e != type) {
 				count += gapConfusionMatrix.at(std::make_pair(e, type));
 			}
@@ -70,9 +71,9 @@ size_t EvaluationData::falsePositives(ErrorType type) const {
 size_t EvaluationData::trueNegatives(ErrorType type) const {
 	size_t count = 0;
 	if (isBaseErrorType(type)) {
-		for (ErrorType e : AllBaseTypeIterator()) {
+		for (ErrorType e : BaseTypeIterator()) {
 			if (e != type) {
-				for (ErrorType f : AllBaseTypeIterator()) {
+				for (ErrorType f : BaseTypeIterator()) {
 					if (f != type) {
 						count += baseConfusionMatrix.at(std::make_pair(e, f));
 					}
@@ -80,9 +81,9 @@ size_t EvaluationData::trueNegatives(ErrorType type) const {
 			}
 		}
 	} else {
-		for (ErrorType e : AllGapTypeIterator()) {
+		for (ErrorType e : GapTypeIterator()) {
 			if (e != type) {
-				for (ErrorType f : AllGapTypeIterator()) {
+				for (ErrorType f : GapTypeIterator()) {
 					if (f != type) {
 						count += gapConfusionMatrix.at(std::make_pair(e, f));
 					}
@@ -96,19 +97,29 @@ size_t EvaluationData::trueNegatives(ErrorType type) const {
 size_t EvaluationData::falseNegatives(ErrorType type) const {
 	size_t count = 0;
 	if (isBaseErrorType(type)) {
-		for (ErrorType e : AllBaseTypeIterator()) {
+		for (ErrorType e : BaseTypeIterator()) {
 			if (e != type) {
 				count += baseConfusionMatrix.at(std::make_pair(type, e));
 			}
 		}
 	} else {
-		for (ErrorType e : AllGapTypeIterator()) {
+		for (ErrorType e : GapTypeIterator()) {
 			if (e != type) {
 				count += gapConfusionMatrix.at(std::make_pair(type, e));
 			}
 		}
 	}
 	return count;
+}
+
+size_t EvaluationData::getEntry(ErrorType trueType, ErrorType predictedType) const {
+	if (isBaseErrorType(trueType) && isBaseErrorType(predictedType)) {
+		return baseConfusionMatrix.at(std::make_pair(trueType, predictedType));
+	} else if (isGapErrorType(trueType) && isBaseErrorType(predictedType)) {
+		return gapConfusionMatrix.at(std::make_pair(trueType, predictedType));
+	} else {
+		throw std::runtime_error("trueType and predictedType must be both base types or both gap types!");
+	}
 }
 
 } // end of namespace seq_correct::eval

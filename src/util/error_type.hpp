@@ -73,11 +73,11 @@ enum class ErrorType {
 };
 typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::NODEL> AllErrorTypeIterator;
 typedef Iterator<ErrorType, ErrorType::INSERTION, ErrorType::MULTIDEL> ErrorOnlyTypeIterator;
-typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::SUB_OF_T> AllBaseTypeIterator;
-typedef Iterator<ErrorType, ErrorType::DEL_OF_A, ErrorType::NODEL> AllGapTypeIterator;
+typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::SUB_OF_T> BaseTypeIterator;
+typedef Iterator<ErrorType, ErrorType::DEL_OF_A, ErrorType::NODEL> GapTypeIterator;
 
 inline bool isBaseErrorType(ErrorType type) {
-	for (ErrorType e : AllBaseTypeIterator()) {
+	for (ErrorType e : BaseTypeIterator()) {
 		if (e == type) {
 			return true;
 		}
@@ -86,7 +86,7 @@ inline bool isBaseErrorType(ErrorType type) {
 }
 
 inline bool isGapErrorType(ErrorType type) {
-	for (ErrorType e : AllGapTypeIterator()) {
+	for (ErrorType e : GapTypeIterator()) {
 		if (e == type) {
 			return true;
 		}

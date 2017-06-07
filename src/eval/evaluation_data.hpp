@@ -34,13 +34,15 @@ using namespace util;
 
 // row in confusion matrix : true error type
 // column in confusion matrix: predicted error type
-struct EvaluationData {
+class EvaluationData {
+public:
 	EvaluationData();
 	size_t truePositives(ErrorType type) const;
 	size_t falsePositives(ErrorType type) const;
 	size_t trueNegatives(ErrorType type) const;
 	size_t falseNegatives(ErrorType type) const;
-
+	size_t getEntry(ErrorType trueType, ErrorType predictedType) const;
+private:
 	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t, EnumClassPairHash> baseConfusionMatrix;
 	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t, EnumClassPairHash> gapConfusionMatrix;
 };
