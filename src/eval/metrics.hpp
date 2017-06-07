@@ -22,18 +22,26 @@
  */
 
 #pragma once
-#include <string>
+
 #include "../util/error_type.hpp"
 #include "evaluation_data.hpp"
 
 namespace seq_correct {
 namespace eval {
 
-// Compare the corrected reads with the aligned original reads
-EvaluationData evaluateCorrectionsByAlignment(const std::string& originalReadsFilepath,
-		const std::string& correctedReadsFilepath, const std::string& genomeFilepath);
+using namespace util;
 
-
+double computeAccuracy(ErrorType type, const EvaluationData& data);
+double computePrecision(ErrorType type, const EvaluationData& data);
+double computeRecall(ErrorType type, const EvaluationData& data);
+double computeSensitivity(ErrorType type, const EvaluationData& data);
+double computeGain(ErrorType type, const EvaluationData& data);
+double computeSpecificity(ErrorType type, const EvaluationData& data);
+double computeF1Score(ErrorType type, const EvaluationData& data);
+double computeUnweightedAverageBaseF1Score(const EvaluationData& data);
+double computeUnweightedAverageGapF1Score(const EvaluationData& data);
+double computeBaseNMIScore(const EvaluationData& data);
+double computeGapNMIScore(const EvaluationData& data);
 
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct
