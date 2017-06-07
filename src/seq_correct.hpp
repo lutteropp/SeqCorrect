@@ -45,5 +45,6 @@
 #include "util/dataset.hpp"
 #include "util/producer_consumer_pattern.hpp"
 #include "eval/evaluation.hpp"
+#include "eval/evaluation_data.hpp"
 #include "external/bloom_filter.hpp"
 #include "external/const_string_ptr.hpp"

@@ -57,6 +57,17 @@ public:
 	}
 };
 
+//modified from https://stackoverflow.com/questions/18837857/cant-use-enum-class-as-unordered-map-key
+//  and https://stackoverflow.com/questions/11376163/custom-hash-function-for-pair-of-enum-values-used-as-unordered-map-key
+struct EnumClassPairHash
+{
+    template <typename T>
+    std::size_t operator()(std::pair<T, T> t) const
+    {
+        return static_cast<std::size_t>(t.first) ^ static_cast<std::size_t>(t.second);
+    }
+};
+
 enum class ErrorType {
 	CORRECT, INSERTION, SUB_OF_A, SUB_OF_C, SUB_OF_G, SUB_OF_T, DEL_OF_A, DEL_OF_C, DEL_OF_G, DEL_OF_T, MULTIDEL, NODEL
 };
@@ -64,6 +75,24 @@ typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::NODEL> AllErrorTypeIt
 typedef Iterator<ErrorType, ErrorType::INSERTION, ErrorType::MULTIDEL> ErrorOnlyTypeIterator;
 typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::SUB_OF_T> AllBaseTypeIterator;
 typedef Iterator<ErrorType, ErrorType::DEL_OF_A, ErrorType::NODEL> AllGapTypeIterator;
+
+inline bool isBaseErrorType(ErrorType type) {
+	for (ErrorType e : AllBaseTypeIterator()) {
+		if (e == type) {
+			return true;
+		}
+	}
+	return false;
+}
+
+inline bool isGapErrorType(ErrorType type) {
+	for (ErrorType e : AllGapTypeIterator()) {
+		if (e == type) {
+			return true;
+		}
+	}
+	return false;
+}
 
 } // end of namespace seq_correct::util
 } // end of namespace seq_correct

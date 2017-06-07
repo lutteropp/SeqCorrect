@@ -22,29 +22,28 @@
  */
 
 #pragma once
-#include <string>
+
+#include <unordered_map>
+#include <utility>
 #include "../util/error_type.hpp"
-#include "evaluation_data.hpp"
 
 namespace seq_correct {
 namespace eval {
 
 using namespace util;
 
-double computeAccuracy(ErrorType type, const EvaluationData& data);
-double computePrecision(ErrorType type, const EvaluationData& data);
-double computeRecall(ErrorType type, const EvaluationData& data);
-double computeSpecificity(ErrorType type, const EvaluationData& data);
-double computeF1Score(ErrorType type, const EvaluationData& data);
-double computeUnweightedAverageBaseF1Score(const EvaluationData& data);
-double computeUnweightedAverageGapF1Score(const EvaluationData& data);
-double computeBaseNMIScore(const EvaluationData& data);
-double computeGapNMIScore(const EvaluationData& data);
+// row in confusion matrix : true error type
+// column in confusion matrix: predicted error type
+struct EvaluationData {
+	EvaluationData();
+	size_t truePositives(ErrorType type) const;
+	size_t falsePositives(ErrorType type) const;
+	size_t trueNegatives(ErrorType type) const;
+	size_t falseNegatives(ErrorType type) const;
 
-EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
-		const std::string& genomeFilepath);
-
-EvaluationData evaluateCorrections(const std::string& alignmentFilepath, const std::string& correctedReadsFilepath);
+	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t, EnumClassPairHash> baseConfusionMatrix;
+	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t, EnumClassPairHash> gapConfusionMatrix;
+};
 
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct

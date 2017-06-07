@@ -50,6 +50,9 @@ std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type) 
 	}
 	std::string newKmer;
 	switch (type) {
+	case ErrorType::CORRECT:
+		newKmer = kmer;
+		break;
 	case ErrorType::INSERTION:
 		newKmer = kmer.substr(0, pos) + kmer.substr(pos + 1, std::string::npos);
 		break;
@@ -86,6 +89,9 @@ std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type) 
 			throw std::runtime_error("multidel after a multidel");
 		}
 		newKmer = kmer.substr(0, pos) + "_" + kmer.substr(pos, std::string::npos);
+		break;
+	case ErrorType::NODEL:
+		newKmer = kmer;
 		break;
 	}
 	return newKmer;

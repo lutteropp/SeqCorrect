@@ -22,6 +22,7 @@
  */
 
 #include <stdexcept>
+#include <cmath>
 #include "evaluation.hpp"
 
 namespace seq_correct {
@@ -37,21 +38,21 @@ EvaluationData evaluateCorrections(const std::string& alignmentFilepath, const s
 }
 
 double computeAccuracy(ErrorType type, const EvaluationData& data) {
-	return (data.truePositives[type] + data.falsePositives[type])
-			/ (double) (data.truePositives[type] + data.falsePositives[type] + data.falsePositives[type]
-					+ data.falseNegatives[type]);
+	return (data.truePositives(type) + data.falsePositives(type))
+			/ (double) (data.truePositives(type) + data.falsePositives(type) + data.falsePositives(type)
+					+ data.falseNegatives(type));
 }
 
 double computePrecision(ErrorType type, const EvaluationData& data) {
-	return data.truePositives[type] / (double) (data.truePositives[type] + data.falsePositives[type]);
+	return data.truePositives(type) / (double) (data.truePositives(type) + data.falsePositives(type));
 }
 
 double computeRecall(ErrorType type, const EvaluationData& data) {
-	return data.truePositives[type] / (double) (data.truePositives[type] + data.falseNegatives[type]);
+	return data.truePositives(type) / (double) (data.truePositives(type) + data.falseNegatives(type));
 }
 
 double computeSpecificity(ErrorType type, const EvaluationData& data) {
-	return data.trueNegatives[type] / (double) (data.trueNegatives[type] + data.falseNegatives[type]);
+	return data.trueNegatives(type) / (double) (data.trueNegatives(type) + data.falseNegatives(type));
 }
 
 double computeF1Score(ErrorType type, const EvaluationData& data) {
@@ -61,15 +62,43 @@ double computeF1Score(ErrorType type, const EvaluationData& data) {
 }
 
 size_t trueTotal(ErrorType type, const EvaluationData& data) {
-	return data.truePositives[type] + data.falseNegatives[type];
+	return data.truePositives(type) + data.falseNegatives(type);
 }
 
+double computeBaseMutualInformation(const EvaluationData& data) {
+	throw std::runtime_error("not implemented yet");
+}
+
+double computeBaseEntropyTruth(const EvaluationData& data) {
+	throw std::runtime_error("not implemented yet");
+}
+
+double computeBaseEntropyPredicted(const EvaluationData& data) {
+	throw std::runtime_error("not implemented yet");
+}
+
+double computeGapMutualInformation(const EvaluationData& data) {
+	throw std::runtime_error("not implemented yet");
+}
+
+double computeGapEntropyTruth(const EvaluationData& data) {
+	throw std::runtime_error("not implemented yet");
+}
+
+double computeGapEntropyPredicted(const EvaluationData& data) {
+	throw std::runtime_error("not implemented yet");
+}
+
+// Using the NMI_max formula I(U,V) / max(H(U), H(V))
 double computeBaseNMIScore(const EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
+	return computeBaseMutualInformation(data)
+			/ std::max(computeBaseEntropyTruth(data), computeBaseEntropyPredicted(data));
 }
 
+// Using the NMI_max formula I(U,V) / max(H(U), H(V))
 double computeGapNMIScore(const EvaluationData& data) {
-	throw std::runtime_error("not implemented yet");
+	return computeGapMutualInformation(data)
+				/ std::max(computeGapEntropyTruth(data), computeGapEntropyPredicted(data));
 }
 
 double computeUnweightedAverageBaseF1Score(const EvaluationData& data) {

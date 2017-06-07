@@ -22,6 +22,7 @@
  */
 
 #include "dataset.hpp"
+#include "../io/sequence_io.hpp"
 
 namespace seq_correct {
 namespace util {
