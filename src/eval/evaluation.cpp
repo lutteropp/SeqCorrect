@@ -51,6 +51,17 @@ double computeRecall(ErrorType type, const EvaluationData& data) {
 	return data.truePositives(type) / (double) (data.truePositives(type) + data.falseNegatives(type));
 }
 
+double computeSensitivity(ErrorType type, const EvaluationData& data) {
+	return computeRecall(type, data);
+}
+
+double computeGain(ErrorType type, const EvaluationData& data) {
+	size_t tp = data.truePositives(type);
+	size_t fp = data.falsePositives(type);
+	size_t fn = data.falseNegatives(type);
+	return (tp - fp) / (double) (tp + fn);
+}
+
 double computeSpecificity(ErrorType type, const EvaluationData& data) {
 	return data.trueNegatives(type) / (double) (data.trueNegatives(type) + data.falseNegatives(type));
 }
