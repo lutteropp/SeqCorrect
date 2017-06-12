@@ -298,35 +298,38 @@ std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, c
 	throw std::runtime_error("not implemented yet");
 }
 
-void handleUndetectedError(const std::vector<AlignedCorrection>& errorsTruth,
-		const std::vector<AlignedCorrection>& errorsPredicted, size_t& truthIdx, size_t& predictedIdx,
-		EvaluationData& data, std::vector<bool>& fineBases, std::vector<bool>& fineGaps) {
-	if (isBaseErrorType(errorsTruth[truthIdx].errorType)) {
-		data.update(errorsTruth[truthIdx].errorType, ErrorType::CORRECT);
-		fineBases[errorsTruth[truthIdx].positionInRead] = false;
-	} else {
-		data.update(errorsTruth[truthIdx].errorType, ErrorType::NODEL);
-		fineGaps[errorsTruth[truthIdx].positionInRead] = false;
+void updateIfMapped(EvaluationData& data, ErrorType typeTruth, ErrorType typePredicted, size_t pos,
+		const std::string& mappedSequence) {
+	if (mappedSequence[pos] != 'S') {
+		data.update(typeTruth, typePredicted);
 	}
-	truthIdx++;
 }
 
-void handleMisdetectedError(const std::vector<AlignedCorrection>& errorsTruth,
-		const std::vector<AlignedCorrection>& errorsPredicted, size_t& truthIdx, size_t& predictedIdx,
-		EvaluationData& data, std::vector<bool>& fineBases, std::vector<bool>& fineGaps) {
-	if (isBaseErrorType(errorsPredicted[predictedIdx].errorType)) {
-		data.update(ErrorType::CORRECT, errorsPredicted[predictedIdx].errorType);
-		fineBases[errorsPredicted[predictedIdx].positionInRead] = false;
+void handleUndetectedError(size_t posTruth, ErrorType typeTruth, EvaluationData& data, std::vector<bool>& fineBases,
+		std::vector<bool>& fineGaps) {
+	if (isBaseErrorType(typeTruth)) {
+		data.update(typeTruth, ErrorType::CORRECT);
+		fineBases[posTruth] = false;
 	} else {
-		data.update(ErrorType::NODEL, errorsPredicted[predictedIdx].errorType);
-		fineGaps[errorsPredicted[predictedIdx].positionInRead] = false;
+		data.update(typeTruth, ErrorType::NODEL);
+		fineGaps[posTruth] = false;
 	}
-	predictedIdx++;
+}
+
+void handleMisdetectedError(size_t posPredicted, ErrorType typePredicted, EvaluationData& data,
+		std::vector<bool>& fineBases, std::vector<bool>& fineGaps) {
+	if (isBaseErrorType(typePredicted)) {
+		data.update(ErrorType::CORRECT, typePredicted);
+		fineBases[posPredicted] = false;
+	} else {
+		data.update(ErrorType::NODEL, typePredicted);
+		fineGaps[posPredicted] = false;
+	}
 }
 
 // requires the detected errors to be sorted by position in read
 void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrection>& errorsTruth,
-		const std::vector<AlignedCorrection>& errorsPredicted, size_t readLength) {
+		const std::vector<AlignedCorrection>& errorsPredicted, size_t readLength, const std::string& mappedSequence) {
 	size_t truthIdx = 0;
 	size_t predictedIdx = 0;
 
@@ -341,40 +344,67 @@ void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrect
 		ErrorType typePredicted = errorsPredicted[predictedIdx].errorType;
 
 		if (posTruth < posPredicted) { // undetected error
-			handleUndetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases, fineGaps);
+			if (mappedSequence[posTruth] != 'S') {
+				handleUndetectedError(posTruth, typeTruth, data, fineBases, fineGaps);
+			}
+			truthIdx++;
 		} else if (posTruth == posPredicted) { // errors at same position
 			if (isBaseErrorType(typeTruth) && isBaseErrorType(typePredicted)) {
-				data.update(typeTruth, typePredicted);
+				if (mappedSequence[posTruth] != 'S') {
+					data.update(typeTruth, typePredicted);
+					fineBases[posTruth] = false;
+				}
 				truthIdx++;
 				predictedIdx++;
-				fineBases[posTruth] = false;
 			} else if (isGapErrorType(typeTruth) && isGapErrorType(typePredicted)) {
-				data.update(typeTruth, typePredicted);
+				if (mappedSequence[posTruth] != 'S') {
+					data.update(typeTruth, typePredicted);
+					fineGaps[posTruth] = false;
+				}
 				truthIdx++;
 				predictedIdx++;
-				fineGaps[posTruth] = false;
 			} else {
 				if (typeTruth < typePredicted) { // undetected error
-					handleUndetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases,
-							fineGaps);
+					if (mappedSequence[posTruth] != 'S') {
+						handleUndetectedError(posTruth, typeTruth, data, fineBases, fineGaps);
+					}
+					truthIdx++;
 				} else { // misdetected error
-					handleMisdetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases,
-							fineGaps);
+					if (mappedSequence[posPredicted] != 'S') {
+						handleMisdetectedError(posPredicted, typePredicted, data, fineBases, fineGaps);
+					}
+					predictedIdx++;
 				}
 			}
 		} else { // misdetected error
-			handleMisdetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases, fineGaps);
+			if (mappedSequence[posPredicted] != 'S') {
+				handleMisdetectedError(posPredicted, typePredicted, data, fineBases, fineGaps);
+			}
+			predictedIdx++;
 		}
 	}
 	while (truthIdx < errorsTruth.size()) { // further undetected errors
-		handleUndetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases, fineGaps);
+		size_t posTruth = errorsTruth[truthIdx].positionInRead;
+		ErrorType typeTruth = errorsTruth[truthIdx].errorType;
+		if (mappedSequence[posTruth] != 'S') {
+			handleUndetectedError(posTruth, typeTruth, data, fineBases, fineGaps);
+		}
+		truthIdx++;
 	}
 	while (predictedIdx < errorsPredicted.size()) { // further misdetected errors
-		handleMisdetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases, fineGaps);
+		size_t posPredicted = errorsPredicted[predictedIdx].positionInRead;
+		ErrorType typePredicted = errorsPredicted[predictedIdx].errorType;
+		if (mappedSequence[posPredicted] != 'S') {
+			handleMisdetectedError(posPredicted, typePredicted, data, fineBases, fineGaps);
+		}
+		predictedIdx++;
 	}
 
 	// correctly unchanged bases/gaps
 	for (size_t i = 0; i < readLength; ++i) {
+		if (mappedSequence[i] == 'S') {
+			continue;
+		}
 		if (fineBases[i]) {
 			data.update(ErrorType::CORRECT, ErrorType::CORRECT);
 		}
@@ -406,7 +436,7 @@ EvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepa
 		}
 		std::vector<AlignedCorrection> errorsTruth = extractErrors(rwa, genomeFilepath);
 		std::vector<AlignedCorrection> errorsPredicted = extractErrors(read.seq, genome, rwa.beginPos);
-		updateEvaluationData(data, errorsTruth, errorsPredicted, read.seq.size());
+		updateEvaluationData(data, errorsTruth, errorsPredicted, read.seq.size(), rwa.seq);
 	}
 	return data;
 }
