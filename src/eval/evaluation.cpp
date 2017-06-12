@@ -299,9 +299,47 @@ std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, c
 	throw std::runtime_error("not implemented yet");
 }
 
+// requires the detected errors to be sorted by position in read
 void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrection>& errorsTruth,
 		const std::vector<AlignedCorrection>& errorsPredicted) {
-	throw std::runtime_error("not implemented yet");
+	size_t truthIdx = 0;
+	size_t predictedIdx = 0;
+	// Reißverschlussverfahren
+	while (truthIdx < errorsTruth.size() && predictedIdx < errorsPredicted.size()) {
+		if (errorsTruth[truthIdx].positionInRead < errorsPredicted[predictedIdx].positionInRead) { // undetected error
+			if (isBaseErrorType(errorsTruth[truthIdx].errorType)) {
+				data.update(errorsTruth[truthIdx].errorType, ErrorType::CORRECT);
+			} else {
+				data.update(errorsTruth[truthIdx].errorType, ErrorType::NODEL);
+			}
+			truthIdx++;
+		} else if (errorsTruth[truthIdx].positionInRead == errorsPredicted[predictedIdx].positionInRead) {
+			data.update(errorsTruth[truthIdx].errorType, errorsPredicted[predictedIdx].errorType);
+			truthIdx++;
+			predictedIdx++;
+		} else { // misdetected error
+			if (isBaseErrorType(errorsPredicted[predictedIdx].errorType)) {
+				data.update(ErrorType::CORRECT, errorsPredicted[predictedIdx].errorType);
+			} else {
+				data.update(ErrorType::NODEL, errorsPredicted[predictedIdx].errorType);
+			}
+		}
+	}
+	while (truthIdx < errorsTruth.size()) { // further undetected errors
+		if (isBaseErrorType(errorsTruth[truthIdx].errorType)) {
+			data.update(errorsTruth[truthIdx].errorType, ErrorType::CORRECT);
+		} else {
+			data.update(errorsTruth[truthIdx].errorType, ErrorType::NODEL);
+		}
+		truthIdx++;
+	}
+	while (predictedIdx < errorsPredicted.size()) { // further misdetected errors
+		if (isBaseErrorType(errorsPredicted[predictedIdx].errorType)) {
+			data.update(ErrorType::CORRECT, errorsPredicted[predictedIdx].errorType);
+		} else {
+			data.update(ErrorType::NODEL, errorsPredicted[predictedIdx].errorType);
+		}
+	}
 }
 
 EvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepath,
