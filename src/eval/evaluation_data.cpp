@@ -170,5 +170,15 @@ size_t EvaluationData::sumPredicted(ErrorType type) const {
 	return sum;
 }
 
+void EvaluationData::update(ErrorType trueType, ErrorType predictedType) {
+	if (isBaseErrorType(trueType) && isBaseErrorType(predictedType)) {
+		baseConfusionMatrix[std::make_pair(trueType, predictedType)]++;
+	} else if (isGapErrorType(trueType) && isGapErrorType(predictedType)) {
+		gapConfusionMatrix[std::make_pair(trueType, predictedType)]++;
+	} else {
+		throw std::runtime_error("trueType and predictedType are of incompatible types");
+	}
+}
+
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct
