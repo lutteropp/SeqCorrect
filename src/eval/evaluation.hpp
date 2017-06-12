@@ -25,15 +25,32 @@
 #include <string>
 #include "../util/error_type.hpp"
 #include "evaluation_data.hpp"
+#include "../io/read_with_alignments.hpp"
 
 namespace seq_correct {
 namespace eval {
 
+struct HandlingInfo {
+	unsigned positionInRead = 0;
+	unsigned hardClippedBases = 0;
+	unsigned softClippedBases = 0;
+	unsigned insertedBases = 0;
+	unsigned deletedBases = 0;
+
+	bool revComp;
+	unsigned beginPos;
+	unsigned readLength;
+	std::vector<AlignedCorrection> corrections;
+};
+
+std::vector<AlignedCorrection> extractErrors(ReadWithAlignments& rwa, const std::string &referenceGenome);
+
 // Compare the corrected reads with the aligned original reads
-EvaluationData evaluateCorrectionsByAlignment(const std::string& originalReadsFilepath,
+EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
+		const std::string& genomeFilepath);
+
+EvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepath,
 		const std::string& correctedReadsFilepath, const std::string& genomeFilepath);
-
-
 
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct
