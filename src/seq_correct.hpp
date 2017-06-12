@@ -47,5 +47,7 @@
 #include "eval/evaluation.hpp"
 #include "eval/evaluation_data.hpp"
 #include "eval/metrics.hpp"
+#include "eval/bam_iterator.hpp"
+#include "eval/read_with_alignments.hpp"
 #include "external/bloom_filter.hpp"
 #include "external/const_string_ptr.hpp"
