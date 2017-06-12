@@ -280,8 +280,7 @@ std::vector<AlignedCorrection> extractErrors(ReadWithAlignments& rwa, const std:
 		// now that indels have been fixed, fix the substitution errors.
 		handleSubstitutionErrors(rwa, info, genome);
 	}
-	std::sort(info.corrections.begin(), info.corrections.end(),
-			[](const AlignedCorrection& lhs, const AlignedCorrection& rhs) {return lhs.positionInRead < rhs.positionInRead;});
+	std::sort(info.corrections.begin(), info.corrections.end());
 	return info.corrections;
 }
 
@@ -299,48 +298,89 @@ std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, c
 	throw std::runtime_error("not implemented yet");
 }
 
+void handleUndetectedError(const std::vector<AlignedCorrection>& errorsTruth,
+		const std::vector<AlignedCorrection>& errorsPredicted, size_t& truthIdx, size_t& predictedIdx,
+		EvaluationData& data, std::vector<bool>& fineBases, std::vector<bool>& fineGaps) {
+	if (isBaseErrorType(errorsTruth[truthIdx].errorType)) {
+		data.update(errorsTruth[truthIdx].errorType, ErrorType::CORRECT);
+		fineBases[errorsTruth[truthIdx].positionInRead] = false;
+	} else {
+		data.update(errorsTruth[truthIdx].errorType, ErrorType::NODEL);
+		fineGaps[errorsTruth[truthIdx].positionInRead] = false;
+	}
+	truthIdx++;
+}
+
+void handleMisdetectedError(const std::vector<AlignedCorrection>& errorsTruth,
+		const std::vector<AlignedCorrection>& errorsPredicted, size_t& truthIdx, size_t& predictedIdx,
+		EvaluationData& data, std::vector<bool>& fineBases, std::vector<bool>& fineGaps) {
+	if (isBaseErrorType(errorsPredicted[predictedIdx].errorType)) {
+		data.update(ErrorType::CORRECT, errorsPredicted[predictedIdx].errorType);
+		fineBases[errorsPredicted[predictedIdx].positionInRead] = false;
+	} else {
+		data.update(ErrorType::NODEL, errorsPredicted[predictedIdx].errorType);
+		fineGaps[errorsPredicted[predictedIdx].positionInRead] = false;
+	}
+	predictedIdx++;
+}
+
 // requires the detected errors to be sorted by position in read
 void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrection>& errorsTruth,
-		const std::vector<AlignedCorrection>& errorsPredicted) {
+		const std::vector<AlignedCorrection>& errorsPredicted, size_t readLength) {
 	size_t truthIdx = 0;
 	size_t predictedIdx = 0;
+
+	std::vector<bool> fineBases(readLength, true);
+	std::vector<bool> fineGaps(readLength, true);
+
 	// Reißverschlussverfahren
 	while (truthIdx < errorsTruth.size() && predictedIdx < errorsPredicted.size()) {
-		if (errorsTruth[truthIdx].positionInRead < errorsPredicted[predictedIdx].positionInRead) { // undetected error
-			if (isBaseErrorType(errorsTruth[truthIdx].errorType)) {
-				data.update(errorsTruth[truthIdx].errorType, ErrorType::CORRECT);
+		size_t posTruth = errorsTruth[truthIdx].positionInRead;
+		size_t posPredicted = errorsPredicted[predictedIdx].positionInRead;
+		ErrorType typeTruth = errorsTruth[truthIdx].errorType;
+		ErrorType typePredicted = errorsPredicted[predictedIdx].errorType;
+
+		if (posTruth < posPredicted) { // undetected error
+			handleUndetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases, fineGaps);
+		} else if (posTruth == posPredicted) { // errors at same position
+			if (isBaseErrorType(typeTruth) && isBaseErrorType(typePredicted)) {
+				data.update(typeTruth, typePredicted);
+				truthIdx++;
+				predictedIdx++;
+				fineBases[posTruth] = false;
+			} else if (isGapErrorType(typeTruth) && isGapErrorType(typePredicted)) {
+				data.update(typeTruth, typePredicted);
+				truthIdx++;
+				predictedIdx++;
+				fineGaps[posTruth] = false;
 			} else {
-				data.update(errorsTruth[truthIdx].errorType, ErrorType::NODEL);
+				if (typeTruth < typePredicted) { // undetected error
+					handleUndetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases,
+							fineGaps);
+				} else { // misdetected error
+					handleMisdetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases,
+							fineGaps);
+				}
 			}
-			truthIdx++;
-		} else if (errorsTruth[truthIdx].positionInRead == errorsPredicted[predictedIdx].positionInRead) {
-			data.update(errorsTruth[truthIdx].errorType, errorsPredicted[predictedIdx].errorType);
-			truthIdx++;
-			predictedIdx++;
 		} else { // misdetected error
-			if (isBaseErrorType(errorsPredicted[predictedIdx].errorType)) {
-				data.update(ErrorType::CORRECT, errorsPredicted[predictedIdx].errorType);
-			} else {
-				data.update(ErrorType::NODEL, errorsPredicted[predictedIdx].errorType);
-			}
-			predictedIdx++;
+			handleMisdetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases, fineGaps);
 		}
 	}
 	while (truthIdx < errorsTruth.size()) { // further undetected errors
-		if (isBaseErrorType(errorsTruth[truthIdx].errorType)) {
-			data.update(errorsTruth[truthIdx].errorType, ErrorType::CORRECT);
-		} else {
-			data.update(errorsTruth[truthIdx].errorType, ErrorType::NODEL);
-		}
-		truthIdx++;
+		handleUndetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases, fineGaps);
 	}
 	while (predictedIdx < errorsPredicted.size()) { // further misdetected errors
-		if (isBaseErrorType(errorsPredicted[predictedIdx].errorType)) {
-			data.update(ErrorType::CORRECT, errorsPredicted[predictedIdx].errorType);
-		} else {
-			data.update(ErrorType::NODEL, errorsPredicted[predictedIdx].errorType);
+		handleMisdetectedError(errorsTruth, errorsPredicted, truthIdx, predictedIdx, data, fineBases, fineGaps);
+	}
+
+	// correctly unchanged bases/gaps
+	for (size_t i = 0; i < readLength; ++i) {
+		if (fineBases[i]) {
+			data.update(ErrorType::CORRECT, ErrorType::CORRECT);
 		}
-		predictedIdx++;
+		if (fineGaps[i]) {
+			data.update(ErrorType::NODEL, ErrorType::NODEL);
+		}
 	}
 }
 
@@ -366,7 +406,7 @@ EvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepa
 		}
 		std::vector<AlignedCorrection> errorsTruth = extractErrors(rwa, genomeFilepath);
 		std::vector<AlignedCorrection> errorsPredicted = extractErrors(read.seq, genome, rwa.beginPos);
-		updateEvaluationData(data, errorsTruth, errorsPredicted);
+		updateEvaluationData(data, errorsTruth, errorsPredicted, read.seq.size());
 	}
 	return data;
 }

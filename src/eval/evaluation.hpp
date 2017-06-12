@@ -49,7 +49,7 @@ std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, c
 		size_t beginPos);
 
 void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrection>& errorsTruth,
-		const std::vector<AlignedCorrection>& errorsPredicted);
+		const std::vector<AlignedCorrection>& errorsPredicted, size_t readLength);
 
 // Compare the corrected reads with the aligned original reads
 EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
