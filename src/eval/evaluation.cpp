@@ -29,6 +29,7 @@
 #include "../util/util.hpp"
 #include "../io/bam_iterator.hpp"
 #include "../io/read_with_alignments.hpp"
+#include "../io/sequence_io.hpp"
 
 namespace seq_correct {
 namespace eval {
@@ -232,24 +233,22 @@ void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const
 }
 
 std::vector<AlignedCorrection> extractErrors(ReadWithAlignments& rwa, const std::string &genome) {
-// ignore searching errors in unmapped reads
 	if (hasFlagUnmapped(rwa.records[0])) {
 		throw std::runtime_error("The read is unmapped");
 	}
-// ignore searching errors in soft-clipped non-chimeric reads
-	/*if (records.size() == 1) {
-	 for (size_t i = 0; i < length(records[0].cigar); ++i) {
-	 if (records[0].cigar[i].operation == 'S') {
-	 return;
-	 }
-	 }
-	 }
+	// warn about searching errors in soft-clipped non-chimeric reads
+	if (rwa.records.size() == 1) {
+		for (size_t i = 0; i < length(rwa.records[0].cigar); ++i) {
+			if (rwa.records[0].cigar[i].operation == 'S') {
+				std::cout << "WARNING: Searching errors in soft-clipped non-chimeric read" << std::endl;
+			}
+		}
+	}
+	// warn about searching errors in reads with chimeric breaks
+	if (rwa.records.size() > 1) {
+		std::cout << "WARNING: chimeric break detected" << std::endl;
+	}
 
-	 // ignore searching errors in reads with chimeric breaks
-	 if (records.size() > 1) {
-	 throw std::runtime_error("chimeric break detected");
-	 return;
-	 }*/
 	HandlingInfo info;
 	for (seqan::BamAlignmentRecord record : rwa.records) {
 		// Extract CIGAR string
@@ -291,16 +290,43 @@ EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, con
 	throw std::runtime_error("not implemented yet");
 }
 
+std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, const std::string& referenceGenome) {
+	throw std::runtime_error("not implemented yet");
+}
+
+std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, const std::string& referenceGenome,
+		size_t beginPos) {
+	throw std::runtime_error("not implemented yet");
+}
+
+void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrection>& errorsTruth,
+		const std::vector<AlignedCorrection>& errorsPredicted) {
+	throw std::runtime_error("not implemented yet");
+}
+
 EvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepath,
 		const std::string& correctedReadsFilepath, const std::string& genomeFilepath) {
 	EvaluationData data;
+	std::string genome = io::readReferenceGenome(genomeFilepath);
 	BAMIterator it(alignmentFilepath);
 	std::ifstream infile(correctedReadsFilepath);
 
-	while (it.hasReadsLeft()) {
+	io::ReadInput input;
+	input.openFile(correctedReadsFilepath);
+
+	while (it.hasReadsLeft() && input.hasNext()) {
+		io::Read read = input.readNext(true, true, true);
 		ReadWithAlignments rwa = it.next();
-		std::vector<AlignedCorrection> corrections = extractErrors(rwa, genomeFilepath);
-		// TODO: ...
+		while (hasFlagUnmapped(rwa.records[0])) {
+			rwa = it.next();
+			read = input.readNext(true, true, true);
+		}
+		if (read.name != rwa.name) {
+			throw std::runtime_error("Something went wrong while evaluating the reads. Are they really sorted?");
+		}
+		std::vector<AlignedCorrection> errorsTruth = extractErrors(rwa, genomeFilepath);
+		std::vector<AlignedCorrection> errorsPredicted = extractErrors(read.seq, genome, rwa.beginPos);
+		updateEvaluationData(data, errorsTruth, errorsPredicted);
 	}
 	return data;
 }

@@ -44,6 +44,12 @@ struct HandlingInfo {
 };
 
 std::vector<AlignedCorrection> extractErrors(ReadWithAlignments& rwa, const std::string &referenceGenome);
+std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, const std::string& referenceGenome);
+std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, const std::string& referenceGenome,
+		size_t beginPos);
+
+void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrection>& errorsTruth,
+		const std::vector<AlignedCorrection>& errorsPredicted);
 
 // Compare the corrected reads with the aligned original reads
 EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
