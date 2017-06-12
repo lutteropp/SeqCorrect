@@ -323,6 +323,7 @@ void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrect
 			} else {
 				data.update(ErrorType::NODEL, errorsPredicted[predictedIdx].errorType);
 			}
+			predictedIdx++;
 		}
 	}
 	while (truthIdx < errorsTruth.size()) { // further undetected errors
@@ -339,6 +340,7 @@ void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrect
 		} else {
 			data.update(ErrorType::NODEL, errorsPredicted[predictedIdx].errorType);
 		}
+		predictedIdx++;
 	}
 }
 
