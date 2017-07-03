@@ -24,6 +24,8 @@
 #pragma once
 
 #include <utility>
+#include <cctype>
+#include <stdexcept>
 
 namespace seq_correct {
 namespace util {
@@ -77,6 +79,36 @@ typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::NODEL> AllErrorTypeIt
 typedef Iterator<ErrorType, ErrorType::INSERTION, ErrorType::MULTIDEL> ErrorOnlyTypeIterator;
 typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::SUB_OF_T> BaseTypeIterator;
 typedef Iterator<ErrorType, ErrorType::DEL_OF_A, ErrorType::NODEL> GapTypeIterator;
+
+inline ErrorType inferSubstitutionFrom(char from) {
+	from = toupper(from);
+	if (from == 'A') {
+		return ErrorType::SUB_OF_A;
+	} else if (from == 'C') {
+		return ErrorType::SUB_OF_C;
+	} else if (from == 'G') {
+		return ErrorType::SUB_OF_G;
+	} else if (from == 'T') {
+		 return ErrorType::SUB_OF_T;
+	} else {
+		throw std::runtime_error("Invalid base: " + from);
+	}
+}
+
+inline ErrorType inferDeletionOf(char deletedBase) {
+	deletedBase = toupper(deletedBase);
+	if (deletedBase == 'A') {
+		return ErrorType::DEL_OF_A;
+	} else if (deletedBase == 'C') {
+		return ErrorType::DEL_OF_C;
+	} else if (deletedBase == 'G') {
+		return ErrorType::DEL_OF_G;
+	} else if (deletedBase == 'T') {
+		 return ErrorType::DEL_OF_T;
+	} else {
+		throw std::runtime_error("Invalid base: " + deletedBase);
+	}
+}
 
 inline bool isBaseErrorType(ErrorType type) {
 	for (ErrorType e : BaseTypeIterator()) {

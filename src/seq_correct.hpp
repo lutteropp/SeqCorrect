@@ -36,7 +36,6 @@
 #include "counting/fm_count.hpp"
 #include "counting/hash3_count.hpp"
 #include "profile/error_profile.hpp"
-#include "kmer/kmer_classification.hpp"
 #include "pusm/pusm.hpp"
 #include "io/sequence_io.hpp"
 #include "util/util.hpp"
@@ -51,3 +50,4 @@
 #include "io/read_with_alignments.hpp"
 #include "external/bloom_filter.hpp"
 #include "external/const_string_ptr.hpp"
+#include "kmer/classification.hpp"

@@ -24,15 +24,40 @@
 #pragma once
 
 #include "../pusm/pusm.hpp"
-
+#include "../counting/matcher.hpp"
 namespace seq_correct {
-namespace kmer {
+namespace classification {
 
 	enum class KmerType {
 		UNTRUSTED, UNIQUE, REPEAT
 	};
 
-	KmerType classifyKmer(const std::string& kmer, const pusm::PusmData& pusmData, size_t observedCount);
+	/**
+	 * Classify a k-mer as either UNTRUSTED, UNIQUE, or REPETITIVE.
+	 * @param kmer The k-mer
+	 * @param pusmData The expected count and standard deviation of the k-mer in an idealized sequencing setting
+	 * @param observedCount Count of the k-mer in the read dataset
+	 */
+	inline KmerType classifyKmer(const pusm::PusmData& pusmData, size_t observedCount) {
+		if (observedCount < 0.5 * pusmData.expectation) {
+			return KmerType::UNTRUSTED;
+		} else if (observedCount <= 1.5 * pusmData.expectation) {
+			return KmerType::UNIQUE;
+		} else {
+			return KmerType::REPEAT;
+		}
+	}
+
+	template <typename T>
+	inline KmerType classifyKmer(const T& kmer, counting::Matcher& kmerCounter,
+			pusm::PerfectUniformSequencingModel& pusm) {
+		if (kmer.empty()) {
+			throw std::runtime_error("The kmer is empty");
+		}
+		pusm::PusmData pusmData = pusm.expectedCount(kmer.size());
+		size_t observedCount = kmerCounter.countKmer(kmer);
+		return classifyKmer(pusmData, observedCount);
+	}
 
 } // end of namespace seq_correct::kmer
 } // end of namespace seq_correct

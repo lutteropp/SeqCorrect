@@ -298,13 +298,6 @@ std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, c
 	throw std::runtime_error("not implemented yet");
 }
 
-void updateIfMapped(EvaluationData& data, ErrorType typeTruth, ErrorType typePredicted, size_t pos,
-		const std::string& mappedSequence) {
-	if (mappedSequence[pos] != 'S') {
-		data.update(typeTruth, typePredicted);
-	}
-}
-
 void handleUndetectedError(size_t posTruth, ErrorType typeTruth, EvaluationData& data, std::vector<bool>& fineBases,
 		std::vector<bool>& fineGaps) {
 	if (isBaseErrorType(typeTruth)) {

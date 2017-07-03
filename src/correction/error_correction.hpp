@@ -27,17 +27,20 @@
 
 #include "../util/util.hpp"
 #include "../io/sequence_io.hpp"
+#include "../counting/matcher.hpp"
+#include "../pusm/pusm.hpp"
 
 namespace seq_correct {
 namespace correction {
 
-/*enum class ErrorCorrectionMethod {
- KMER_BASED, SUFFIX_TREE_BASED, MSA_BASED
- };*/
+using namespace io;
+using namespace counting;
+using namespace pusm;
 
-io::Read correctRead_kmer(const io::Read& read, bool correctSingleIndels = true, bool correctMultidels = false);
-io::Read correctRead_suffix_tree(const io::Read& read, bool correctSingleIndels = true, bool correctMultidels = false);
-io::Read correctRead_msa(const io::Read& read, bool correctSingleIndels = true, bool correctMultidels = false);
+Read correctRead_kmer(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true,
+		bool correctMultidels = false);
+Read correctRead_suffix_tree(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true, bool correctMultidels = false);
+Read correctRead_msa(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true, bool correctMultidels = false);
 
 } // end of namespace seq_correct::correction
 } // end of namespace seq_correct
