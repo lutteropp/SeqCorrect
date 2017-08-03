@@ -27,6 +27,7 @@
 #include <string>
 #include <seqan/bam_io.h>
 #include "../util/error_type.hpp"
+#include "../util/correction.hpp"
 
 /*
  * TODO: Bei einem Chimeric break dürfte die beginPos des Reads unterschiedlich sein!!!
@@ -36,26 +37,6 @@ namespace seq_correct {
 namespace eval {
 
 using namespace util;
-
-class AlignedCorrection {
-public:
-	AlignedCorrection(size_t posInGenome, size_t posInRead, ErrorType type, char baseInRead) :
-			positionInGenome(posInGenome), positionInRead(posInRead), errorType(type), baseInRead(baseInRead) {
-	}
-
-	bool operator <(const AlignedCorrection& other) const {
-		if (positionInRead == other.positionInRead) {
-			return errorType < other.errorType;
-		} else {
-			return positionInRead < other.positionInRead;
-		}
-	}
-
-	size_t positionInGenome;
-	size_t positionInRead;
-	ErrorType errorType;
-	char baseInRead;
-};
 
 class ReadWithAlignments {
 public:

@@ -24,29 +24,16 @@
 #pragma once
 
 #include <vector>
-
-#include "../util/util.hpp"
-#include "../io/sequence_io.hpp"
-#include "../counting/matcher.hpp"
-#include "../pusm/pusm.hpp"
+#include "../util/error_type.hpp"
 
 namespace seq_correct {
-namespace correction {
+namespace eval {
 
-using namespace io;
-using namespace counting;
-using namespace pusm;
+/**
+ * Perform pairwise alignment using the Levensthein distance
+ */
+std::vector<std::pair<size_t, util::ErrorType> > align(const std::string& originalRead,
+		const std::string& correctedRead);
 
-enum class CorrectionAlgorithm {
-	KMER //, SUFFIX_TREE, MSA
-};
-
-void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm);
-
-Read correctRead_kmer(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true,
-		bool correctMultidels = false);
-Read correctRead_suffix_tree(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true, bool correctMultidels = false);
-Read correctRead_msa(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true, bool correctMultidels = false);
-
-} // end of namespace seq_correct::correction
+} // end of namespace eval
 } // end of namespace seq_correct

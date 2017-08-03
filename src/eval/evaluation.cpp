@@ -30,6 +30,7 @@
 #include "../io/bam_iterator.hpp"
 #include "../io/read_with_alignments.hpp"
 #include "../io/sequence_io.hpp"
+#include "alignment.hpp"
 
 namespace seq_correct {
 namespace eval {
@@ -46,8 +47,8 @@ std::string extractCigarString(const seqan::String< seqan::CigarElement<char> >&
 }
 
 void handleChimericBreak(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& info) {
-	unsigned nucleotidePositionInReference = info.beginPos + info.positionInRead - info.insertedBases
-			- info.softClippedBases + info.deletedBases;
+	/*unsigned nucleotidePositionInReference = info.beginPos + info.positionInRead - info.insertedBases
+	 - info.softClippedBases + info.deletedBases;*/
 	unsigned realPositionInRead = info.positionInRead + info.hardClippedBases; // the position of the first base of the chimeric break
 
 	assert(realPositionInRead < readLength);
@@ -64,9 +65,7 @@ void handleChimericBreak(ReadWithAlignments& rwa, size_t cigarCount, HandlingInf
 	}
 
 	// because we treat chimeric breaks as deletion of multiple bases
-	info.corrections.push_back(
-			AlignedCorrection(nucleotidePositionInReference, realPositionInRead, ErrorType::MULTIDEL,
-					rwa.seq[realPositionInRead]));
+	info.corrections.push_back(Correction(realPositionInRead, ErrorType::MULTIDEL, rwa.seq[realPositionInRead]));
 }
 
 void handleSoftClipping(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& info) {
@@ -86,8 +85,8 @@ void handleInsertion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& i
 			throw std::runtime_error("this should not happen");
 		}
 
-		unsigned nucleotidePositionInReference = info.beginPos + nucleotidePositionRead - info.insertedBases
-				- info.softClippedBases + info.deletedBases;
+		/*unsigned nucleotidePositionInReference = info.beginPos + nucleotidePositionRead - info.insertedBases
+		 - info.softClippedBases + info.deletedBases;*/
 		size_t realPositionInRead = info.positionInRead + info.hardClippedBases;
 
 		if (info.revComp) {
@@ -103,8 +102,7 @@ void handleInsertion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& i
 			correctionPosition = rwa.seq.size() - correctionPosition - 1;
 		}
 
-		info.corrections.push_back(
-				AlignedCorrection(nucleotidePositionInReference, correctionPosition, ErrorType::INSERTION, fromBase));
+		info.corrections.push_back(Correction(correctionPosition, ErrorType::INSERTION, fromBase));
 	}
 	info.insertedBases += cigarCount;
 }
@@ -142,23 +140,18 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 	assert(toBases.size() == cigar[i].count);
 	if (cigarCount == 1) {
 		if (nucleotideInReference == 'A') {
-			info.corrections.push_back(
-					AlignedCorrection(nucleotideInReference, correctionPosition, ErrorType::DEL_OF_A, fromBase));
+			info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_A, fromBase));
 		} else if (nucleotideInReference == 'C') {
-			info.corrections.push_back(
-					AlignedCorrection(nucleotideInReference, correctionPosition, ErrorType::DEL_OF_C, fromBase));
+			info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_C, fromBase));
 		} else if (nucleotideInReference == 'G') {
-			info.corrections.push_back(
-					AlignedCorrection(nucleotideInReference, correctionPosition, ErrorType::DEL_OF_G, fromBase));
+			info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_G, fromBase));
 		} else if (nucleotideInReference == 'T') {
-			info.corrections.push_back(
-					AlignedCorrection(nucleotideInReference, correctionPosition, ErrorType::DEL_OF_T, fromBase));
+			info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_T, fromBase));
 		} else if (nucleotideInReference != 'N') {
 			throw std::runtime_error("weird base in reference genome");
 		}
 	} else {
-		info.corrections.push_back(
-				AlignedCorrection(nucleotideInReference, correctionPosition, ErrorType::MULTIDEL, fromBase));
+		info.corrections.push_back(Correction(correctionPosition, ErrorType::MULTIDEL, fromBase));
 	}
 	info.positionInRead += cigarCount;
 }
@@ -192,35 +185,27 @@ void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const
 			// TODO: Check me.
 			if (baseInGenome == 'A') {
 				if (!info.revComp) {
-					info.corrections.push_back(
-							AlignedCorrection(genomeIdx, correctionPos, ErrorType::SUB_OF_A, baseInRead));
+					info.corrections.push_back(Correction(correctionPos, ErrorType::SUB_OF_A, baseInRead));
 				} else {
-					info.corrections.push_back(
-							AlignedCorrection(genomeIdx, correctionPos, ErrorType::SUB_OF_T, baseInRead));
+					info.corrections.push_back(Correction(correctionPos, ErrorType::SUB_OF_T, baseInRead));
 				}
 			} else if (baseInGenome == 'C') {
 				if (!info.revComp) {
-					info.corrections.push_back(
-							AlignedCorrection(genomeIdx, correctionPos, ErrorType::SUB_OF_C, baseInRead));
+					info.corrections.push_back(Correction(correctionPos, ErrorType::SUB_OF_C, baseInRead));
 				} else {
-					info.corrections.push_back(
-							AlignedCorrection(genomeIdx, correctionPos, ErrorType::SUB_OF_G, baseInRead));
+					info.corrections.push_back(Correction(correctionPos, ErrorType::SUB_OF_G, baseInRead));
 				}
 			} else if (baseInGenome == 'G') {
 				if (!info.revComp) {
-					info.corrections.push_back(
-							AlignedCorrection(genomeIdx, correctionPos, ErrorType::SUB_OF_G, baseInRead));
+					info.corrections.push_back(Correction(correctionPos, ErrorType::SUB_OF_G, baseInRead));
 				} else {
-					info.corrections.push_back(
-							AlignedCorrection(genomeIdx, correctionPos, ErrorType::SUB_OF_C, baseInRead));
+					info.corrections.push_back(Correction(correctionPos, ErrorType::SUB_OF_C, baseInRead));
 				}
 			} else if (baseInGenome == 'T') {
 				if (!info.revComp) {
-					info.corrections.push_back(
-							AlignedCorrection(genomeIdx, correctionPos, ErrorType::SUB_OF_T, baseInRead));
+					info.corrections.push_back(Correction(correctionPos, ErrorType::SUB_OF_T, baseInRead));
 				} else {
-					info.corrections.push_back(
-							AlignedCorrection(genomeIdx, correctionPos, ErrorType::SUB_OF_A, baseInRead));
+					info.corrections.push_back(Correction(correctionPos, ErrorType::SUB_OF_A, baseInRead));
 				}
 			} else if (baseInGenome == 'N') {
 				throw std::runtime_error("base in genome is N");
@@ -232,7 +217,7 @@ void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const
 	rwa.endPos = genomeIdx - 1;
 }
 
-std::vector<AlignedCorrection> extractErrors(ReadWithAlignments& rwa, const std::string &genome) {
+std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string &genome) {
 	if (hasFlagUnmapped(rwa.records[0])) {
 		throw std::runtime_error("The read is unmapped");
 	}
@@ -284,19 +269,47 @@ std::vector<AlignedCorrection> extractErrors(ReadWithAlignments& rwa, const std:
 	return info.corrections;
 }
 
-EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
-		const std::string& genomeFilepath) {
-	throw std::runtime_error("not implemented yet");
+template<typename T>
+std::vector<std::vector<T> > createMatrix(size_t nrows, size_t ncols) {
+	std::vector<std::vector<T> > res;
+	res.resize(nrows);
+	for (size_t i = 0; i < nrows; ++i) {
+		res[i].resize(ncols);
+	}
+	return res;
 }
 
-std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, const std::string& referenceGenome) {
-	throw std::runtime_error("not implemented yet");
+std::vector<std::vector<int> > fillDPMatrix(const std::string& s1, const std::string& s2) {
+	// create a DP table
+	size_t nrows = s1.size() + 1;
+	size_t ncols = s2.size() + 1;
+	std::vector<std::vector<int> > matrix = createMatrix<int>(nrows, ncols);
+	// initialize it
+	for (size_t i = 0; i < nrows; ++i) {
+		matrix[i][0] = i;
+	}
+	for (size_t j = 0; j < ncols; ++j) {
+		matrix[0][j] = j;
+	}
+	// fill it
+	for (size_t i = 1; i < nrows; ++i) {
+		for (size_t j = 1; j < ncols; ++j) {
+			int penalty = (s1[i] == s2[j]) ? 0 : 1;
+			matrix[i][j] = std::min(matrix[i - 1][j - 1] + penalty,
+					std::min(matrix[i - 1][j] + 1, matrix[i][j - 1] + 1));
+		}
+	}
+	return matrix;
 }
 
-std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, const std::string& referenceGenome,
-		size_t beginPos) {
-	throw std::runtime_error("not implemented yet");
-}
+/*
+ std::vector<AlignedCorrection> extractErrors(const std::string& originalRead, const std::string& correctedRead) {
+ std::vector<std::vector<int> > dpMatrix = fillDPMatrix(originalRead, correctedRead);
+
+
+ throw std::runtime_error("not implemented yet");
+ }
+ */
 
 void handleUndetectedError(size_t posTruth, ErrorType typeTruth, EvaluationData& data, std::vector<bool>& fineBases,
 		std::vector<bool>& fineGaps) {
@@ -321,8 +334,8 @@ void handleMisdetectedError(size_t posPredicted, ErrorType typePredicted, Evalua
 }
 
 // requires the detected errors to be sorted by position in read
-void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrection>& errorsTruth,
-		const std::vector<AlignedCorrection>& errorsPredicted, size_t readLength, const std::string& mappedSequence) {
+void updateEvaluationData(EvaluationData& data, const std::vector<Correction>& errorsTruth,
+		const std::vector<Correction>& errorsPredicted, size_t readLength, const std::string& mappedSequence) {
 	size_t truthIdx = 0;
 	size_t predictedIdx = 0;
 
@@ -407,29 +420,40 @@ void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrect
 	}
 }
 
-EvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepath,
+std::vector<Correction> convertToCorrections(const std::vector<std::pair<size_t, ErrorType> >& alignment,
+		const std::string& originalRead) {
+	std::vector<Correction> res;
+
+	for (size_t i = 0; i < alignment.size(); ++i) {
+		res.push_back(Correction(alignment[i].first, alignment[i].second, originalRead[alignment[i].first]));
+	}
+
+	return res;
+}
+
+EvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFilepath,
 		const std::string& correctedReadsFilepath, const std::string& genomeFilepath) {
 	EvaluationData data;
 	std::string genome = io::readReferenceGenome(genomeFilepath);
-	BAMIterator it(alignmentFilepath);
+	BAMIterator it(alignedReadsFilepath);
 	std::ifstream infile(correctedReadsFilepath);
 
 	io::ReadInput input;
 	input.openFile(correctedReadsFilepath);
 
 	while (it.hasReadsLeft() && input.hasNext()) {
-		io::Read read = input.readNext(true, true, true);
+		io::Read correctedRead = input.readNext(true, true, true);
 		ReadWithAlignments rwa = it.next();
 		while (hasFlagUnmapped(rwa.records[0])) {
 			rwa = it.next();
-			read = input.readNext(true, true, true);
+			correctedRead = input.readNext(true, true, true);
 		}
-		if (read.name != rwa.name) {
+		if (correctedRead.name != rwa.name) {
 			throw std::runtime_error("Something went wrong while evaluating the reads. Are they really sorted?");
 		}
-		std::vector<AlignedCorrection> errorsTruth = extractErrors(rwa, genomeFilepath);
-		std::vector<AlignedCorrection> errorsPredicted = extractErrors(read.seq, genome, rwa.beginPos);
-		updateEvaluationData(data, errorsTruth, errorsPredicted, read.seq.size(), rwa.seq);
+		std::vector<Correction> errorsTruth = extractErrors(rwa, genomeFilepath);
+		std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
+		updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
 	}
 	return data;
 }

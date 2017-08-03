@@ -40,22 +40,22 @@ struct HandlingInfo {
 	bool revComp;
 	unsigned beginPos;
 	unsigned readLength;
-	std::vector<AlignedCorrection> corrections;
+	std::vector<Correction> corrections;
 };
 
-std::vector<AlignedCorrection> extractErrors(ReadWithAlignments& rwa, const std::string &referenceGenome);
-std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, const std::string& referenceGenome);
-std::vector<AlignedCorrection> extractErrors(const std::string& correctedRead, const std::string& referenceGenome,
+inline std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string &referenceGenome);
+inline std::vector<Correction> extractErrors(const std::string& correctedRead, const std::string& referenceGenome);
+inline std::vector<Correction> extractErrors(const std::string& correctedRead, const std::string& referenceGenome,
 		size_t beginPos);
 
-void updateEvaluationData(EvaluationData& data, const std::vector<AlignedCorrection>& errorsTruth,
-		const std::vector<AlignedCorrection>& errorsPredicted, size_t readLength);
+inline void updateEvaluationData(EvaluationData& data, const std::vector<Correction>& errorsTruth,
+		const std::vector<Correction>& errorsPredicted, size_t readLength);
 
 // Compare the corrected reads with the aligned original reads
-EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
-		const std::string& genomeFilepath);
+/*EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
+		const std::string& genomeFilepath);*/
 
-EvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepath,
+inline EvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepath,
 		const std::string& correctedReadsFilepath, const std::string& genomeFilepath);
 
 } // end of namespace seq_correct::eval
