@@ -31,7 +31,7 @@ namespace correction {
 
 using namespace classification;
 
-size_t findSmallestNonrepetitive(const external::ConstStringPtr& str, size_t pos, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm) {
+size_t findSmallestNonrepetitive(const external::ConstStringPtr& str, size_t pos, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm) {
 	KmerType type = KmerType::REPEAT;
 	for (size_t i = 1; i < str.size() - pos; i+=2) {
 		type = classifyKmer(str.substr(pos, i), kmerCounter, pusm);
@@ -42,7 +42,7 @@ size_t findSmallestNonrepetitive(const external::ConstStringPtr& str, size_t pos
 	return std::numeric_limits<size_t>::max();
 }
 
-Read correctRead_kmer(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+Read correctRead_kmer(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		bool correctSingleIndels, bool correctMultidels) {
 	/*
 	 * TODO:
@@ -71,11 +71,11 @@ Read correctRead_kmer(const io::Read& read, Matcher& kmerCounter, PerfectUniform
 
 	throw std::runtime_error("not implemented yet");
 }
-Read correctRead_suffix_tree(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+Read correctRead_suffix_tree(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		bool correctSingleIndels, bool correctMultidels) {
 	throw std::runtime_error("not implemented yet");
 }
-Read correctRead_msa(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+Read correctRead_msa(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		bool correctSingleIndels, bool correctMultidels) {
 	throw std::runtime_error("not implemented yet");
 }

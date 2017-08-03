@@ -32,7 +32,6 @@
 
 #include "../io/sequence_io.hpp"
 #include "../external/const_string_ptr.hpp"
-#include "matcher.hpp"
 
 namespace seq_correct {
 namespace counting {
@@ -40,26 +39,16 @@ namespace counting {
 using namespace sdsl;
 typedef csa_wt<wt_huff<bit_vector, rank_support_v5<>, select_support_scan<>, select_support_scan<0>>, 1 << 20, 1 << 20> FMIndex;
 
-class FMIndexMatcher: public Matcher {
+class FMIndexMatcher {
 public:
 	FMIndexMatcher(const std::string& filename);
-	virtual size_t countKmer(const std::string &kmer) override;
-	virtual size_t countKmer(const external::ConstStringPtr& kmerPtr) override;
-	virtual size_t countKmerNoRC(const std::string &kmer) override;
-	virtual size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr) override;
+	size_t countKmer(const std::string &kmer);
+	size_t countKmer(const external::ConstStringPtr& kmerPtr);
+	size_t countKmerNoRC(const std::string &kmer);
+	size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr);
 private:
 	FMIndex fmIndex;
 };
-
-/*
-FMIndexMatcher buildIndex(const std::string& text);
-FMIndexMatcher buildIndex(const std::vector<std::string>& filepaths);
-FMIndexMatcher buildIndex(const io::Read& read);
-FMIndexMatcher buildIndex(const std::vector<io::Read>& reads);
-
-FMIndexMatcher loadIndex(const std::string& filepath);
-bool storeIndex(const std::string& filepath, const FMIndexMatcher& index);
-*/
 
 } // end of namespace seq_correct::counting
 } // end of namespace seq_correct

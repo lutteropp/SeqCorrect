@@ -27,7 +27,7 @@
 
 #include "../util/util.hpp"
 #include "../io/sequence_io.hpp"
-#include "../counting/matcher.hpp"
+#include "../counting/fm_count.hpp"
 #include "../pusm/pusm.hpp"
 
 namespace seq_correct {
@@ -38,15 +38,15 @@ using namespace counting;
 using namespace pusm;
 
 enum class CorrectionAlgorithm {
-	KMER //, SUFFIX_TREE, MSA
+	SIMPLE_KMER, ADAPTIVE_KMER, PARTIAL_MSA //, SUFFIX_TREE, FULL_MSA
 };
 
-void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm);
+void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm);
 
-Read correctRead_kmer(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true,
+Read correctRead_kmer(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true,
 		bool correctMultidels = false);
-Read correctRead_suffix_tree(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true, bool correctMultidels = false);
-Read correctRead_msa(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true, bool correctMultidels = false);
+Read correctRead_suffix_tree(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true, bool correctMultidels = false);
+Read correctRead_msa(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true, bool correctMultidels = false);
 
 } // end of namespace seq_correct::correction
 } // end of namespace seq_correct

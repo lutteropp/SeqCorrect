@@ -29,7 +29,8 @@ void createReadsOnly(const std::string& pathToOriginalReads) {
 	reader.openFile(pathToOriginalReads);
 	std::ofstream writer(pathToOriginalReads + ".readsOnly.txt");
 	while (reader.hasNext()) {
-		writer << reader.readNext(true, false, false).seq << "\n";
+		std::string seq = reader.readNext(true, false, false).seq;
+		writer << seq << "$" << util::reverseComplementString(seq) << "$"; // use '$' as a delimiter
 	}
 	writer.close();
 }

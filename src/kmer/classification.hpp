@@ -24,7 +24,7 @@
 #pragma once
 
 #include "../pusm/pusm.hpp"
-#include "../counting/matcher.hpp"
+#include "../counting/fm_count.hpp"
 namespace seq_correct {
 namespace classification {
 
@@ -49,7 +49,7 @@ namespace classification {
 	}
 
 	template <typename T>
-	inline KmerType classifyKmer(const T& kmer, counting::Matcher& kmerCounter,
+	inline KmerType classifyKmer(const T& kmer, counting::FMIndexMatcher& kmerCounter,
 			pusm::PerfectUniformSequencingModel& pusm) {
 		if (kmer.empty()) {
 			throw std::runtime_error("The kmer is empty");

@@ -26,7 +26,7 @@
 #include <vector>
 #include "../pusm/pusm.hpp"
 #include "../io/sequence_io.hpp"
-#include "../counting/matcher.hpp"
+#include "../counting/fm_count.hpp"
 
 namespace seq_correct {
 namespace coverage {
@@ -46,9 +46,9 @@ class CoverageBiasUnitSingle {
 public:
 	CoverageBiasUnitSingle() : gcStep(0) {};
 	// preprocessing without a reference genome
-	void preprocess(size_t k, const std::string &filepath, counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel &pusm);
+	void preprocess(size_t k, const std::string &filepath, counting::FMIndexMatcher& readsIndex, pusm::PerfectUniformSequencingModel &pusm);
 	// preprocessing with a reference genome
-	void preprocess(size_t k, const std::string& genome, counting::Matcher& readsIndex, counting::Matcher& genomeIndex);
+	void preprocess(size_t k, const std::string& genome, counting::FMIndexMatcher& readsIndex, counting::FMIndexMatcher& genomeIndex);
 	// using linear interpolation to compute coverage bias factor
 	double computeCoverageBias(const std::string &kmer);
 	double computeCoverageBias(double gc);
@@ -65,8 +65,8 @@ class CoverageBiasUnitMulti {
 public:
 	CoverageBiasUnitMulti();
 	// using linear interpolation to compute coverage bias factor
-	double computeCoverageBias(const std::string &kmer, const std::string& filepath, counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel& pusm);
-	double computeCoverageBias(const std::string &kmer, const std::string& genome, counting::Matcher& readsIndex, counting::Matcher& genomeIndex);
+	double computeCoverageBias(const std::string &kmer, const std::string& filepath, counting::FMIndexMatcher& readsIndex, pusm::PerfectUniformSequencingModel& pusm);
+	double computeCoverageBias(const std::string &kmer, const std::string& genome, counting::FMIndexMatcher& readsIndex, counting::FMIndexMatcher& genomeIndex);
 	void printMedianCoverageBiases();
 private:
 	std::unordered_map<size_t, CoverageBiasUnitSingle> biasUnits; //TODO: maybe change into an std::vector
