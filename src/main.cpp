@@ -53,9 +53,7 @@ void cmd_demo(const std::string& outputPath) {
 
 	// count the k-mer "ACGGT" in all the reads
 	counting::FMIndexMatcher matcher(dataset.getReadFilepath());
-	size_t count = matcher.countKmerNoRC("ACGGT");
-	std::cout << "The kmer 'ACGGT' occurs " << count << " times in the read dataset\n";
-	count = matcher.countKmer("ACGGT");
+	size_t count = matcher.countKmer("ACGGT");
 	std::cout << "The kmer 'ACGGT' or its reverse-complement occurs " << count << " times in the read dataset\n";
 
 	// compute the coverage biases

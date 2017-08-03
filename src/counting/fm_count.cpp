@@ -31,10 +31,6 @@ namespace seq_correct {
 namespace counting {
 
 size_t FMIndexMatcher::countKmer(const std::string& kmer) {
-	return countKmerNoRC(kmer) + countKmerNoRC(util::reverseComplementString(kmer));
-}
-
-size_t FMIndexMatcher::countKmerNoRC(const std::string& kmer) {
 	return sdsl::count(fmIndex, kmer.begin(), kmer.end());
 }
 
@@ -64,7 +60,7 @@ FMIndexMatcherMulti::FMIndexMatcherMulti(const std::string& filename) :
 		if (*it == '$') {
 			actId++;
 		}
-		documentID.push_back(actId);
+		documentID.push_back(actId / 2); // divided by 2 because the reverse-complement it put afterwards
 		++it;
 	}
 }

@@ -42,7 +42,6 @@ class FMIndexMatcher {
 public:
 	FMIndexMatcher(const std::string& filename);
 	size_t countKmer(const std::string &kmer);
-	size_t countKmerNoRC(const std::string &kmer);
 protected:
 	FMIndex fmIndex;
 };
