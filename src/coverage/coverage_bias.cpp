@@ -254,7 +254,7 @@ std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& 
  * @param pusm A structure for computing the expected count of k-mers in the read dataset, in an idealized
  * sequencing setting
  */
-void CoverageBiasUnit::preprocess(size_t k, const std::string &filepath, counting::Matcher& readsIndex,
+void CoverageBiasUnitSingle::preprocess(size_t k, const std::string &filepath, counting::Matcher& readsIndex,
 		pusm::PerfectUniformSequencingModel& pusm) {
 	gcStep = 1 / (double) k;
 	medianCoverageBiases = preprocessWithoutGenome(k, filepath, readsIndex, pusm);
@@ -267,7 +267,7 @@ void CoverageBiasUnit::preprocess(size_t k, const std::string &filepath, countin
  * @param readsIndex A structure for querying how often the k-mer occurs in the read dataset
  * @param genomeIndex A structure for querying how often the k-mer occurs in the genome
  */
-void CoverageBiasUnit::preprocess(size_t k, const std::string &genome, counting::Matcher& readsIndex,
+void CoverageBiasUnitSingle::preprocess(size_t k, const std::string &genome, counting::Matcher& readsIndex,
 		counting::Matcher& genomeIndex) {
 	gcStep = 1 / (double) k;
 	medianCoverageBiases = preprocessWithGenome(k, genome, readsIndex, genomeIndex);
@@ -277,7 +277,7 @@ void CoverageBiasUnit::preprocess(size_t k, const std::string &genome, counting:
  * Computes the expected coverage bias of a k-mer, based on its GC-content.
  * @param gc The GC-content of the k-mer
  */
-double CoverageBiasUnit::computeCoverageBias(double gc) {
+double CoverageBiasUnitSingle::computeCoverageBias(double gc) {
 	size_t idxMin = std::floor(gc / gcStep);
 	size_t idxMax = idxMin + 1;
 	double gcMin = idxMin * gcStep;
@@ -292,18 +292,55 @@ double CoverageBiasUnit::computeCoverageBias(double gc) {
  * Compute the expected coverage bias of a k-mer.
  * @param kmer The k-mer
  */
-double CoverageBiasUnit::computeCoverageBias(const std::string &kmer) {
+double CoverageBiasUnitSingle::computeCoverageBias(const std::string &kmer) {
 	return computeCoverageBias(util::gcContent(kmer));
 }
 
 /**
  * Print the median coverage bias factors.
  */
-void CoverageBiasUnit::printMedianCoverageBiases() {
+void CoverageBiasUnitSingle::printMedianCoverageBiases() {
 	for (size_t i = 0; i < medianCoverageBiases.size(); ++i) {
 		std::cout << medianCoverageBiases[i].gc << " " << medianCoverageBiases[i].bias << "\n";
 	}
 }
+
+
+
+CoverageBiasUnitMulti::CoverageBiasUnitMulti() {}
+
+double CoverageBiasUnitMulti::computeCoverageBias(const std::string& kmer, const std::string& filepath, counting::Matcher& matcher, pusm::PerfectUniformSequencingModel& pusm) {
+	size_t k = kmer.size();
+	if (biasUnits.find(k) != biasUnits.end()) {
+		return biasUnits[k].computeCoverageBias(kmer);
+	} else {
+		CoverageBiasUnitSingle cbsSingle;
+		biasUnits[k] = cbsSingle;
+		cbsSingle.preprocess(k, filepath, matcher, pusm);
+		return cbsSingle.computeCoverageBias(kmer);
+	}
+}
+
+double CoverageBiasUnitMulti::computeCoverageBias(const std::string &kmer, const std::string& genome, counting::Matcher& readsIndex, counting::Matcher& genomeIndex) {
+	size_t k = kmer.size();
+		if (biasUnits.find(k) != biasUnits.end()) {
+			return biasUnits[k].computeCoverageBias(kmer);
+		} else {
+			CoverageBiasUnitSingle cbsSingle;
+			biasUnits[k] = cbsSingle;
+			cbsSingle.preprocess(k, genome, readsIndex, genomeIndex);
+			return cbsSingle.computeCoverageBias(kmer);
+		}
+}
+
+void CoverageBiasUnitMulti::printMedianCoverageBiases() {
+	for (auto& kv : biasUnits) {
+		std::cout << kv.first << ":\n";
+		kv.second.printMedianCoverageBiases();
+		std::cout << "\n";
+	}
+}
+
 
 } // end of namespace seq_correct::coverage
 } // end of namespace seq_correct

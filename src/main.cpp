@@ -60,7 +60,7 @@ void cmd_demo(const std::string& outputPath) {
 	// compute the coverage biases
 	pusm::PerfectUniformSequencingModel pusm(dataset.getGenomeType(), dataset.getGenomeSize(),
 			dataset.getReadLengths());
-	coverage::CoverageBiasUnit biasUnit;
+	coverage::CoverageBiasUnitSingle biasUnit;
 	biasUnit.preprocess(21, dataset.getReadFilepath(), matcher, pusm);
 	biasUnit.printMedianCoverageBiases();
 }
@@ -71,11 +71,7 @@ void cmd_correct(const std::string& pathToOriginalReads, GenomeType genomeType, 
 	counting::FMIndexMatcher fm(pathToReadsOnly);
 	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
 	pusm::PerfectUniformSequencingModel pusm(genomeType, genomeSize, readLengths);
-	coverage::CoverageBiasUnit biasUnit;
-
-	size_t k = 21; // TODO: Do we really want a fixed, hard-coded k?
-
-	biasUnit.preprocess(k, pathToOriginalReads, fm, pusm);
+	coverage::CoverageBiasUnitMulti biasUnit;
 	// TODO: compute coverage biases
 	// TODO: correct the reads
 	// TODO: print the result

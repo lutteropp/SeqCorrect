@@ -40,11 +40,11 @@ struct CoverageBiasData {
 };
 
 /**
- * Computes the median coverage biases from the dataset, then uses linear interpolation to respond to coverage bias queries.
+ * Computes the median coverage biases from the dataset for a specific k, then uses linear interpolation to respond to coverage bias queries.
  */
-class CoverageBiasUnit {
+class CoverageBiasUnitSingle {
 public:
-	CoverageBiasUnit() : gcStep(0) {};
+	CoverageBiasUnitSingle() : gcStep(0) {};
 	// preprocessing without a reference genome
 	void preprocess(size_t k, const std::string &filepath, counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel &pusm);
 	// preprocessing with a reference genome
@@ -56,6 +56,20 @@ public:
 private:
 	std::vector<CoverageBiasData> medianCoverageBiases;
 	double gcStep;
+};
+
+/**
+ * Computes the median coverage biases from the dataset for multiple k, then uses linear interpolation to respond to coverage bias queries.
+ */
+class CoverageBiasUnitMulti {
+public:
+	CoverageBiasUnitMulti();
+	// using linear interpolation to compute coverage bias factor
+	double computeCoverageBias(const std::string &kmer, const std::string& filepath, counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel& pusm);
+	double computeCoverageBias(const std::string &kmer, const std::string& genome, counting::Matcher& readsIndex, counting::Matcher& genomeIndex);
+	void printMedianCoverageBiases();
+private:
+	std::unordered_map<size_t, CoverageBiasUnitSingle> biasUnits; //TODO: maybe change into an std::vector
 };
 
 } // end of namespace seq_correct::coverage
