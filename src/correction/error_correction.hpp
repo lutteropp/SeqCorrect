@@ -41,12 +41,8 @@ enum class CorrectionAlgorithm {
 	SIMPLE_KMER, ADAPTIVE_KMER, PARTIAL_MSA //, SUFFIX_TREE, FULL_MSA
 };
 
-void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm);
-
-Read correctRead_kmer(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true,
-		bool correctMultidels = false);
-Read correctRead_suffix_tree(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true, bool correctMultidels = false);
-Read correctRead_msa(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm, bool correctSingleIndels = true, bool correctMultidels = false);
+void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, FMIndexMatcher& kmerCounter,
+		PerfectUniformSequencingModel& pusm, const std::string& outputPath);
 
 } // end of namespace seq_correct::correction
 } // end of namespace seq_correct

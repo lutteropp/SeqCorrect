@@ -30,6 +30,14 @@ namespace correction {
 
 using namespace classification;
 
+Read correctRead_kmer(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+		bool correctSingleIndels = true, bool correctMultidels = false);
+Read correctRead_suffix_tree(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+		bool correctSingleIndels = true, bool correctMultidels = false);
+Read correctRead_msa(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+		bool correctSingleIndels = true, bool correctMultidels = false);
+
+
 size_t findSmallestNonrepetitive(const std::string& str, size_t pos, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm) {
 	KmerType type = KmerType::REPEAT;
 	for (size_t i = 1; i < str.size() - pos; i+=2) {
@@ -76,6 +84,11 @@ Read correctRead_suffix_tree(const io::Read& read, FMIndexMatcher& kmerCounter, 
 Read correctRead_msa(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		bool correctSingleIndels, bool correctMultidels) {
 	throw std::runtime_error("not implemented yet");
+}
+
+void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, FMIndexMatcher& kmerCounter,
+		PerfectUniformSequencingModel& pusm, const std::string& outputPath) {
+	//TODO: implement this
 }
 
 } // end of namespace seq_correct::correction

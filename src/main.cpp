@@ -64,16 +64,15 @@ void cmd_demo(const std::string& outputPath) {
 	biasUnit.printMedianCoverageBiases();
 }
 
-void cmd_correct(const std::string& pathToOriginalReads, GenomeType genomeType, const std::string& outputPath, size_t genomeSize) {
+void cmd_correct(const std::string& pathToOriginalReads, GenomeType genomeType, const std::string& outputPath,
+		size_t genomeSize, correction::CorrectionAlgorithm algo) {
 	createReadsOnly(pathToOriginalReads);
 	std::string pathToReadsOnly = pathToOriginalReads + ".readsOnly.txt";
 	counting::FMIndexMatcher fm(pathToReadsOnly);
 	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
 	pusm::PerfectUniformSequencingModel pusm(genomeType, genomeSize, readLengths);
 	coverage::CoverageBiasUnitMulti biasUnit;
-	// TODO: compute coverage biases
-	// TODO: correct the reads
-	// TODO: print the result
+	correction::correctReads(pathToOriginalReads, algo, fm, pusm, outputPath);
 }
 
 void cmd_eval(const std::string& pathToOriginalReads, const std::string& pathToCorrectedReads,
@@ -93,6 +92,8 @@ int main(int argc, char* argv[]) {
 	std::string pathToCorrectedReads;
 	std::string pathToGenome;
 	std::string outputPath;
+	std::string algoName;
+	correction::CorrectionAlgorithm algo = correction::CorrectionAlgorithm::SIMPLE_KMER;
 
 	try {
 		TCLAP::CmdLine cmd("SeqCorrect - an error correction toolkit for next-generation whole-genome sequencing reads",
@@ -120,6 +121,10 @@ int main(int argc, char* argv[]) {
 		cmd.add(evalArg);
 		TCLAP::SwitchArg correctArg("n", "normal", "Error Correction mode", false);
 		cmd.add(correctArg);
+
+		TCLAP::ValueArg<std::string> algoArg("a", "algo", "Error correction algorithm", false, "", "string");
+		cmd.add(algoArg);
+
 		cmd.parse(argc, argv);
 
 		pathToOriginalReads = readsArg.getValue();
@@ -132,6 +137,7 @@ int main(int argc, char* argv[]) {
 		correctMode = correctArg.getValue();
 		evalMode = evalArg.getValue();
 		genomeSize = genomeSizeArg.getValue();
+		algoName = algoArg.getValue(); // TODO: Parse the algo arg
 	} catch (TCLAP::ArgException &e) // catch any exceptions
 	{
 		std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
@@ -185,7 +191,7 @@ int main(int argc, char* argv[]) {
 		} else {
 			genomeType = GenomeType::LINEAR;
 		}
-		cmd_correct(pathToOriginalReads, genomeType, outputPath, genomeSize);
+		cmd_correct(pathToOriginalReads, genomeType, outputPath, genomeSize, algo);
 	} else if (evalMode) {
 		cmd_eval(pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);
 	}
