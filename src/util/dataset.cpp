@@ -23,24 +23,10 @@
 
 #include "dataset.hpp"
 #include "../io/sequence_io.hpp"
+#include "util.hpp"
 
 namespace seq_correct {
 namespace util {
-
-std::unordered_map<size_t, size_t> countReadLengths(const std::string& readFilepath) {
-	std::unordered_map<size_t, size_t> res;
-	io::ReadInput reader;
-	reader.openFile(readFilepath);
-	while (reader.hasNext()) {
-		io::Read read = reader.readNext(true, false, false);
-		if (res.find(read.seq.size()) == res.end()) {
-			res[read.seq.size()] = 1;
-		} else {
-			res[read.seq.size()]++;
-		}
-	}
-	return res;
-}
 
 Dataset::Dataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath,
 		const std::string& readsOnlyFilepath) :

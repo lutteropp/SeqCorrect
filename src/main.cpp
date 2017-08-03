@@ -7,20 +7,38 @@
 
 #include "seq_correct.hpp"
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
 #include <iostream>
 #include <stdexcept>
+#include <fstream>
 #include "external/tclap/CmdLine.h"
 #include "util/genome_type.hpp"
 
 using namespace seq_correct;
 using namespace util;
 
+void createReadsOnly(const std::string& pathToOriginalReads) {
+	// create the readsOnly file if it doesn't exist yet
+	std::ifstream testInput(pathToOriginalReads + ".readsOnly.txt");
+	if (testInput.good()) {
+		testInput.close();
+		return; // file already exists, do nothing.
+	}
+	io::ReadInput reader;
+	reader.openFile(pathToOriginalReads);
+	std::ofstream writer(pathToOriginalReads + ".readsOnly.txt");
+	while (reader.hasNext()) {
+		writer << reader.readNext(true, false, false).seq << "\n";
+	}
+	writer.close();
+}
+
 void cmd_demo(const std::string& outputPath) {
 	// Specify an example Ebola Illumina dataset
 	util::Dataset dataset(util::GenomeType::LINEAR, 18959,
-				"/home/sarah/Documents/Master Thesis Topic Extension/thesis_zipped/SOFTWARE_AND_DATA/data/Simulated Datasets/Ebola/Illumina/ebola_illumina_simulated.fastq",
-				"/home/sarah/Documents/Master Thesis Topic Extension/thesis_zipped/SOFTWARE_AND_DATA/data/Simulated Datasets/Ebola/Illumina/ebola_illumina_simulated.fastq.readsOnly.txt");
+			"/home/sarah/Documents/Master Thesis Topic Extension/thesis_zipped/SOFTWARE_AND_DATA/data/Simulated Datasets/Ebola/Illumina/ebola_illumina_simulated.fastq",
+			"/home/sarah/Documents/Master Thesis Topic Extension/thesis_zipped/SOFTWARE_AND_DATA/data/Simulated Datasets/Ebola/Illumina/ebola_illumina_simulated.fastq.readsOnly.txt");
 
 	// Read the reads and write them
 	/*io::ReadInput reader;
@@ -47,8 +65,20 @@ void cmd_demo(const std::string& outputPath) {
 	biasUnit.printMedianCoverageBiases();
 }
 
-void cmd_correct(const std::string& pathToOriginalReads, GenomeType genomeType, const std::string& outputPath) {
+void cmd_correct(const std::string& pathToOriginalReads, GenomeType genomeType, const std::string& outputPath, size_t genomeSize) {
+	createReadsOnly(pathToOriginalReads);
+	std::string pathToReadsOnly = pathToOriginalReads + ".readsOnly.txt";
+	counting::FMIndexMatcher fm(pathToReadsOnly);
+	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
+	pusm::PerfectUniformSequencingModel pusm(genomeType, genomeSize, readLengths);
+	coverage::CoverageBiasUnit biasUnit;
 
+	size_t k = 21; // TODO: Do we really want a fixed, hard-coded k?
+
+	biasUnit.preprocess(k, pathToOriginalReads, fm, pusm);
+	// TODO: compute coverage biases
+	// TODO: correct the reads
+	// TODO: print the result
 }
 
 void cmd_eval(const std::string& pathToOriginalReads, const std::string& pathToCorrectedReads,
@@ -64,6 +94,7 @@ int main(int argc, char* argv[]) {
 	bool demoMode; // load an example dataset, good for quick testing and code demonstrations
 	bool correctMode;
 	bool evalMode;
+	size_t genomeSize = 0;
 	std::string pathToCorrectedReads;
 	std::string pathToGenome;
 	std::string outputPath;
@@ -80,6 +111,8 @@ int main(int argc, char* argv[]) {
 		TCLAP::ValueArg<std::string> genomeArg("g", "genome", "Path to the reference genome in FASTA format", false, "",
 				"string");
 		cmd.add(genomeArg);
+		TCLAP::ValueArg<size_t> genomeSizeArg("s", "size", "Estimated genome size", false, 0, "unsigned int");
+		cmd.add(genomeSizeArg);
 		TCLAP::ValueArg<std::string> outputArg("o", "output", "Path to the output file", true, "", "string");
 		cmd.add(outputArg);
 		TCLAP::SwitchArg circularArg("c", "circular", "Circular genome", false);
@@ -103,10 +136,19 @@ int main(int argc, char* argv[]) {
 		demoMode = demoArg.getValue();
 		correctMode = correctArg.getValue();
 		evalMode = evalArg.getValue();
+		genomeSize = genomeSizeArg.getValue();
 	} catch (TCLAP::ArgException &e) // catch any exceptions
 	{
 		std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
 		return 1;
+	}
+
+	if (correctMode && (genomeSize == 0)) {
+		throw std::runtime_error("You must specify an estimated genome size > 0!");
+	}
+
+	if (!correctMode && (genomeSize != 0)) {
+		throw std::runtime_error("--size only allowed in --normal mode");
 	}
 
 	if (demoMode + correctMode + evalMode != 1) {
@@ -148,7 +190,7 @@ int main(int argc, char* argv[]) {
 		} else {
 			genomeType = GenomeType::LINEAR;
 		}
-		cmd_correct(pathToOriginalReads, genomeType, outputPath);
+		cmd_correct(pathToOriginalReads, genomeType, outputPath, genomeSize);
 	} else if (evalMode) {
 		cmd_eval(pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);
 	}

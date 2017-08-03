@@ -69,6 +69,21 @@ inline size_t countGC(const T& kmer) {
 	return gcCount;
 }
 
+inline std::unordered_map<size_t, size_t> countReadLengths(const std::string& readFilepath) {
+	std::unordered_map<size_t, size_t> res;
+	io::ReadInput reader;
+	reader.openFile(readFilepath);
+	while (reader.hasNext()) {
+		io::Read read = reader.readNext(true, false, false);
+		if (res.find(read.seq.size()) == res.end()) {
+			res[read.seq.size()] = 1;
+		} else {
+			res[read.seq.size()]++;
+		}
+	}
+	return res;
+}
+
 std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type);
 
 } // end of namespace seq_correct::util
