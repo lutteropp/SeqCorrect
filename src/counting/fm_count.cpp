@@ -22,6 +22,7 @@
  */
 
 #include <stdexcept>
+#include <unordered_set>
 
 #include "fm_count.hpp"
 #include "../util/util.hpp"
@@ -33,16 +34,8 @@ size_t FMIndexMatcher::countKmer(const std::string& kmer) {
 	return countKmerNoRC(kmer) + countKmerNoRC(util::reverseComplementString(kmer));
 }
 
-size_t FMIndexMatcher::countKmer(const external::ConstStringPtr& kmer) {
-	return countKmer(kmer.toString());
-}
-
 size_t FMIndexMatcher::countKmerNoRC(const std::string& kmer) {
 	return sdsl::count(fmIndex, kmer.begin(), kmer.end());
-}
-
-size_t FMIndexMatcher::countKmerNoRC(const external::ConstStringPtr& kmer) {
-	return countKmerNoRC(kmer.toString());
 }
 
 FMIndexMatcher::FMIndexMatcher(const std::string& filename) {
@@ -62,29 +55,37 @@ FMIndexMatcher::FMIndexMatcher(const std::string& filename) {
 	}
 }
 
-/*FMIndexMatcher buildIndex(const std::string &text) {
- throw std::runtime_error("not implemented yet");
- }
+FMIndexMatcherMulti::FMIndexMatcherMulti(const std::string& filename) :
+		FMIndexMatcher(filename) {
+	std::ifstream infile(filename);
+	std::istreambuf_iterator<char> it(infile);
+	size_t actId = 0;
+	while (it != std::istreambuf_iterator<char>()) {
+		if (*it == '$') {
+			actId++;
+		}
+		documentID.push_back(actId);
+		++it;
+	}
+}
 
- FMIndexMatcher buildIndex(const std::vector<std::string> &filepaths) {
- throw std::runtime_error("not implemented yet");
- }
-
- FMIndexMatcher buildIndex(const io::Read &read) {
- throw std::runtime_error("not implemented yet");
- }
-
- FMIndexMatcher buildIndex(const std::vector<io::Read> &reads) {
- throw std::runtime_error("not implemented yet");
- }
-
- FMIndexMatcher loadIndex(const std::string &filepath) {
- throw std::runtime_error("not implemented yet");
- }
-
- bool storeIndex(const std::string &filepath, const FMIndexMatcher &index) {
- throw std::runtime_error("not implemented yet");
- }*/
+std::vector<size_t> FMIndexMatcherMulti::countKmerMultiPositions(const std::string& kmer,
+		bool returnEmptyIfDoubleOccs) {
+	auto locations = sdsl::locate(fmIndex, kmer.begin(), kmer.end());
+	std::sort(locations.begin(), locations.end());
+	std::vector<size_t> res;
+	std::unordered_set<size_t> documents;
+	for (size_t i = 0; i < locations.size(); ++i) {
+		if (returnEmptyIfDoubleOccs && documents.find(documentID[locations[i]]) != documents.end()) {
+			return std::vector<size_t>();
+		}
+		if (returnEmptyIfDoubleOccs) {
+			documents.insert(documentID[locations[i]]);
+		}
+		res.push_back(documentID[locations[i]]);
+	}
+	return res;
+}
 
 } // end of namespace seq_correct::counting
 } // end of namespace seq_correct

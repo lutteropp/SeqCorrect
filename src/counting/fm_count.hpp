@@ -31,7 +31,6 @@
 #include <sdsl/suffix_arrays.hpp>
 
 #include "../io/sequence_io.hpp"
-#include "../external/const_string_ptr.hpp"
 
 namespace seq_correct {
 namespace counting {
@@ -43,11 +42,17 @@ class FMIndexMatcher {
 public:
 	FMIndexMatcher(const std::string& filename);
 	size_t countKmer(const std::string &kmer);
-	size_t countKmer(const external::ConstStringPtr& kmerPtr);
 	size_t countKmerNoRC(const std::string &kmer);
-	size_t countKmerNoRC(const external::ConstStringPtr& kmerPtr);
-private:
+protected:
 	FMIndex fmIndex;
+};
+
+class FMIndexMatcherMulti: public FMIndexMatcher {
+public:
+	FMIndexMatcherMulti(const std::string& filename);
+	std::vector<size_t> countKmerMultiPositions(const std::string &kmer, bool returnEmptyIfDoubleOccs);
+private:
+	std::vector<size_t> documentID; // TODO: there should be smth better with bit vectors and rank
 };
 
 } // end of namespace seq_correct::counting

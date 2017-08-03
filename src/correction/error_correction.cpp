@@ -23,7 +23,6 @@
 
 #include <stdexcept>
 #include "error_correction.hpp"
-#include "../external/const_string_ptr.hpp"
 #include "../kmer/classification.hpp"
 
 namespace seq_correct {
@@ -31,7 +30,7 @@ namespace correction {
 
 using namespace classification;
 
-size_t findSmallestNonrepetitive(const external::ConstStringPtr& str, size_t pos, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm) {
+size_t findSmallestNonrepetitive(const std::string& str, size_t pos, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm) {
 	KmerType type = KmerType::REPEAT;
 	for (size_t i = 1; i < str.size() - pos; i+=2) {
 		type = classifyKmer(str.substr(pos, i), kmerCounter, pusm);
@@ -54,15 +53,14 @@ Read correctRead_kmer(const io::Read& read, FMIndexMatcher& kmerCounter, Perfect
 	 */
 
 	io::Read correctedRead(read);
-	external::ConstStringPtr str(&correctedRead.seq);
 	size_t pos = 0;
 	while (pos < correctedRead.seq.size()) { // loop over starting position
 		//find smallest nonrepetitive k-mer size
-		size_t k = findSmallestNonrepetitive(str, pos, kmerCounter, pusm);
+		size_t k = findSmallestNonrepetitive(correctedRead.seq, pos, kmerCounter, pusm);
 		if (k == std::numeric_limits<size_t>::max()) {
 			break;
 		}
-		KmerType type = classifyKmer(str.substr(pos, k), kmerCounter, pusm);
+		KmerType type = classifyKmer(correctedRead.seq.substr(pos, k), kmerCounter, pusm);
 		if (type == KmerType::UNIQUE)
 
 		pos++;

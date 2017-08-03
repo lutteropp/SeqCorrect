@@ -25,7 +25,6 @@
 
 #include <unordered_map>
 
-#include "../external/const_string_ptr.hpp"
 #include "../io/sequence_io.hpp"
 #include "../util/error_type.hpp"
 

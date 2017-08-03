@@ -27,7 +27,6 @@
 #include <unordered_set>
 #include <iostream>
 #include "coverage_bias.hpp"
-#include "../external/const_string_ptr.hpp"
 #include "../external/bloom_filter.hpp"
 #include "../util/util.hpp"
 #include "../io/sequence_io.hpp"
@@ -111,10 +110,10 @@ std::vector<CoverageBiasData> computeMedianBiases(size_t k, std::vector<std::vec
  * @param readsIndex A structure for querying how often the k-mer occurs in the read dataset
  * @param genomeIndex A structure for querying how often the k-mer occurs in the genome
  */
-double inferBias(const external::ConstStringPtr& kmerPtr, counting::FMIndexMatcher& readsIndex,
+double inferBias(const std::string& kmer, counting::FMIndexMatcher& readsIndex,
 		counting::FMIndexMatcher& genomeIndex) {
-	size_t countObserved = readsIndex.countKmer(kmerPtr);
-	size_t countGenome = genomeIndex.countKmer(kmerPtr);
+	size_t countObserved = readsIndex.countKmer(kmer);
+	size_t countGenome = genomeIndex.countKmer(kmer);
 	return countObserved / (double) countGenome;
 }
 
@@ -127,9 +126,9 @@ double inferBias(const external::ConstStringPtr& kmerPtr, counting::FMIndexMatch
  * @param pusm A structure for computing the expected count of k-mers in the read dataset, in an idealized
  * sequencing setting
  */
-double inferBias(size_t k, const external::ConstStringPtr& kmerPtr, counting::FMIndexMatcher& readsIndex,
+double inferBias(size_t k, const std::string& kmer, counting::FMIndexMatcher& readsIndex,
 		pusm::PerfectUniformSequencingModel &pusm) {
-	size_t countObserved = readsIndex.countKmer(kmerPtr);
+	size_t countObserved = readsIndex.countKmer(kmer);
 	double countExpected = pusm.expectedCount(k).expectation;
 	if (countObserved >= countExpected * 0.2) {
 		// if this condition is left out, the coverage biases will be very low due to erroneous k-mers
@@ -170,41 +169,40 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 
 	while (reader.hasNext()) {
 		io::Read seqRead = reader.readNext(true, false, false);
-		external::ConstStringPtr readPtr(&seqRead.seq);
-		external::ConstStringPtr kmerPtr = readPtr.substr(0, k);
-		size_t gcCount = util::countGC(kmerPtr);
-		double bias = inferBias(k, kmerPtr, readsIndex, pusm);
+		std::string kmer = seqRead.seq.substr(0, k);
+		size_t gcCount = util::countGC(kmer);
+		double bias = inferBias(k, kmer, readsIndex, pusm);
 		if (bias > 0) {
 			biases[gcCount].push_back(bias);
 		}
 #ifdef USE_BLOOM_FILTER
-		filter.insert(readPtr.dataU(0), k);
+		filter.insert(&seqRead.seq[0], k);
 #else
 		visited.insert(kmerPtr.toString());
 #endif
 
-		for (size_t i = 1; i + k < readPtr.size(); ++i) {
-			if (kmerPtr[0] == 'G' || kmerPtr[0] == 'C') {
+		for (size_t i = 1; i + k < seqRead.seq.size(); ++i) {
+			if (kmer[0] == 'G' || kmer[0] == 'C') {
 				gcCount--;
 			}
-			kmerPtr = readPtr.substr(i, k);
-			if (kmerPtr[k - 1] == 'G' || kmerPtr[k - 1] == 'C') {
+			kmer = seqRead.seq.substr(i, k);
+			if (kmer[k - 1] == 'G' || kmer[k - 1] == 'C') {
 				gcCount++;
 			}
 
 #ifdef USE_BLOOM_FILTER
-			if (!filter.contains(readPtr.dataU(i), k)) {
+			if (!filter.contains(&seqRead.seq[i], k)) {
 #else
 				if (visited.find(kmerPtr.toString()) == visited.end()) {
 #endif
-				double bias = inferBias(k, kmerPtr, readsIndex, pusm);
+				double bias = inferBias(k, kmer, readsIndex, pusm);
 				if (bias > 0) {
 					biases[gcCount].push_back(bias);
 				}
 #ifdef USE_BLOOM_FILTER
-				filter.insert(readPtr.dataU(i), k);
+				filter.insert(&seqRead.seq[i], k);
 #else
-				visited.insert(kmerPtr.toString());
+				visited.insert(kmer);
 #endif
 			}
 		}
@@ -223,22 +221,21 @@ std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& 
 		counting::FMIndexMatcher& genomeIndex) {
 	std::vector<std::vector<double> > biases;
 	biases.resize(k + 1);
-	external::ConstStringPtr genomePtr(&genome);
-	external::ConstStringPtr kmerPtr = genomePtr.substr(0, k);
-	size_t gcCount = util::countGC(kmerPtr);
-	double bias = inferBias(kmerPtr, readsIndex, genomeIndex);
+	std::string kmer = genome.substr(0, k);
+	size_t gcCount = util::countGC(kmer);
+	double bias = inferBias(kmer, readsIndex, genomeIndex);
 	if (bias > 0) {
 		biases[gcCount].push_back(bias);
 	}
 	for (size_t i = 1; i + k < genome.size(); ++i) {
-		if (kmerPtr[0] == 'G' || kmerPtr[0] == 'C') {
+		if (kmer[0] == 'G' || kmer[0] == 'C') {
 			gcCount--;
 		}
-		kmerPtr = genomePtr.substr(i, k);
-		if (kmerPtr[k - 1] == 'G' || kmerPtr[k - 1] == 'C') {
+		kmer = genome.substr(i, k);
+		if (kmer[k - 1] == 'G' || kmer[k - 1] == 'C') {
 			gcCount++;
 		}
-		double bias = inferBias(kmerPtr, readsIndex, genomeIndex);
+		double bias = inferBias(kmer, readsIndex, genomeIndex);
 		if (bias > 0) {
 			biases[gcCount].push_back(bias);
 		}

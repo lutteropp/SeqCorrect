@@ -46,5 +46,4 @@
 #include "io/bam_iterator.hpp"
 #include "io/read_with_alignments.hpp"
 #include "external/bloom_filter.hpp"
-#include "external/const_string_ptr.hpp"
 #include "kmer/classification.hpp"
