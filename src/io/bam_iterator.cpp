@@ -38,7 +38,7 @@ void BAMIterator::countNumberOfReads(const std::string &alignmentFilename) {
 	numReadsTotal = 0;
 	numReadsTotalMapped = 0;
 	seqan::BamFileIn bamFileInReadCounting;
-	if (!open(bamFileInReadCounting, alignmentFilename.c_str())) {
+	if (!seqan::open(bamFileInReadCounting, alignmentFilename.c_str())) {
 		throw std::runtime_error("ERROR: Could not open " + alignmentFilename);
 	}
 	// read and discard header
@@ -90,7 +90,7 @@ BAMIterator::BAMIterator(const std::string &alignmentFilename) {
 	readsLeft = numReadsTotal;
 
 	// Open input file, BamFileIn can read SAM and BAM files.
-	if (!open(bamFileIn, alignmentFilename.c_str())) {
+	if (!seqan::open(bamFileIn, alignmentFilename.c_str())) {
 		throw std::runtime_error("ERROR: Could not open " + alignmentFilename);
 	}
 
