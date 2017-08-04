@@ -100,21 +100,25 @@ void cmd_eval(const std::string& pathToOriginalReads, const std::string& pathToC
 	if (!alignmentFile.good()) {
 		std::cout << "Alignment file " << alignmentPath << " not found. Building alignment now...\n";
 		std::string indexGenomeCall = "bwa index " + pathToGenome;
+		std::cout << "Calling: " << indexGenomeCall << "\n";
 		int status = std::system(indexGenomeCall.c_str());
 		if (!WIFEXITED(status)) {
 			throw std::runtime_error("Something went wrong while indexing genome!");
 		}
 		std::string alignReadsCall = "bwa mem " + pathToGenome + " " + pathToOriginalReads + " > myreads_aln.sam";
+		std::cout << "Calling: " << alignReadsCall << "\n";
 		status = std::system(alignReadsCall.c_str());
 		if (!WIFEXITED(status)) {
 			throw std::runtime_error("Something went wrong while aligning reads!");
 		}
 		std::string removeUnmappedAndCompressCall = "samtools view -bS -F 4 myreads_aln.sam > myreads_aln.bam";
+		std::cout << "Calling: " << removeUnmappedAndCompressCall << "\n";
 		status = std::system(removeUnmappedAndCompressCall.c_str());
 		if (!WIFEXITED(status)) {
 			throw std::runtime_error("Something went wrong while removing unmapped reads and compressing the file!");
 		}
-		std::string sortCall = "samtools sort -n -o " + alignmentPath + "myreads_aln.bam";
+		std::string sortCall = "samtools sort -n -o " + alignmentPath + " myreads_aln.bam";
+		std::cout << "Calling: " << sortCall << "\n";
 		status = std::system(sortCall.c_str());
 		if (!WIFEXITED(status)) {
 			throw std::runtime_error("Something went wrong while sorting the file!");
