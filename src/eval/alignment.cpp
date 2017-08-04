@@ -126,7 +126,7 @@ std::vector<std::pair<size_t, util::ErrorType> > align(const std::string& origin
 		for (size_t j = 1; j < m + 1; ++j) {
 			// check matrix M
 			size_t mismatch = (originalRead[i - 1] != correctedRead[j - 1]) ? mis : 0;
-			size_t min = min3(M[coord(i - 1, j - 1)] + mismatch, M[coord(i, j - 1)] + ins, M[coord(i - 1, j) + del]);
+			size_t min = min3(M[coord(i - 1, j - 1)] + mismatch, M[coord(i, j - 1)] + ins, M[coord(i - 1, j)] + del);
 
 			if (M[coord(i - 1, j - 1)] + mismatch == min) {
 				info[coord(i, j)][0] = 1;
@@ -137,6 +137,12 @@ std::vector<std::pair<size_t, util::ErrorType> > align(const std::string& origin
 			if (M[coord(i - 1, j)] + del == min) {
 				info[coord(i, j)][2] = 1;
 			}
+
+			if (info[coord(i,j)] == 0) {
+				std::cout << "min: " << min << "\n";
+				throw std::runtime_error("info[coord(" + std::to_string(i) + "," + std::to_string(j) + ")] = 0");
+			}
+
 			M[coord(i, j)] = min;
 		}
 	}
