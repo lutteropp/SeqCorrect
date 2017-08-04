@@ -75,6 +75,8 @@ void backtrack(size_t i, size_t j, const std::string& originalRead, const std::s
 		res.push_back(std::make_pair(i, util::ErrorType::INSERTION));
 		backtrack(i-1, j, originalRead, correctedRead, M, info, res);
 	} else {
+		std::cout << "i: " << i << "\n";
+		std::cout << "j: " << j << "\n";
 		throw std::runtime_error("This should not happen.");
 	}
 
@@ -123,8 +125,9 @@ std::vector<std::pair<size_t, util::ErrorType> > align(const std::string& origin
 	for (size_t i = 1; i < n + 1; ++i) {
 		for (size_t j = 1; j < m + 1; ++j) {
 			// check matrix M
-			size_t mismatch = (originalRead[i - 1] != correctedRead[i - 1]) ? mis : 0;
+			size_t mismatch = (originalRead[i - 1] != correctedRead[j - 1]) ? mis : 0;
 			size_t min = min3(M[coord(i - 1, j - 1)] + mismatch, M[coord(i, j - 1)] + ins, M[coord(i - 1, j) + del]);
+
 			if (M[coord(i - 1, j - 1)] + mismatch == min) {
 				info[coord(i, j)][0] = 1;
 			}
