@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
 		TCLAP::CmdLine cmd("SeqCorrect - an error correction toolkit for next-generation whole-genome sequencing reads",
 				' ', "0.1");
 		TCLAP::ValueArg<std::string> readsArg("r", "reads", "Path to the sequencing reads in FASTA or FASTQ format",
-				true, "", "string");
+				false, "", "string");
 		cmd.add(readsArg);
 		TCLAP::ValueArg<std::string> inputArg("i", "input", "Path to the corrected reads in FASTA or FASTQ format",
 				false, "", "string");
