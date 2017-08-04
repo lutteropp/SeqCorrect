@@ -434,7 +434,7 @@ std::vector<Correction> convertToCorrections(const std::vector<std::pair<size_t,
 EvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFilepath,
 		const std::string& correctedReadsFilepath, const std::string& genomeFilepath) {
 	EvaluationData data;
-	std::string genome = io::readReferenceGenome(genomeFilepath);
+	//std::string genome = io::readReferenceGenome(genomeFilepath);
 	BAMIterator it(alignedReadsFilepath);
 	std::ifstream infile(correctedReadsFilepath);
 

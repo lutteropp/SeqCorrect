@@ -80,6 +80,36 @@ typedef Iterator<ErrorType, ErrorType::INSERTION, ErrorType::MULTIDEL> ErrorOnly
 typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::SUB_OF_T> BaseTypeIterator;
 typedef Iterator<ErrorType, ErrorType::DEL_OF_A, ErrorType::NODEL> GapTypeIterator;
 
+inline std::string errorTypeToString(ErrorType type) {
+	if (type == ErrorType::CORRECT) {
+		return "CORRECT";
+	} else if (type == ErrorType::INSERTION) {
+		return "INSERTION";
+	} else if (type == ErrorType::SUB_OF_A) {
+		return "SUB_OF_A";
+	} else if (type == ErrorType::SUB_OF_C) {
+		return "SUB_OF_C";
+	} else if (type == ErrorType::SUB_OF_G) {
+		return "SUB_OF_G";
+	} else if (type == ErrorType::SUB_OF_T) {
+		return "SUB_OF_T";
+	} else if (type == ErrorType::DEL_OF_A) {
+		return "DEL_OF_A";
+	} else if (type == ErrorType::DEL_OF_C) {
+		return "DEL_OF_C";
+	} else if (type == ErrorType::DEL_OF_G) {
+		return "DEL_OF_G";
+	} else if (type == ErrorType::DEL_OF_T) {
+		return "DEL_OF_T";
+	} else if (type == ErrorType::MULTIDEL) {
+		return "MULTIDEL";
+	} else if (type == ErrorType::NODEL) {
+		return "NODEL";
+	} else {
+		throw std::runtime_error("Unknown error type!");
+	}
+}
+
 inline ErrorType inferSubstitutionFrom(char from) {
 	from = toupper(from);
 	if (from == 'A') {

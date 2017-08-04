@@ -12,6 +12,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <fstream>
+#include <cstdlib>
 #include "external/tclap/CmdLine.h"
 #include "util/genome_type.hpp"
 
@@ -33,6 +34,22 @@ void createReadsOnly(const std::string& pathToOriginalReads) {
 		writer << seq << "$" << util::reverseComplementString(seq) << "$"; // use '$' as a delimiter
 	}
 	writer.close();
+}
+
+void printEvaluationData(const eval::EvaluationData& evalData) {
+	for (ErrorType type : AllErrorTypeIterator()) {
+		std::cout << errorTypeToString(type) << ":\n";
+		std::cout << "  Accuracy:    " << eval::computeAccuracy(type, evalData) << "\n";
+		std::cout << "  Specificity: " << eval::computeSpecificity(type, evalData) << "\n";
+		std::cout << "  Sensitivity: " << eval::computeSensitivity(type, evalData) << "\n";
+		std::cout << "  Gain:        " << eval::computeGain(type, evalData) << "\n";
+		std::cout << "  F1-score:    " << eval::computeF1Score(type, evalData) << "\n";
+	}
+	std::cout << "\n";
+	std::cout << "Unweighted Average Base F1-score: " << eval::computeUnweightedAverageBaseF1Score(evalData) << "\n";
+	std::cout << "Base NMI-score:                   " << eval::computeBaseNMIScore(evalData) << "\n";
+	std::cout << "Unweighted Average Gap F1-score:  " << eval::computeUnweightedAverageGapF1Score(evalData) << "\n";
+	std::cout << "Gap NMI-score:                    " << eval::computeGapNMIScore(evalData) << "\n";
 }
 
 void cmd_demo(const std::string& outputPath) {
@@ -75,9 +92,48 @@ void cmd_correct(const std::string& pathToOriginalReads, GenomeType genomeType, 
 	correction::correctReads(pathToOriginalReads, algo, fm, pusm, outputPath);
 }
 
+// TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?
 void cmd_eval(const std::string& pathToOriginalReads, const std::string& pathToCorrectedReads,
 		const std::string& pathToGenome, const std::string& outputPath) {
+	std::string alignmentPath = pathToOriginalReads.substr(0, pathToOriginalReads.find_last_of('.')) + ".bam";
+	std::ifstream alignmentFile(alignmentPath);
+	if (!alignmentFile.good()) {
+		std::cout << "Alignment file " << alignmentPath << " not found. Building alignment now...\n";
+		std::string indexGenomeCall = "bwa index " + pathToGenome;
+		int status = std::system(indexGenomeCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while indexing genome!");
+		}
+		std::string alignReadsCall = "bwa mem " + pathToGenome + " " + pathToOriginalReads + " > myreads_aln.sam";
+		status = std::system(alignReadsCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while aligning reads!");
+		}
+		std::string removeUnmappedAndCompressCall = "samtools view -bS -F 4 myreads_aln.sam > myreads_aln.bam";
+		status = std::system(removeUnmappedAndCompressCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing unmapped reads and compressing the file!");
+		}
+		std::string sortCall = "samtools sort -n -o " + alignmentPath + "myreads_aln.bam";
+		status = std::system(sortCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while sorting the file!");
+		}
+		std::string removeCall1 = "rm myreads_aln.sam";
+		status = std::system(removeCall1.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.sam!");
+		}
+		std::string removeCall2 = "rm myreads_aln.bam";
+		status = std::system(removeCall2.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.bam!");
+		}
+	}
+	alignmentFile.close();
 
+	eval::EvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads, pathToGenome);
+	printEvaluationData(res);
 }
 
 int main(int argc, char* argv[]) {
