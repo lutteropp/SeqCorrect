@@ -157,8 +157,11 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 }
 
 // Assumes that indels have already been detected
-void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const std::string& genome) {
+void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const std::string& genomePath) {
 	int genomeIdx = info.beginPos - 1;
+
+	const std::string genome = io::readReferenceGenome(genomePath);
+
 	for (size_t i = 0; i < rwa.seq.size(); ++i) {
 		if (rwa.seq[i] == 'S') {
 			continue;
@@ -210,7 +213,8 @@ void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const
 			} else if (baseInGenome == 'N') {
 				throw std::runtime_error("base in genome is N");
 			} else {
-				throw std::runtime_error("ERROR");
+				std::cout << baseInGenome << "\n";
+				throw std::runtime_error("Weird base in genome");
 			}
 		}
 	}
@@ -448,8 +452,8 @@ EvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFil
 			rwa = it.next();
 			correctedRead = input.readNext(true, true, true);
 		}
-		if (correctedRead.name != rwa.name) {
-			throw std::runtime_error("Something went wrong while evaluating the reads. Are they really sorted?");
+		if (correctedRead.name.substr(0, correctedRead.name.find('/')) != rwa.name) {
+			throw std::runtime_error("Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: " + correctedRead.name + "\nOriginal read name: " + rwa.name);
 		}
 		std::vector<Correction> errorsTruth = extractErrors(rwa, genomeFilepath);
 		std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
