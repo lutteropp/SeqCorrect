@@ -27,4 +27,4 @@ Looooooooong List of TODOS:
 - how about doing approximate k-mer counting?
 - auto-estimate genome size
 - create a Makefile that works without Eclipse
-- implement sorting of FASTA and FASTQ files by read name -> external Mergesort?
+- implement external-memory sorting of FASTA and FASTQ files by read name -> external Mergesort?
