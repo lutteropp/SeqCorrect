@@ -227,6 +227,30 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
+	if (correctMode && algoName.empty()) {
+		throw std::runtime_error(
+				"You must specify an algorithm! Accepted choices are: NONE, SIMPLE_KMER, ADAPTIVE_KMER, FULL_MSA, PARTIAL_MSA, SUFFIX_TREE");
+	}
+
+	if (correctMode && !algoName.empty()) {
+		if (algoName == "NONE") {
+			algo = correction::CorrectionAlgorithm::NONE;
+		} else if (algoName == "SIMPLE_KMER") {
+			algo = correction::CorrectionAlgorithm::SIMPLE_KMER;
+		} else if (algoName == "ADAPTIVE_KMER") {
+			algo = correction::CorrectionAlgorithm::ADAPTIVE_KMER;
+		} else if (algoName == "FULL_MSA") {
+			algo = correction::CorrectionAlgorithm::FULL_MSA;
+		} else if (algoName == "PARTIAL_MSA") {
+			algo = correction::CorrectionAlgorithm::PARTIAL_MSA;
+		} else if (algoName == "SUFFIX_TREE") {
+			algo = correction::CorrectionAlgorithm::SUFFIX_TREE;
+		} else {
+			throw std::runtime_error(
+					"Unknown algorithm! Accepted choices are: NONE, SIMPLE_KMER, ADAPTIVE_KMER, FULL_MSA, PARTIAL_MSA, SUFFIX_TREE");
+		}
+	}
+
 	if (correctMode && (genomeSize == 0)) {
 		throw std::runtime_error("You must specify an estimated genome size > 0!");
 	}
