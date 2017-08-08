@@ -105,7 +105,7 @@ void cmd_eval(const std::string& pathToOriginalReads, const std::string& pathToC
 		if (!WIFEXITED(status)) {
 			throw std::runtime_error("Something went wrong while indexing genome!");
 		}
-		std::string alignReadsCall = "bwa mem " + pathToGenome + " " + pathToOriginalReads + " > myreads_aln.sam";
+		std::string alignReadsCall = "bwa mem -L 999999999 " + pathToGenome + " " + pathToOriginalReads + " > myreads_aln.sam";
 		std::cout << "Calling: " << alignReadsCall << "\n";
 		status = std::system(alignReadsCall.c_str());
 		if (!WIFEXITED(status)) {

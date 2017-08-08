@@ -115,7 +115,7 @@ size_t EvaluationData::falseNegatives(ErrorType type) const {
 size_t EvaluationData::getEntry(ErrorType trueType, ErrorType predictedType) const {
 	if (isBaseErrorType(trueType) && isBaseErrorType(predictedType)) {
 		return baseConfusionMatrix.at(std::make_pair(trueType, predictedType));
-	} else if (isGapErrorType(trueType) && isBaseErrorType(predictedType)) {
+	} else if (isGapErrorType(trueType) && isGapErrorType(predictedType)) {
 		return gapConfusionMatrix.at(std::make_pair(trueType, predictedType));
 	} else {
 		throw std::runtime_error("trueType and predictedType must be both base types or both gap types!");

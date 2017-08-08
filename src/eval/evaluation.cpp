@@ -60,9 +60,6 @@ void handleChimericBreak(ReadWithAlignments& rwa, size_t cigarCount, HandlingInf
 	// What if multiple chimeric breaks happen in a read? ... It should be fine, too.
 	//  As long as there aren't multiple hard clipped regions in a single record.
 	info.hardClippedBases += cigarCount;
-	if (info.revComp) {
-		realPositionInRead = info.readLength - realPositionInRead - 1;
-	}
 
 	// because we treat chimeric breaks as deletion of multiple bases
 	info.corrections.push_back(Correction(realPositionInRead, ErrorType::MULTIDEL, rwa.seq[realPositionInRead]));
@@ -89,18 +86,11 @@ void handleInsertion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& i
 		 - info.softClippedBases + info.deletedBases;*/
 		size_t realPositionInRead = info.positionInRead + info.hardClippedBases;
 
-		if (info.revComp) {
-			nucleotideInRead = util::reverseComplementChar(nucleotideInRead);
-		}
-
 		assert(realPositionInRead < readLength);
 
 		char fromBase = nucleotideInRead;
 
 		size_t correctionPosition = realPositionInRead;
-		if (info.revComp) {
-			correctionPosition = rwa.seq.size() - correctionPosition - 1;
-		}
 
 		info.corrections.push_back(Correction(correctionPosition, ErrorType::INSERTION, fromBase));
 	}
@@ -117,24 +107,23 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 
 	std::string toBases = "";
 	size_t correctionPosition = realPositionInRead;
-	if (info.revComp) {
-		correctionPosition = rwa.seq.size() - correctionPosition - 1;
-	}
 
+	// TODO: This is wrong for reverse-complemented reads!!!
 	unsigned nucleotidePositionInReference = (info.positionInRead + info.hardClippedBases) + info.beginPos
 			- info.softClippedBases;
 
 	if (nucleotidePositionInReference >= genome.size()) {
-		throw std::runtime_error("nucleotidePositionInReference >= length(genome)");
+		std::cout << "genome size: " << genome.size() << "\n";
+		std::cout << "nucleotidePositionInReference: " << nucleotidePositionInReference << "\n";
+		std::cout << genome.substr(12614, 12713 - 12614 + 1) << "\n";
+		std::cout << rwa.seq << "\n";
+		throw std::runtime_error("nucleotidePositionInReference >= genome.size()");
 	}
 
 	char nucleotideInReference;
 	for (size_t j = 0; j < cigarCount; ++j) {
 		info.deletedBases++;
 		nucleotideInReference = genome[nucleotidePositionInReference + j];
-		if (info.revComp) {
-			nucleotideInReference = util::reverseComplementChar(nucleotideInReference);
-		}
 		toBases += nucleotideInReference;
 	}
 	assert(toBases.size() == cigar[i].count);
@@ -157,10 +146,8 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 }
 
 // Assumes that indels have already been detected
-void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const std::string& genomePath) {
+void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const std::string& genome) {
 	int genomeIdx = info.beginPos - 1;
-
-	const std::string genome = io::readReferenceGenome(genomePath);
 
 	for (size_t i = 0; i < rwa.seq.size(); ++i) {
 		if (rwa.seq[i] == 'S') {
@@ -173,11 +160,6 @@ void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const
 		char baseInGenome = genome[genomeIdx];
 
 		size_t correctionPos = i;
-
-		if (info.revComp) {
-			correctionPos = rwa.seq.size() - i - 1;
-			baseInRead = util::reverseComplementChar(rwa.seq[correctionPos]);
-		}
 
 		if (baseInRead != baseInGenome) {
 			std::string debugString = "";
@@ -239,6 +221,12 @@ std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string
 	}
 
 	HandlingInfo info;
+
+	if (hasFlagRC(rwa.records[0])) {
+		info.revComp = true;
+		rwa.seq = util::reverseComplementString(rwa.seq);
+	}
+
 	for (seqan::BamAlignmentRecord record : rwa.records) {
 		// Extract CIGAR string
 		std::string cigarString = extractCigarString(record.cigar);
@@ -249,7 +237,6 @@ std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string
 		info.deletedBases = 0;
 		info.readLength = rwa.seq.size();
 		info.beginPos = record.beginPos;
-		info.revComp = hasFlagRC(record);
 		for (unsigned i = 0; i < length(record.cigar); ++i) {
 			if (record.cigar[i].operation == 'H') { // hard clipping
 				handleChimericBreak(rwa, record.cigar[i].count, info);
@@ -269,6 +256,11 @@ std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string
 		// now that indels have been fixed, fix the substitution errors.
 		handleSubstitutionErrors(rwa, info, genome);
 	}
+
+	if (hasFlagRC(rwa.records[0])) {
+		rwa.seq = util::reverseComplementString(rwa.seq);
+	}
+
 	std::sort(info.corrections.begin(), info.corrections.end());
 	return info.corrections;
 }
@@ -438,7 +430,7 @@ std::vector<Correction> convertToCorrections(const std::vector<std::pair<size_t,
 EvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFilepath,
 		const std::string& correctedReadsFilepath, const std::string& genomeFilepath) {
 	EvaluationData data;
-	//std::string genome = io::readReferenceGenome(genomeFilepath);
+	std::string genome = io::readReferenceGenome(genomeFilepath);
 	BAMIterator it(alignedReadsFilepath);
 	std::ifstream infile(correctedReadsFilepath);
 
@@ -453,9 +445,11 @@ EvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFil
 			correctedRead = input.readNext(true, true, true);
 		}
 		if (correctedRead.name.substr(0, correctedRead.name.find('/')) != rwa.name) {
-			throw std::runtime_error("Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: " + correctedRead.name + "\nOriginal read name: " + rwa.name);
+			throw std::runtime_error(
+					"Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: "
+							+ correctedRead.name + "\nOriginal read name: " + rwa.name);
 		}
-		std::vector<Correction> errorsTruth = extractErrors(rwa, genomeFilepath);
+		std::vector<Correction> errorsTruth = extractErrors(rwa, genome);
 		std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
 		updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
 	}
