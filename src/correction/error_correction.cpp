@@ -22,6 +22,7 @@
  */
 
 #include <stdexcept>
+#include <functional>
 #include "error_correction.hpp"
 #include "../kmer/classification.hpp"
 
@@ -29,18 +30,25 @@ namespace seq_correct {
 namespace correction {
 
 using namespace classification;
+using namespace std::placeholders;
 
-Read correctRead_kmer(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+Read correctRead_none(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+		bool correctSingleIndels = true, bool correctMultidels = false);
+Read correctRead_simple_kmer(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+		bool correctSingleIndels = true, bool correctMultidels = false);
+Read correctRead_adaptive_kmer(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		bool correctSingleIndels = true, bool correctMultidels = false);
 Read correctRead_suffix_tree(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		bool correctSingleIndels = true, bool correctMultidels = false);
-Read correctRead_msa(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+Read correctRead_full_msa(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+		bool correctSingleIndels = true, bool correctMultidels = false);
+Read correctRead_partial_msa(const Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		bool correctSingleIndels = true, bool correctMultidels = false);
 
-
-size_t findSmallestNonrepetitive(const std::string& str, size_t pos, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm) {
+size_t findSmallestNonrepetitive(const std::string& str, size_t pos, FMIndexMatcher& kmerCounter,
+		PerfectUniformSequencingModel& pusm) {
 	KmerType type = KmerType::REPEAT;
-	for (size_t i = 1; i < str.size() - pos; i+=2) {
+	for (size_t i = 1; i < str.size() - pos; i += 2) {
 		type = classifyKmer(str.substr(pos, i), kmerCounter, pusm);
 		if (type != KmerType::REPEAT) {
 			return i;
@@ -49,7 +57,16 @@ size_t findSmallestNonrepetitive(const std::string& str, size_t pos, FMIndexMatc
 	return std::numeric_limits<size_t>::max();
 }
 
-Read correctRead_kmer(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+Read correctRead_none(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+		bool correctSingleIndels, bool correctMultidels) {
+	(void) kmerCounter;
+	(void) pusm;
+	(void) correctSingleIndels;
+	(void) correctMultidels;
+	return read;
+}
+
+Read correctRead_simple_kmer(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		bool correctSingleIndels, bool correctMultidels) {
 	/*
 	 * TODO:
@@ -71,24 +88,84 @@ Read correctRead_kmer(const io::Read& read, FMIndexMatcher& kmerCounter, Perfect
 		KmerType type = classifyKmer(correctedRead.seq.substr(pos, k), kmerCounter, pusm);
 		if (type == KmerType::UNIQUE)
 
-		pos++;
+			pos++;
 	}
-
 
 	throw std::runtime_error("not implemented yet");
 }
+
+Read correctRead_adaptive_kmer(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+		bool correctSingleIndels, bool correctMultidels) {
+	throw std::runtime_error("not implemented yet");
+}
+
 Read correctRead_suffix_tree(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		bool correctSingleIndels, bool correctMultidels) {
 	throw std::runtime_error("not implemented yet");
 }
-Read correctRead_msa(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+
+Read correctRead_full_msa(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+		bool correctSingleIndels, bool correctMultidels) {
+	throw std::runtime_error("not implemented yet");
+}
+
+Read correctRead_partial_msa(const io::Read& read, FMIndexMatcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		bool correctSingleIndels, bool correctMultidels) {
 	throw std::runtime_error("not implemented yet");
 }
 
 void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, FMIndexMatcher& kmerCounter,
 		PerfectUniformSequencingModel& pusm, const std::string& outputPath) {
-	//TODO: implement this
+
+	bool correctSingleIndels = true;
+	bool correctMultidels = false;
+
+	std::function<Read(const Read&, FMIndexMatcher&, PerfectUniformSequencingModel&, bool, bool)> f;
+	switch (algo) {
+	case CorrectionAlgorithm::NONE:
+		f = std::bind(correctRead_none, _1, kmerCounter, pusm, correctSingleIndels, correctMultidels);
+		break;
+	case CorrectionAlgorithm::SIMPLE_KMER:
+		f = std::bind(correctRead_simple_kmer, _1, kmerCounter, pusm, correctSingleIndels, correctMultidels);
+		break;
+	case CorrectionAlgorithm::ADAPTIVE_KMER:
+		f = std::bind(correctRead_adaptive_kmer, _1, kmerCounter, pusm, correctSingleIndels, correctMultidels);
+		break;
+	case CorrectionAlgorithm::FULL_MSA:
+		f = std::bind(correctRead_full_msa, _1, kmerCounter, pusm, correctSingleIndels, correctMultidels);
+		break;
+	case CorrectionAlgorithm::PARTIAL_MSA:
+		f = std::bind(correctRead_partial_msa, _1, kmerCounter, pusm, correctSingleIndels, correctMultidels);
+		break;
+	case CorrectionAlgorithm::SUFFIX_TREE:
+		f = std::bind(correctRead_suffix_tree, _1, kmerCounter, pusm, correctSingleIndels, correctMultidels);
+		break;
+	default:
+		throw std::runtime_error("Unknown correction algorithm");
+	}
+
+	io::ReadOutput printer;
+	printer.createFile(outputPath);
+
+	io::ReadInput reader;
+	reader.openFile(readsFilepath);
+
+#pragma omp parallel
+	{
+#pragma omp single
+		{
+			while (reader.hasNext()) {
+				io::Read uncorrected = reader.readNext(true, true, true);
+#pragma omp task shared(printer, kmerCounter, pusm, correctSingleIndels, correctMultidels)
+				{
+					io::Read corrected = f(uncorrected, kmerCounter, pusm, correctSingleIndels, correctMultidels);
+#pragma omp critical
+					printer.write(corrected);
+				}
+			}
+		}
+#pragma omp taskwait
+	}
 }
 
 } // end of namespace seq_correct::correction

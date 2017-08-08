@@ -38,7 +38,7 @@ using namespace counting;
 using namespace pusm;
 
 enum class CorrectionAlgorithm {
-	SIMPLE_KMER, ADAPTIVE_KMER, PARTIAL_MSA //, SUFFIX_TREE, FULL_MSA
+	NONE, SIMPLE_KMER, ADAPTIVE_KMER, PARTIAL_MSA, SUFFIX_TREE, FULL_MSA
 };
 
 void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, FMIndexMatcher& kmerCounter,
