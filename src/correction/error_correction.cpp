@@ -156,7 +156,7 @@ void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, FM
 		{
 			while (reader.hasNext()) {
 				io::Read uncorrected = reader.readNext(true, true, true);
-#pragma omp task shared(printer, kmerCounter, pusm, correctSingleIndels, correctMultidels)
+#pragma omp task shared(printer, kmerCounter, pusm, correctSingleIndels, correctMultidels) firstprivate(uncorrected)
 				{
 					io::Read corrected = f(uncorrected, kmerCounter, pusm, correctSingleIndels, correctMultidels);
 #pragma omp critical
