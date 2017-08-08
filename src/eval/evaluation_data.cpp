@@ -22,6 +22,7 @@
  */
 
 #include <stdexcept>
+#include <iostream>
 #include "evaluation_data.hpp"
 
 namespace seq_correct {
@@ -118,6 +119,20 @@ size_t EvaluationData::getEntry(ErrorType trueType, ErrorType predictedType) con
 	} else if (isGapErrorType(trueType) && isGapErrorType(predictedType)) {
 		return gapConfusionMatrix.at(std::make_pair(trueType, predictedType));
 	} else {
+		std::cout << util::errorTypeToString(trueType) << ":\n";
+		if (isBaseErrorType(trueType)) {
+			std::cout << "trueType is a base error type\n";
+		}
+		if (isGapErrorType(trueType)) {
+			std::cout << "trueType is a gap error type\n";
+		}
+		std::cout << util::errorTypeToString(predictedType) << ":\n";
+		if (isBaseErrorType(predictedType)) {
+			std::cout << "predictedType is a base error type\n";
+		}
+		if (isGapErrorType(predictedType)) {
+			std::cout << "predictedType is a gap error type\n";
+		}
 		throw std::runtime_error("trueType and predictedType must be both base types or both gap types!");
 	}
 }

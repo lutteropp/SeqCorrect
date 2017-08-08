@@ -108,7 +108,6 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 	std::string toBases = "";
 	size_t correctionPosition = realPositionInRead;
 
-	// TODO: This is wrong for reverse-complemented reads!!!
 	unsigned nucleotidePositionInReference = (info.positionInRead + info.hardClippedBases) + info.beginPos
 			- info.softClippedBases;
 
@@ -449,6 +448,7 @@ EvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFil
 					"Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: "
 							+ correctedRead.name + "\nOriginal read name: " + rwa.name);
 		}
+
 		std::vector<Correction> errorsTruth = extractErrors(rwa, genome);
 		std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
 		updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);

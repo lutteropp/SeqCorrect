@@ -50,6 +50,22 @@ void printEvaluationData(const eval::EvaluationData& evalData) {
 	std::cout << "Base NMI-score:                   " << eval::computeBaseNMIScore(evalData) << "\n";
 	std::cout << "Unweighted Average Gap F1-score:  " << eval::computeUnweightedAverageGapF1Score(evalData) << "\n";
 	std::cout << "Gap NMI-score:                    " << eval::computeGapNMIScore(evalData) << "\n";
+
+	std::cout << "\n Base Confusion Matrix:\n";
+	for (ErrorType e1 : BaseTypeIterator()) {
+		for (ErrorType e2 : BaseTypeIterator()) {
+			std::cout << "[" << util::errorTypeToString(e1) << "][" << util::errorTypeToString(e2) << "]: "
+					<< evalData.getEntry(e1, e2) << "\n";
+		}
+	}
+
+	std::cout << "\n Gap Confusion Matrix:\n";
+	for (ErrorType e1 : GapTypeIterator()) {
+		for (ErrorType e2 : GapTypeIterator()) {
+			std::cout << "[" << util::errorTypeToString(e1) << "][" << util::errorTypeToString(e2) << "]: "
+					<< evalData.getEntry(e1, e2) << "\n";
+		}
+	}
 }
 
 void cmd_demo(const std::string& outputPath) {
@@ -105,7 +121,8 @@ void cmd_eval(const std::string& pathToOriginalReads, const std::string& pathToC
 		if (!WIFEXITED(status)) {
 			throw std::runtime_error("Something went wrong while indexing genome!");
 		}
-		std::string alignReadsCall = "bwa mem -L 999999999 " + pathToGenome + " " + pathToOriginalReads + " > myreads_aln.sam";
+		std::string alignReadsCall = "bwa mem -L 999999999 " + pathToGenome + " " + pathToOriginalReads
+				+ " > myreads_aln.sam";
 		std::cout << "Calling: " << alignReadsCall << "\n";
 		status = std::system(alignReadsCall.c_str());
 		if (!WIFEXITED(status)) {
