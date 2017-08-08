@@ -1,0 +1,30 @@
+Looooooooong List of TODOS:
+
+- WRITE PAPER DRAFT!!!
+- support polyploid genomes
+- support metagenome datasets
+	- in case the references are known: maybe first do some kind of assignment of reads to believed genome size?
+- implement error correction with MSA
+- implement error correction with partial MSA (similar to SGA and Sanderson2016)
+- implement error correction with suffix tree (similar to Fiona)
+- implement error correction with fixed size k-mers (similar to Quake)
+- implement error correction with variable size k-mers (similar to Quake)
+- implement stupid error correction with fixed size k-mers (similar to RACER and my master thesis approach)
+- implement stupid error correction with adaptive size k-mers (similar to RACER and my master thesis approach)
+- implement error correction by alignment to reference genome and majority voting among the reads (-> this might help in detecting biological variation)
+- implement error correction by alignment to reference genome and ignoring the other reads (-> this will not detect biological variation and treat it as sequencing error instead)
+- replace N by A/C/G/T to reduce alphabet size?
+- read... maximum number of corrections (e.g., 20% of read length) -> remove read if garbage (compare with unmapped reads?)
+- maintain the ability to simultaneously correct read datasets from different sequencers under the same reference genome...
+- current error correction evaluation ignores biological variation and treats it as sequencing error instead -> one could include some variant-calling for that...
+- improve the user interface, maybe split up the program into 3 tools
+- maybe first only compare goodness of error detection before comparing goodness of error correction?
+- add code for evaluating k-mer classification results (UNTRUSTED, TRUSTED, REPEAT)
+- implement k-mer classification by single frequency cut-off value
+- implement the error profile stuff
+- create nice plots for the error profile stuff... might need some nice user interface for this
+- how about explorable error corrections, smth like this base could be 80% A, 10%C, 8%T, 1%G, 1% a gap? Instead of just doing a majority vote for example
+- how about doing approximate k-mer counting?
+- auto-estimate genome size
+- create a Makefile that works without Eclipse
+- implement sorting of FASTA and FASTQ files by read name -> external Mergesort?
