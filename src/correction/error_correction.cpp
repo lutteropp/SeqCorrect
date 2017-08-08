@@ -120,7 +120,7 @@ void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, FM
 	bool correctSingleIndels = true;
 	bool correctMultidels = false;
 
-	std::function<Read(const Read&, FMIndexMatcher&, PerfectUniformSequencingModel&, bool, bool)> f;
+	std::function<Read(const Read&)> f;
 	switch (algo) {
 	case CorrectionAlgorithm::NONE:
 		f = std::bind(correctRead_none, _1, kmerCounter, pusm, correctSingleIndels, correctMultidels);
@@ -158,7 +158,7 @@ void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, FM
 				io::Read uncorrected = reader.readNext(true, true, true);
 #pragma omp task shared(printer, kmerCounter, pusm, correctSingleIndels, correctMultidels) firstprivate(uncorrected)
 				{
-					io::Read corrected = f(uncorrected, kmerCounter, pusm, correctSingleIndels, correctMultidels);
+					io::Read corrected = f(uncorrected);
 #pragma omp critical
 					printer.write(corrected);
 				}
