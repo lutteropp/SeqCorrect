@@ -39,7 +39,6 @@
 #include "util/error_type.hpp"
 #include "util/genome_type.hpp"
 #include "util/dataset.hpp"
-#include "util/producer_consumer_pattern.hpp"
 #include "eval/evaluation.hpp"
 #include "eval/evaluation_data.hpp"
 #include "eval/metrics.hpp"

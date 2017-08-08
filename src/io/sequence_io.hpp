@@ -61,6 +61,7 @@ class ReadOutput {
 public:
 	bool createFile(const std::string& filepath);
 	void write(const Read& read);
+	void close();
 private:
 	std::ofstream file;
 };

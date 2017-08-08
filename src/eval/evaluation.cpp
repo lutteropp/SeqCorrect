@@ -426,12 +426,39 @@ std::vector<Correction> convertToCorrections(const std::vector<std::pair<size_t,
 	return res;
 }
 
+// TODO: Maybe replace this by external Merge sort if the read data set is too large
+void sortCorrectedReads(const std::string& correctedReadsFilepath, const std::string& sortedFilepath) {
+	std::ifstream corrTest(sortedFilepath);
+	if (corrTest.good()) {
+		return;
+	}
+
+	io::ReadOutput output;
+	output.createFile(sortedFilepath);
+
+	std::vector<io::Read> allReads;
+	io::ReadInput input;
+	input.openFile(correctedReadsFilepath);
+	while (input.hasNext()) {
+		allReads.push_back(input.readNext(true, true, true));
+	}
+	std::sort(allReads.begin(), allReads.end(), [](const io::Read& left, const io::Read& right) {return left.name < right.name;});
+	for (size_t i = 0; i < allReads.size(); ++i) {
+		output.write(allReads[i]);
+	}
+	output.close();
+}
+
 EvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFilepath,
 		const std::string& correctedReadsFilepath, const std::string& genomeFilepath) {
 	EvaluationData data;
 	std::string genome = io::readReferenceGenome(genomeFilepath);
 	BAMIterator it(alignedReadsFilepath);
-	std::ifstream infile(correctedReadsFilepath);
+
+	std::string sortedReadsFilepath = correctedReadsFilepath + ".sorted";
+	sortCorrectedReads(correctedReadsFilepath, sortedReadsFilepath);
+
+	std::ifstream infile(sortedReadsFilepath);
 
 	io::ReadInput input;
 	input.openFile(correctedReadsFilepath);

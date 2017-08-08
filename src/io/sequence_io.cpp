@@ -140,5 +140,9 @@ void ReadOutput::write(const Read& read) {
 	file << buffer.str();
 }
 
+void ReadOutput::close() {
+	file.close();
+}
+
 } // end of namespace seq_correct::io
 } // end of namespace seq_correct
