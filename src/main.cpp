@@ -39,7 +39,13 @@ void createReadsOnly(const std::string& pathToOriginalReads) {
 void printEvaluationData(const eval::EvaluationData& evalData) {
 	for (ErrorType type : AllErrorTypeIterator()) {
 		std::cout << errorTypeToString(type) << ":\n";
+		std::cout << "  TP:          " << eval::truePositives(type, evalData) << "\n";
+		std::cout << "  TN:          " << eval::trueNegatives(type, evalData) << "\n";
+		std::cout << "  FP:          " << eval::falsePositives(type, evalData) << "\n";
+		std::cout << "  FN:          " << eval::falseNegatives(type, evalData) << "\n";
 		std::cout << "  Accuracy:    " << eval::computeAccuracy(type, evalData) << "\n";
+		std::cout << "  Precision:   " << eval::computePrecision(type, evalData) << "\n";
+		std::cout << "  Recall:      " << eval::computeRecall(type, evalData) << "\n";
 		std::cout << "  Specificity: " << eval::computeSpecificity(type, evalData) << "\n";
 		std::cout << "  Sensitivity: " << eval::computeSensitivity(type, evalData) << "\n";
 		std::cout << "  Gain:        " << eval::computeGain(type, evalData) << "\n";

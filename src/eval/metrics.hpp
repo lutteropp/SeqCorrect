@@ -31,6 +31,11 @@ namespace eval {
 
 using namespace util;
 
+size_t truePositives(ErrorType type, const EvaluationData& data);
+size_t trueNegatives(ErrorType type, const EvaluationData& data);
+size_t falsePositives(ErrorType type, const EvaluationData& data);
+size_t falseNegatives(ErrorType type, const EvaluationData& data);
+
 double computeAccuracy(ErrorType type, const EvaluationData& data);
 double computePrecision(ErrorType type, const EvaluationData& data);
 double computeRecall(ErrorType type, const EvaluationData& data);

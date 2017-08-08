@@ -27,6 +27,22 @@
 namespace seq_correct {
 namespace eval {
 
+size_t truePositives(ErrorType type, const EvaluationData& data) {
+	return data.truePositives(type);
+}
+
+size_t trueNegatives(ErrorType type, const EvaluationData& data) {
+	return data.trueNegatives(type);
+}
+
+size_t falsePositives(ErrorType type, const EvaluationData& data) {
+	return data.falsePositives(type);
+}
+
+size_t falseNegatives(ErrorType type, const EvaluationData& data) {
+	return data.falseNegatives(type);
+}
+
 double computeAccuracy(ErrorType type, const EvaluationData& data) {
 	return (data.truePositives(type) + data.falsePositives(type))
 			/ (double) (data.truePositives(type) + data.falsePositives(type) + data.falsePositives(type)
