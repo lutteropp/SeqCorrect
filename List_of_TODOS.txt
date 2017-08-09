@@ -39,3 +39,5 @@ Looooooooong List of TODOS:
 - implement error localization heuristic as in Quake!!!!
 - make a Bloom filter containing the trusted k-mers?
 - what about the ninja k-mers I was thinking about?
+- since all (not only k-mer-based) error correction algorithms seem to be so similar... maybe build some kind of LEGO-sandbox/ graphical programming language /framework for putting together error correction algorithms?
+- create a nice picture showing the abstract ingredients of any sequencing error correction algorithm I know
