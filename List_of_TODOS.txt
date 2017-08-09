@@ -31,3 +31,10 @@ Looooooooong List of TODOS:
 - maybe take into account quality scores somehow?
 - handle chimeric breaks/ read splitting
 - improve homopolymer handling
+- add option to simply discard reads with untrusted k-mers
+- count problematic mutations (trusted k-mer -> another trusted k-mer)
+- compare percentage of detected / undetected erroneous reads
+- read trimming by quality scores?
+- align all reads to references just to find the reads we'd like to compare with each other in terns of error correction?
+- implement error localization heuristic as in Quake!!!!
+- make a Bloom filter containing the trusted k-mers?
