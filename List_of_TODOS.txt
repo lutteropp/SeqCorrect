@@ -38,3 +38,4 @@ Looooooooong List of TODOS:
 - align all reads to references just to find the reads we'd like to compare with each other in terns of error correction?
 - implement error localization heuristic as in Quake!!!!
 - make a Bloom filter containing the trusted k-mers?
+- what about the ninja k-mers I was thinking about?
