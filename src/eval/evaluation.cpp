@@ -426,10 +426,59 @@ std::vector<Correction> convertToCorrections(const std::vector<std::pair<size_t,
 	return res;
 }
 
+// do some fancy read-name-parsing to comply with 'samtools sort -n'
+static int strnum_cmp(const std::string& s1, const std::string& s2) {
+	// parse the strings into digits and non-digits
+	std::vector<std::string> s1Parsed;
+	std::vector<std::string> s2Parsed;
+	bool s1Digit = isdigit(s1[0]);
+	bool s2Digit = isdigit(s2[0]);
+	bool startText1 = !s1Digit;
+	bool startText2 = !s2Digit;
+	s1Parsed.push_back(std::string(""));
+	s1Parsed[0] += s1[0];
+	s2Parsed.push_back(std::string(""));
+	s2Parsed[0] += s2[0];
+	for (size_t i = 1; i < s1.size(); ++i) {
+		if (isdigit(s1[i]) == s1Digit) {
+			s1Parsed[s1Parsed.size() - 1] += s1[i];
+		} else {
+			s1Digit = !s1Digit;
+			s1Parsed.push_back(std::string(""));
+			s1Parsed[s1Parsed.size() - 1] += s1[i];
+		}
+	}
+	for (size_t i = 1; i < s2.size(); ++i) {
+		if (isdigit(s2[i]) == s2Digit) {
+			s2Parsed[s2Parsed.size() - 1] += s2[i];
+		} else {
+			s2Digit = !s2Digit;
+			s2Parsed.push_back(std::string(""));
+			s2Parsed[s2Parsed.size() - 1] += s2[i];
+		}
+	}
+
+	if (startText1 != startText2) {
+		return (s1Parsed[0] < s2Parsed[0]);
+	}
+	for (size_t i = 0; i < std::min(s1Parsed.size(), s2Parsed.size()); ++i) {
+		if (s1Parsed[i] != s2Parsed[i]) {
+			if (isdigit(s1Parsed[i][0]) && isdigit(s2Parsed[i][0])) {
+				// compare numbers
+				return (stoi(s1Parsed[i]) < stoi(s2Parsed[i]));
+			} else {
+				return (s1Parsed[i] < s2Parsed[i]);
+			}
+		}
+	}
+	return (s1Parsed.size() < s2Parsed.size());
+}
+
 // TODO: Maybe replace this by external Merge sort if the read data set is too large
 void sortCorrectedReads(const std::string& correctedReadsFilepath, const std::string& sortedFilepath) {
 	std::ifstream corrTest(sortedFilepath);
 	if (corrTest.good()) {
+		std::cout << "Sorted reads file already exists. Doing nothing." << "\n";
 		return;
 	}
 
@@ -442,7 +491,9 @@ void sortCorrectedReads(const std::string& correctedReadsFilepath, const std::st
 	while (input.hasNext()) {
 		allReads.push_back(input.readNext(true, true, true));
 	}
-	std::sort(allReads.begin(), allReads.end(), [](const io::Read& left, const io::Read& right) {return left.name < right.name;});
+	std::cout << allReads.size() << "\n";
+	std::sort(allReads.begin(), allReads.end(),
+			[](const io::Read& left, const io::Read& right) {return strnum_cmp(left.name, right.name);});
 	for (size_t i = 0; i < allReads.size(); ++i) {
 		output.write(allReads[i]);
 	}
@@ -455,21 +506,27 @@ EvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFil
 	std::string genome = io::readReferenceGenome(genomeFilepath);
 	BAMIterator it(alignedReadsFilepath);
 
+	std::ifstream test(correctedReadsFilepath);
+	if (!test.good()) {
+		throw std::runtime_error("The specified file does not exist: " + correctedReadsFilepath);
+	}
+	test.close();
+
 	std::string sortedReadsFilepath = correctedReadsFilepath + ".sorted";
 	sortCorrectedReads(correctedReadsFilepath, sortedReadsFilepath);
 
-	std::ifstream infile(sortedReadsFilepath);
-
 	io::ReadInput input;
-	input.openFile(correctedReadsFilepath);
+	input.openFile(sortedReadsFilepath);
 
 	while (it.hasReadsLeft() && input.hasNext()) {
 		io::Read correctedRead = input.readNext(true, true, true);
+
 		ReadWithAlignments rwa = it.next();
 		while (hasFlagUnmapped(rwa.records[0])) {
 			rwa = it.next();
 			correctedRead = input.readNext(true, true, true);
 		}
+
 		if (correctedRead.name.substr(0, correctedRead.name.find('/')) != rwa.name) {
 			throw std::runtime_error(
 					"Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: "

@@ -28,3 +28,6 @@ Looooooooong List of TODOS:
 - auto-estimate genome size
 - create a Makefile that works without Eclipse
 - implement external-memory sorting of FASTA and FASTQ files by read name -> external Mergesort?
+- maybe take into account quality scores somehow?
+- handle chimeric breaks/ read splitting
+- improve homopolymer handling
