@@ -11,8 +11,8 @@ Looooooooong List of TODOS:
 - implement error correction with variable size k-mers (similar to Quake)
 - implement stupid error correction with fixed size k-mers (similar to RACER and my master thesis approach)
 - implement stupid error correction with adaptive size k-mers (similar to RACER and my master thesis approach)
-- implement error correction by alignment to reference genome and majority voting among the reads (-> this might help in detecting biological variation)
-- implement error correction by alignment to reference genome and ignoring the other reads (-> this will not detect biological variation and treat it as sequencing error instead)
+- implement error correction by alignment to some closely related reference genome and majority voting among the reads (-> this might help in detecting biological variation, in case we do smth more sophisticated than majority voting)
+	- align all reads to references just to find the reads we'd like to compare with each other in terms of error correction?
 - replace N by A/C/G/T to reduce alphabet size?
 - read... maximum number of corrections (e.g., 20% of read length) -> remove read if garbage (compare with unmapped reads?)
 - maintain the ability to simultaneously correct read datasets from different sequencers under the same reference genome...
@@ -32,12 +32,14 @@ Looooooooong List of TODOS:
 - handle chimeric breaks/ read splitting
 - improve homopolymer handling
 - add option to simply discard reads with untrusted k-mers
-- count problematic mutations (trusted k-mer -> another trusted k-mer)
+- count problematic mutations (trusted k-mer -> another trusted k-mer) ... NINJAS!
 - compare percentage of detected / undetected erroneous reads
 - read trimming by quality scores?
-- align all reads to references just to find the reads we'd like to compare with each other in terns of error correction?
 - implement error localization heuristic as in Quake!!!!
 - make a Bloom filter containing the trusted k-mers?
 - what about the ninja k-mers I was thinking about?
 - since all (not only k-mer-based) error correction algorithms seem to be so similar... maybe build some kind of LEGO-sandbox/ graphical programming language /framework for putting together error correction algorithms?
-- create a nice picture showing the abstract ingredients of any sequencing error correction algorithm I know
+- also do some evaluation by using third-party assembly-tools and variant-calling tools
+- simulate my own data (based on error profiles)?
+
+- implement error correction by alignment to reference genome and ignoring the other reads (-> this will not detect biological variation and treat it as sequencing error instead) ... is is already kinda implemented in the evaluation code
