@@ -26,6 +26,7 @@
 #include "../pusm/pusm.hpp"
 #include "../counting/fm_count.hpp"
 #include "../util/enums.hpp"
+#include "../coverage/coverage_bias.hpp"
 
 namespace seq_correct {
 namespace classification {
@@ -38,10 +39,10 @@ using namespace util;
  * @param pusmData The expected count and standard deviation of the k-mer in an idealized sequencing setting
  * @param observedCount Count of the k-mer in the read dataset
  */
-inline KmerType classifyKmer(const pusm::PusmData& pusmData, size_t observedCount) {
-	if (observedCount < 0.5 * pusmData.expectation) {
+inline KmerType classifyKmer(const pusm::PusmData& pusmData, double correctedCount) {
+	if ((correctedCount < 2) || (correctedCount < 0.5 * pusmData.expectation)) {
 		return KmerType::UNTRUSTED;
-	} else if (observedCount <= 1.5 * pusmData.expectation) {
+	} else if (correctedCount <= 1.5 * pusmData.expectation) {
 		return KmerType::UNIQUE;
 	} else {
 		return KmerType::REPEAT;
@@ -49,14 +50,26 @@ inline KmerType classifyKmer(const pusm::PusmData& pusmData, size_t observedCoun
 }
 
 template<typename T>
-inline KmerType classifyKmer(const T& kmer, counting::FMIndexMatcher& kmerCounter,
-		pusm::PerfectUniformSequencingModel& pusm) {
+inline KmerType classifyKmer(const T& kmer, counting::Matcher& kmerCounter,
+		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitSingle& biasUnit) {
 	if (kmer.empty()) {
 		throw std::runtime_error("The kmer is empty");
 	}
 	pusm::PusmData pusmData = pusm.expectedCount(kmer.size());
 	size_t observedCount = kmerCounter.countKmer(kmer);
-	return classifyKmer(pusmData, observedCount);
+	double correctedCount = biasUnit.computeCoverageBias(kmer) * observedCount;
+	return classifyKmer(pusmData, correctedCount);
+}
+
+template<typename T>
+inline KmerType classifyKmer(const T& kmer, size_t observedCount,
+		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitSingle& biasUnit) {
+	if (kmer.empty()) {
+		throw std::runtime_error("The kmer is empty");
+	}
+	pusm::PusmData pusmData = pusm.expectedCount(kmer.size());
+	double correctedCount = biasUnit.computeCoverageBias(kmer) * observedCount;
+	return classifyKmer(pusmData, correctedCount);
 }
 
 inline KmerType classifyKmerReadBased(size_t k, size_t posInRead, const std::vector<size_t>& kmerCounts, size_t medianCount,

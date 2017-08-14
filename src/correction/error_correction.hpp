@@ -30,6 +30,7 @@
 #include "../counting/fm_count.hpp"
 #include "../pusm/pusm.hpp"
 #include "../util/enums.hpp"
+#include "../coverage/coverage_bias.hpp"
 
 namespace seq_correct {
 namespace correction {
@@ -39,8 +40,8 @@ using namespace counting;
 using namespace pusm;
 using namespace util;
 
-void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, FMIndexMatcher& kmerCounter,
-		PerfectUniformSequencingModel& pusm, const std::string& outputPath);
+void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, Matcher& kmerCounter,
+		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitSingle& biasUnit, const std::string& outputPath);
 
 } // end of namespace seq_correct::correction
 } // end of namespace seq_correct

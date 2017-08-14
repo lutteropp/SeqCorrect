@@ -130,15 +130,16 @@ void cmd_demo(const std::string& outputPath) {
 	biasUnit.printMedianCoverageBiases();
 }
 
-void cmd_correct(const std::string& pathToOriginalReads, GenomeType genomeType, const std::string& outputPath,
+void cmd_correct(size_t k, const std::string& pathToOriginalReads, GenomeType genomeType, const std::string& outputPath,
 		size_t genomeSize, correction::CorrectionAlgorithm algo) {
 	createReadsOnly(pathToOriginalReads);
 	std::string pathToReadsOnly = pathToOriginalReads + ".readsOnly.txt";
 	counting::FMIndexMatcher fm(pathToReadsOnly);
 	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
 	pusm::PerfectUniformSequencingModel pusm(genomeType, genomeSize, readLengths);
-	coverage::CoverageBiasUnitMulti biasUnit;
-	correction::correctReads(pathToOriginalReads, algo, fm, pusm, outputPath);
+	coverage::CoverageBiasUnitSingle biasUnit;
+	biasUnit.preprocess(k, pathToOriginalReads, fm, pusm);
+	correction::correctReads(pathToOriginalReads, algo, fm, pusm, biasUnit, outputPath);
 }
 
 // TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?
@@ -186,21 +187,24 @@ void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginal
 	}
 	alignmentFile.close();
 
-	eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
+	/*eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
 			pathToGenome);
-	printErrorEvaluationData(res);
+	printErrorEvaluationData(res);*/
 
 	createReadsOnly(pathToOriginalReads);
+
+	counting::NaiveBufferedMatcher fmReads(pathToOriginalReads,k);
+	counting::NaiveBufferedMatcher fmGenome(pathToGenome,k);
 
 	std::cout << "k-mer size used: " << k << "\n";
 	std::cout << "My own k-mer classification: \n";
 	eval::KmerEvaluationData resKmer = eval::classifyKmersTestSarah(k, genomeType, alignmentPath, pathToOriginalReads,
-			pathToGenome);
+			pathToGenome, fmReads, fmGenome);
 	printKmerEvaluationData(resKmer);
 
 	std::cout << "\nRead-based k-mer classification: \n";
 	eval::KmerEvaluationData resKmer2 = eval::classifyKmersTestReadbased(k, genomeType, alignmentPath,
-			pathToOriginalReads, pathToGenome);
+			pathToOriginalReads, pathToGenome, fmReads, fmGenome);
 	printKmerEvaluationData(resKmer2);
 }
 
@@ -234,7 +238,7 @@ int main(int argc, char* argv[]) {
 		cmd.add(genomeArg);
 		TCLAP::ValueArg<size_t> genomeSizeArg("s", "size", "Estimated genome size", false, 0, "unsigned int");
 		cmd.add(genomeSizeArg);
-		TCLAP::ValueArg<size_t> kmerSizeArg("k", "kmer", "K-mer size to use", false, 19, "unsigned int");
+		TCLAP::ValueArg<size_t> kmerSizeArg("k", "kmer", "K-mer size to use", false, 15, "unsigned int");
 		cmd.add(kmerSizeArg);
 		TCLAP::ValueArg<std::string> outputArg("o", "output", "Path to the output file", true, "", "string");
 		cmd.add(outputArg);
@@ -344,7 +348,7 @@ int main(int argc, char* argv[]) {
 	if (demoMode) {
 		cmd_demo(outputPath);
 	} else if (correctMode) {
-		cmd_correct(pathToOriginalReads, genomeType, outputPath, genomeSize, algo);
+		cmd_correct(k, pathToOriginalReads, genomeType, outputPath, genomeSize, algo);
 	} else if (evalMode) {
 		cmd_eval(k, genomeType, pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);
 	}

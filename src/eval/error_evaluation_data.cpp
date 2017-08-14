@@ -263,13 +263,16 @@ size_t ErrorEvaluationData::sumPredicted(ErrorType type) const {
 }
 
 void KmerEvaluationData::update(KmerType trueType, KmerType predictedType) {
+#pragma omp critical(updateKmer)
 	kmerConfusionMatrix[std::make_pair(trueType, predictedType)]++;
 }
 
 void ErrorEvaluationData::update(ErrorType trueType, ErrorType predictedType) {
 	if (isBaseErrorType(trueType) && isBaseErrorType(predictedType)) {
+#pragma omp critical(updateBase)
 		baseConfusionMatrix[std::make_pair(trueType, predictedType)]++;
 	} else if (isGapErrorType(trueType) && isGapErrorType(predictedType)) {
+#pragma omp critical(updateGap)
 		gapConfusionMatrix[std::make_pair(trueType, predictedType)]++;
 	} else {
 		throw std::runtime_error("trueType and predictedType are of incompatible types");

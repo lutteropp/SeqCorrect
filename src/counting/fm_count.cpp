@@ -23,6 +23,7 @@
 
 #include <stdexcept>
 #include <unordered_set>
+#include <iostream>
 
 #include "fm_count.hpp"
 #include "../util/util.hpp"
@@ -31,7 +32,14 @@ namespace seq_correct {
 namespace counting {
 
 size_t FMIndexMatcher::countKmer(const std::string& kmer) {
-	return sdsl::count(fmIndex, kmer.begin(), kmer.end());
+	if (useBuffer && buffer.find(kmer) != buffer.end()) {
+		return buffer[kmer];
+	}
+	size_t count = sdsl::count(fmIndex, kmer.begin(), kmer.end());
+	if (useBuffer) {
+		buffer[kmer] = count;
+	}
+	return count;
 }
 
 FMIndexMatcher::FMIndexMatcher(const std::string& filename) {
@@ -49,6 +57,15 @@ FMIndexMatcher::FMIndexMatcher(const std::string& filename) {
 		std::cout << "Index construction complete, index requires " << size_in_mega_bytes(fmIndex) << " MiB."
 				<< std::endl;
 	}
+	useBuffer = false;
+}
+
+void FMIndexMatcher::enableBuffer() {
+	useBuffer = true;
+}
+
+void FMIndexMatcher::disableBuffer() {
+	useBuffer = false;
 }
 
 FMIndexMatcherMulti::FMIndexMatcherMulti(const std::string& filename) :
@@ -81,6 +98,49 @@ std::vector<size_t> FMIndexMatcherMulti::countKmerMultiPositions(const std::stri
 		res.push_back(documentID[locations[i]]);
 	}
 	return res;
+}
+
+NaiveBufferedMatcher::NaiveBufferedMatcher(const std::string& filename, size_t k) {
+	io::ReadInput input;
+
+	std::string filenameNaive = filename + ".naive";
+	std::ifstream test(filenameNaive);
+	if (test.good()) {
+		std::string kmer;
+		size_t count;
+		while (test >> kmer >> count) {
+			buffer[kmer] = count;
+		}
+	} else {
+		input.openFile(filename);
+		double minProgress = 0;
+		while (input.hasNext()) {
+			if (input.progress() > minProgress) {
+				std::cout << input.progress() << "\n";
+				minProgress += 1;
+			}
+			io::Read read = input.readNext(true, false, false);
+			for (size_t i = 0; i < read.seq.size() - k; ++i) {
+				std::string kmer = read.seq.substr(i, k);
+				if (buffer.find(kmer) != buffer.end()) {
+					buffer[kmer]++;
+				} else {
+					buffer[kmer] = 1;
+				}
+			}
+		}
+
+		std::ofstream testOut(filenameNaive);
+		for (auto kv : buffer) {
+			testOut << kv.first << " " << kv.second << "\n";
+		}
+		testOut.close();
+
+	}
+}
+
+size_t NaiveBufferedMatcher::countKmer(const std::string& kmer) {
+	return buffer[kmer];
 }
 
 } // end of namespace seq_correct::counting

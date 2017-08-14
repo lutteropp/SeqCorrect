@@ -73,9 +73,28 @@ bool ReadInput::hasNext() {
  * Open a FASTA or FASTQ file containing the reads.
  * @param filepath The file containing the reads
  */
-bool ReadInput::openFile(const std::string& filepath) {
+void ReadInput::openFile(const std::string& filepath) {
 	file.open(filepath);
-	return (file.good());
+
+	if (!file.good()) {
+		throw std::runtime_error("Could not open file: " + filepath);
+	}
+
+	// count number of reads
+	numReadsTotal = 0;
+	std::ifstream temp(filepath);
+	std::string line;
+	while (std::getline(temp, line)) {
+		if (line[0] == '@' || line[0] == '>') {
+			numReadsTotal++;
+		}
+	}
+	readsLeft = numReadsTotal;
+	temp.close();
+}
+
+double ReadInput::progress() {
+	return ((numReadsTotal - readsLeft) / ((double) numReadsTotal)) * 100;
 }
 
 /**
@@ -112,6 +131,7 @@ Read ReadInput::readNext(bool readSequence, bool readQuality, bool readName) {
 			read.qual = line;
 		}
 	}
+	readsLeft--;
 	return read;
 }
 

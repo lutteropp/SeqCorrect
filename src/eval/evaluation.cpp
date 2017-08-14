@@ -521,70 +521,156 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 	io::ReadInput input;
 	input.openFile(sortedReadsFilepath);
 
-	while (it.hasReadsLeft() && input.hasNext()) {
-		io::Read correctedRead = input.readNext(true, true, true);
+#pragma omp parallel
+	{
+#pragma omp single
+		{
+			while (it.hasReadsLeft() && input.hasNext()) {
+				io::Read correctedRead = input.readNext(true, true, true);
 
-		ReadWithAlignments rwa = it.next();
-		while (hasFlagUnmapped(rwa.records[0])) {
-			rwa = it.next();
-			correctedRead = input.readNext(true, true, true);
+				ReadWithAlignments rwa = it.next();
+				while (hasFlagUnmapped(rwa.records[0])) {
+					std::cout << "skipping " << rwa.name << " because it's unmapped\n";
+					rwa = it.next();
+					std::cout << "skipping " << correctedRead.name << "\n";
+					correctedRead = input.readNext(true, true, true);
+				}
+
+				if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0, correctedRead.name.find('/'))
+						!= rwa.name) {
+					correctedRead = input.readNext(true, true, true);
+					/*throw std::runtime_error(
+					 "Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: "
+					 + correctedRead.name + "\nOriginal read name: " + rwa.name);*/
+				}
+
+#pragma omp task shared(genome, data), firstprivate(rwa, correctedRead)
+				{
+					std::vector<Correction> errorsTruth = extractErrors(rwa, genome);
+					std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
+							rwa.seq);
+					updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
+				}
+			}
 		}
-
-		if (correctedRead.name.substr(0, correctedRead.name.find('/')) != rwa.name) {
-			throw std::runtime_error(
-					"Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: "
-							+ correctedRead.name + "\nOriginal read name: " + rwa.name);
-		}
-
-		std::vector<Correction> errorsTruth = extractErrors(rwa, genome);
-		std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
-		updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
 	}
 	return data;
 }
 
+std::vector<KmerType> computeTrueTypes(size_t k, const std::string& sequence, counting::Matcher& fmGenome) {
+	std::vector<KmerType> trueTypes;
+	for (size_t i = 0; i < sequence.size() - k; ++i) {
+		std::string kmer = sequence.substr(i, k);
+		size_t trueCount = fmGenome.countKmer(kmer) + fmGenome.countKmer(util::reverseComplementString(kmer));
+		KmerType trueType;
+		if (trueCount == 0) {
+			trueType = KmerType::UNTRUSTED;
+		} else if (trueCount == 1) {
+			trueType = KmerType::UNIQUE;
+		} else {
+			trueType = KmerType::REPEAT;
+		}
+		trueTypes.push_back(trueType);
+	}
+	return trueTypes;
+}
+
+double computeMedianKmerCount(const std::vector<size_t>& counts) {
+	double medianCount = 0;
+	std::vector<size_t> kmerCountsSorted;
+	for (size_t i = 0; i < counts.size(); ++i) {
+		kmerCountsSorted.push_back(counts[i]);
+	}
+	std::sort(kmerCountsSorted.begin(), kmerCountsSorted.end());
+	if (kmerCountsSorted.size() % 2 == 1) {
+		medianCount = (double) kmerCountsSorted[(kmerCountsSorted.size() + 1) / 2];
+	} else {
+		medianCount = ((double) kmerCountsSorted[kmerCountsSorted.size() / 2]
+				+ (double) kmerCountsSorted[kmerCountsSorted.size() / 2 + 1]) / 2;
+	}
+	return medianCount;
+}
+
+std::vector<size_t> computeKmerCountsRead(size_t k, const std::string& sequence, counting::Matcher& fmReads) {
+	std::vector<size_t> kmerCounts;
+	for (size_t i = 0; i < sequence.size() - k; ++i) {
+		std::string kmer = sequence.substr(i, k);
+		size_t count = fmReads.countKmer(kmer);
+		kmerCounts.push_back(count);
+	}
+	return kmerCounts;
+}
+
 KmerEvaluationData classifyKmersTestSarah(size_t k, GenomeType genomeType, const std::string& alignmentFilepath,
-		const std::string& pathToOriginalReads, const std::string& genomeFilepath) {
+		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
+		counting::Matcher& fmGenome) {
+	size_t numCorrect = 0;
+	size_t numWrong = 0;
 	KmerEvaluationData data;
 	std::string genome = io::readReferenceGenome(genomeFilepath);
 	BAMIterator it(alignmentFilepath);
 
 	std::string pathToReadsOnly = pathToOriginalReads + ".readsOnly.txt";
-	counting::FMIndexMatcher fmReads(pathToReadsOnly);
-	counting::FMIndexMatcher fmGenome(genomeFilepath);
 	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
 	pusm::PerfectUniformSequencingModel pusm(genomeType, genome.size(), readLengths);
-	coverage::CoverageBiasUnitMulti biasUnit;
+	coverage::CoverageBiasUnitSingle biasUnit;
+	biasUnit.preprocess(k, pathToOriginalReads, fmReads, pusm);
 
+	double minProgress = 0.0;
 	while (it.hasReadsLeft()) {
 		ReadWithAlignments rwa = it.next();
+
+		std::vector<size_t> kmerCounts = computeKmerCountsRead(k, rwa.seq, fmReads);
+		std::vector<KmerType> trueTypes = computeTrueTypes(k, rwa.seq, fmGenome);
+		std::vector<KmerType> predictedTypes;
 		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
 			std::string kmer = rwa.seq.substr(i, k);
-			size_t trueCount = fmGenome.countKmer(kmer);
-			KmerType trueType;
-			if (trueCount == 0) {
-				trueType = KmerType::UNTRUSTED;
-			} else if (trueCount == 1) {
-				trueType = KmerType::UNIQUE;
-			} else {
-				trueType = KmerType::REPEAT;
+			KmerType predictedType = classifyKmer(kmer, kmerCounts[i], pusm, biasUnit);
+			predictedTypes.push_back(predictedType);
+		}
+
+		bool correctlyClassified = true;
+
+		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
+			KmerType trueType = trueTypes[i];
+			KmerType predictedType = predictedTypes[i];
+			if (trueType != predictedType) {
+				correctlyClassified = false;
 			}
-			KmerType predictedType = classifyKmer(kmer, fmReads, pusm);
 			data.update(trueType, predictedType);
 		}
+
+		if (!correctlyClassified) {
+			std::cout << "Read K-mer-decomposition:\n";
+			for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
+				std::cout << "  " << kmerTypeToString(trueTypes[i]) << " -> " << kmerTypeToString(predictedTypes[i])
+						<< ": " << kmerCounts[i] << "\n";
+			}
+
+			numWrong++;
+		} else {
+			numCorrect++;
+		}
+
+		if (it.progress() > minProgress) {
+			minProgress += 1;
+			std::cout << it.progress() << "\n";
+		}
 	}
+
+	std::cout << "numCorrect: " << numCorrect << "\n";
+	std::cout << "numWrong: " << numWrong << "\n";
+
 	return data;
 }
 
 KmerEvaluationData classifyKmersTestReadbased(size_t k, GenomeType genomeType, const std::string& alignmentFilepath,
-		const std::string& pathToOriginalReads, const std::string& genomeFilepath) {
+		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
+		counting::Matcher& fmGenome) {
 	KmerEvaluationData data;
 	std::string genome = io::readReferenceGenome(genomeFilepath);
 	BAMIterator it(alignmentFilepath);
 
-	std::string pathToReadsOnly = pathToOriginalReads + ".readsOnly.txt";
-	counting::FMIndexMatcher fmReads(pathToReadsOnly);
-	counting::FMIndexMatcher fmGenome(genomeFilepath);
 	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
 	pusm::PerfectUniformSequencingModel pusm(genomeType, genome.size(), readLengths);
 	coverage::CoverageBiasUnitMulti biasUnit;
@@ -592,38 +678,33 @@ KmerEvaluationData classifyKmersTestReadbased(size_t k, GenomeType genomeType, c
 	while (it.hasReadsLeft()) {
 		ReadWithAlignments rwa = it.next();
 
-		std::vector<size_t> kmerCounts;
+		std::vector<size_t> kmerCounts = computeKmerCountsRead(k, rwa.seq, fmReads);
+		double medianCount = computeMedianKmerCount(kmerCounts);
+		std::vector<KmerType> trueTypes = computeTrueTypes(k, rwa.seq, fmGenome);
+		std::vector<KmerType> predictedTypes;
 		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
 			std::string kmer = rwa.seq.substr(i, k);
-			size_t count = fmReads.countKmer(kmer);
-			kmerCounts.push_back(count);
-		}
-		double medianCount = 0;
-		std::vector<size_t> kmerCountsSorted;
-		for (size_t i = 0; i < kmerCounts.size(); ++i) {
-			kmerCountsSorted.push_back(kmerCounts[i]);
-		}
-		std::sort(kmerCountsSorted.begin(), kmerCountsSorted.end());
-		if (kmerCountsSorted.size() % 2 == 1) {
-			medianCount = (double) kmerCountsSorted[(kmerCountsSorted.size() + 1) / 2];
-		} else {
-			medianCount = ((double) kmerCountsSorted[kmerCountsSorted.size() / 2]
-					+ (double) kmerCountsSorted[kmerCountsSorted.size() / 2 + 1]) / 2;
+			KmerType predictedType = classifyKmerReadBased(k, i, kmerCounts, medianCount, rwa.seq);
+			predictedTypes.push_back(predictedType);
 		}
 
+		bool correctlyClassified = true;
+
 		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
-			std::string kmer = rwa.seq.substr(i, k);
-			size_t trueCount = fmGenome.countKmer(kmer);
-			KmerType trueType;
-			if (trueCount == 0) {
-				trueType = KmerType::UNTRUSTED;
-			} else if (trueCount == 1) {
-				trueType = KmerType::UNIQUE;
-			} else {
-				trueType = KmerType::REPEAT;
+			KmerType trueType = trueTypes[i];
+			KmerType predictedType = predictedTypes[i];
+			if (trueType != predictedType) {
+				correctlyClassified = false;
 			}
-			KmerType predictedType = classifyKmerReadBased(k, i, kmerCounts, medianCount, rwa.seq);
 			data.update(trueType, predictedType);
+		}
+
+		if (!correctlyClassified) {
+			std::cout << "Read K-mer-decomposition:\n";
+			for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
+				std::cout << "  " << kmerTypeToString(trueTypes[i]) << " -> " << kmerTypeToString(predictedTypes[i])
+						<< ": " << kmerCounts[i] << "\n";
+			}
 		}
 	}
 	return data;

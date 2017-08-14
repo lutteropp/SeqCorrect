@@ -110,8 +110,8 @@ std::vector<CoverageBiasData> computeMedianBiases(size_t k, std::vector<std::vec
  * @param readsIndex A structure for querying how often the k-mer occurs in the read dataset
  * @param genomeIndex A structure for querying how often the k-mer occurs in the genome
  */
-double inferBias(const std::string& kmer, counting::FMIndexMatcher& readsIndex,
-		counting::FMIndexMatcher& genomeIndex) {
+double inferBias(const std::string& kmer, counting::Matcher& readsIndex,
+		counting::Matcher& genomeIndex) {
 	size_t countObserved = readsIndex.countKmer(kmer);
 	size_t countGenome = genomeIndex.countKmer(kmer);
 	return countObserved / (double) countGenome;
@@ -126,7 +126,7 @@ double inferBias(const std::string& kmer, counting::FMIndexMatcher& readsIndex,
  * @param pusm A structure for computing the expected count of k-mers in the read dataset, in an idealized
  * sequencing setting
  */
-double inferBias(size_t k, const std::string& kmer, counting::FMIndexMatcher& readsIndex,
+double inferBias(size_t k, const std::string& kmer, counting::Matcher& readsIndex,
 		pusm::PerfectUniformSequencingModel &pusm) {
 	size_t countObserved = readsIndex.countKmer(kmer);
 	double countExpected = pusm.expectedCount(k).expectation;
@@ -148,7 +148,7 @@ double inferBias(size_t k, const std::string& kmer, counting::FMIndexMatcher& re
  * sequencing setting
  */
 std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::string &filepath,
-		counting::FMIndexMatcher& readsIndex, pusm::PerfectUniformSequencingModel &pusm) {
+		counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel &pusm) {
 	std::vector<std::vector<double> > biases;
 	biases.resize(k + 1);
 
@@ -217,8 +217,8 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
  * @param readsIndex A structure for querying how often the k-mer occurs in the read dataset
  * @param genomeIndex A structure for querying how often the k-mer occurs in the genome
  */
-std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& genome, counting::FMIndexMatcher& readsIndex,
-		counting::FMIndexMatcher& genomeIndex) {
+std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& genome, counting::Matcher& readsIndex,
+		counting::Matcher& genomeIndex) {
 	std::vector<std::vector<double> > biases;
 	biases.resize(k + 1);
 	std::string kmer = genome.substr(0, k);
@@ -251,7 +251,7 @@ std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& 
  * @param pusm A structure for computing the expected count of k-mers in the read dataset, in an idealized
  * sequencing setting
  */
-void CoverageBiasUnitSingle::preprocess(size_t k, const std::string &filepath, counting::FMIndexMatcher& readsIndex,
+void CoverageBiasUnitSingle::preprocess(size_t k, const std::string &filepath, counting::Matcher& readsIndex,
 		pusm::PerfectUniformSequencingModel& pusm) {
 	gcStep = 1 / (double) k;
 	medianCoverageBiases = preprocessWithoutGenome(k, filepath, readsIndex, pusm);
@@ -264,8 +264,8 @@ void CoverageBiasUnitSingle::preprocess(size_t k, const std::string &filepath, c
  * @param readsIndex A structure for querying how often the k-mer occurs in the read dataset
  * @param genomeIndex A structure for querying how often the k-mer occurs in the genome
  */
-void CoverageBiasUnitSingle::preprocess(size_t k, const std::string &genome, counting::FMIndexMatcher& readsIndex,
-		counting::FMIndexMatcher& genomeIndex) {
+void CoverageBiasUnitSingle::preprocess(size_t k, const std::string &genome, counting::Matcher& readsIndex,
+		counting::Matcher& genomeIndex) {
 	gcStep = 1 / (double) k;
 	medianCoverageBiases = preprocessWithGenome(k, genome, readsIndex, genomeIndex);
 }
@@ -306,7 +306,7 @@ void CoverageBiasUnitSingle::printMedianCoverageBiases() {
 
 CoverageBiasUnitMulti::CoverageBiasUnitMulti() {}
 
-double CoverageBiasUnitMulti::computeCoverageBias(const std::string& kmer, const std::string& filepath, counting::FMIndexMatcher& matcher, pusm::PerfectUniformSequencingModel& pusm) {
+double CoverageBiasUnitMulti::computeCoverageBias(const std::string& kmer, const std::string& filepath, counting::Matcher& matcher, pusm::PerfectUniformSequencingModel& pusm) {
 	size_t k = kmer.size();
 	if (biasUnits.find(k) != biasUnits.end()) {
 		return biasUnits[k].computeCoverageBias(kmer);
@@ -318,7 +318,7 @@ double CoverageBiasUnitMulti::computeCoverageBias(const std::string& kmer, const
 	}
 }
 
-double CoverageBiasUnitMulti::computeCoverageBias(const std::string &kmer, const std::string& genome, counting::FMIndexMatcher& readsIndex, counting::FMIndexMatcher& genomeIndex) {
+double CoverageBiasUnitMulti::computeCoverageBias(const std::string &kmer, const std::string& genome, counting::Matcher& readsIndex, counting::Matcher& genomeIndex) {
 	size_t k = kmer.size();
 		if (biasUnits.find(k) != biasUnits.end()) {
 			return biasUnits[k].computeCoverageBias(kmer);
