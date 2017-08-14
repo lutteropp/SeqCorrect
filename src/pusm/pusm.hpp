@@ -26,7 +26,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include "../util/util.hpp"
-#include "../util/genome_type.hpp"
+#include "../util/enums.hpp"
 
 namespace seq_correct {
 namespace pusm {

@@ -25,7 +25,7 @@
 
 #include <string>
 #include <unordered_map>
-#include "genome_type.hpp"
+#include "enums.hpp"
 
 
 namespace seq_correct {

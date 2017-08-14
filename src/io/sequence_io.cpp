@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <experimental/filesystem>
 #include <sstream>
+#include <iostream>
 #include <ios>
 #include "sequence_io.hpp"
 
@@ -36,6 +37,9 @@ namespace io {
  * @param filepath Path to the FASTA file containig the reference genome
  */
 std::string readReferenceGenome(const std::string& filepath) {
+	if (filepath.empty()) {
+		throw std::runtime_error("Genome filepath is empty!");
+	}
 	std::string genome;
 	std::ifstream infile(filepath);
 	std::string line;

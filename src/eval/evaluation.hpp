@@ -23,9 +23,13 @@
 
 #pragma once
 #include <string>
-#include "../util/error_type.hpp"
-#include "evaluation_data.hpp"
+#include "../util/enums.hpp"
+#include "../util/correction.hpp"
 #include "../io/read_with_alignments.hpp"
+#include "../counting/fm_count.hpp"
+#include "../pusm/pusm.hpp"
+#include "../coverage/coverage_bias.hpp"
+#include "error_evaluation_data.hpp"
 
 namespace seq_correct {
 namespace eval {
@@ -48,15 +52,21 @@ std::vector<Correction> extractErrors(const std::string& correctedRead, const st
 std::vector<Correction> extractErrors(const std::string& correctedRead, const std::string& referenceGenome,
 		size_t beginPos);
 
-void updateEvaluationData(EvaluationData& data, const std::vector<Correction>& errorsTruth,
+void updateEvaluationData(ErrorEvaluationData& data, const std::vector<Correction>& errorsTruth,
 		const std::vector<Correction>& errorsPredicted, size_t readLength);
 
 // Compare the corrected reads with the aligned original reads
 /*EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
-		const std::string& genomeFilepath);*/
+ const std::string& genomeFilepath);*/
 
-EvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepath,
+ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepath,
 		const std::string& correctedReadsFilepath, const std::string& genomeFilepath);
+
+KmerEvaluationData classifyKmersTestSarah(size_t k, util::GenomeType genomeType, const std::string& alignmentFilepath,
+		const std::string& pathToOriginalReads, const std::string& genomeFilepath);
+
+KmerEvaluationData classifyKmersTestReadbased(size_t k, GenomeType genomeType, const std::string& alignmentFilepath, const std::string& pathToOriginalReads,
+		const std::string& genomeFilepath);
 
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct

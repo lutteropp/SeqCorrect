@@ -26,8 +26,7 @@
 #include <vector>
 #include <string>
 #include <seqan/bam_io.h>
-#include "../util/error_type.hpp"
-#include "../util/correction.hpp"
+#include "../util/enums.hpp"
 
 /*
  * TODO: Bei einem Chimeric break dürfte die beginPos des Reads unterschiedlich sein!!!

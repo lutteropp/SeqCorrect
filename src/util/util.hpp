@@ -26,7 +26,7 @@
 #include <unordered_map>
 
 #include "../io/sequence_io.hpp"
-#include "../util/error_type.hpp"
+#include "enums.hpp"
 
 namespace seq_correct {
 namespace util {

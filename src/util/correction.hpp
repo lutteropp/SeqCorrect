@@ -23,7 +23,7 @@
 
 #pragma once
 
-#include "error_type.hpp"
+#include "enums.hpp"
 
 namespace seq_correct {
 namespace util {

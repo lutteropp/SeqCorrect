@@ -23,30 +23,46 @@
 
 #pragma once
 
-#include "../util/error_type.hpp"
-#include "evaluation_data.hpp"
+#include "../util/enums.hpp"
+#include "error_evaluation_data.hpp"
 
 namespace seq_correct {
 namespace eval {
 
 using namespace util;
 
-size_t truePositives(ErrorType type, const EvaluationData& data);
-size_t trueNegatives(ErrorType type, const EvaluationData& data);
-size_t falsePositives(ErrorType type, const EvaluationData& data);
-size_t falseNegatives(ErrorType type, const EvaluationData& data);
+size_t truePositives(ErrorType type, const ErrorEvaluationData& data);
+size_t trueNegatives(ErrorType type, const ErrorEvaluationData& data);
+size_t falsePositives(ErrorType type, const ErrorEvaluationData& data);
+size_t falseNegatives(ErrorType type, const ErrorEvaluationData& data);
 
-double computeAccuracy(ErrorType type, const EvaluationData& data);
-double computePrecision(ErrorType type, const EvaluationData& data);
-double computeRecall(ErrorType type, const EvaluationData& data);
-double computeSensitivity(ErrorType type, const EvaluationData& data);
-double computeGain(ErrorType type, const EvaluationData& data);
-double computeSpecificity(ErrorType type, const EvaluationData& data);
-double computeF1Score(ErrorType type, const EvaluationData& data);
-double computeUnweightedAverageBaseF1Score(const EvaluationData& data);
-double computeUnweightedAverageGapF1Score(const EvaluationData& data);
-double computeBaseNMIScore(const EvaluationData& data);
-double computeGapNMIScore(const EvaluationData& data);
+double computeAccuracy(ErrorType type, const ErrorEvaluationData& data);
+double computePrecision(ErrorType type, const ErrorEvaluationData& data);
+double computeRecall(ErrorType type, const ErrorEvaluationData& data);
+double computeSensitivity(ErrorType type, const ErrorEvaluationData& data);
+double computeGain(ErrorType type, const ErrorEvaluationData& data);
+double computeSpecificity(ErrorType type, const ErrorEvaluationData& data);
+double computeF1Score(ErrorType type, const ErrorEvaluationData& data);
+double computeUnweightedAverageBaseF1Score(const ErrorEvaluationData& data);
+double computeUnweightedAverageGapF1Score(const ErrorEvaluationData& data);
+double computeBaseNMIScore(const ErrorEvaluationData& data);
+double computeGapNMIScore(const ErrorEvaluationData& data);
+
+
+size_t truePositives(KmerType type, const KmerEvaluationData& data);
+size_t trueNegatives(KmerType type, const KmerEvaluationData& data);
+size_t falsePositives(KmerType type, const KmerEvaluationData& data);
+size_t falseNegatives(KmerType type, const KmerEvaluationData& data);
+
+double computeAccuracy(KmerType type, const KmerEvaluationData& data);
+double computePrecision(KmerType type, const KmerEvaluationData& data);
+double computeRecall(KmerType type, const KmerEvaluationData& data);
+double computeSensitivity(KmerType type, const KmerEvaluationData& data);
+double computeGain(KmerType type, const KmerEvaluationData& data);
+double computeSpecificity(KmerType type, const KmerEvaluationData& data);
+double computeF1Score(KmerType type, const KmerEvaluationData& data);
+double computeUnweightedAverageF1Score(const KmerEvaluationData& data);
+double computeNMIScore(const KmerEvaluationData& data);
 
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct

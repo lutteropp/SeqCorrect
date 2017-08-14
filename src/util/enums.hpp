@@ -30,6 +30,22 @@
 namespace seq_correct {
 namespace util {
 
+enum class GenomeType {
+	CIRCULAR, LINEAR
+};
+
+enum class ErrorType {
+	CORRECT, INSERTION, SUB_OF_A, SUB_OF_C, SUB_OF_G, SUB_OF_T, DEL_OF_A, DEL_OF_C, DEL_OF_G, DEL_OF_T, MULTIDEL, NODEL
+};
+
+enum class CorrectionAlgorithm {
+	NONE, SIMPLE_KMER, ADAPTIVE_KMER, PARTIAL_MSA, SUFFIX_TREE, FULL_MSA
+};
+
+enum class KmerType {
+	UNTRUSTED, UNIQUE, REPEAT
+};
+
 // code from http://stackoverflow.com/questions/261963/how-can-i-iterate-over-an-enum
 template<typename C, C beginVal, C endVal>
 class Iterator {
@@ -72,13 +88,24 @@ struct EnumClassPairHash
     }
 };
 
-enum class ErrorType {
-	CORRECT, INSERTION, SUB_OF_A, SUB_OF_C, SUB_OF_G, SUB_OF_T, DEL_OF_A, DEL_OF_C, DEL_OF_G, DEL_OF_T, MULTIDEL, NODEL
-};
 typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::NODEL> AllErrorTypeIterator;
 typedef Iterator<ErrorType, ErrorType::INSERTION, ErrorType::MULTIDEL> ErrorOnlyTypeIterator;
 typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::SUB_OF_T> BaseTypeIterator;
 typedef Iterator<ErrorType, ErrorType::DEL_OF_A, ErrorType::NODEL> GapTypeIterator;
+
+typedef Iterator<KmerType, KmerType::UNTRUSTED, KmerType::REPEAT> KmerTypeIterator;
+
+inline std::string kmerTypeToString(KmerType type) {
+	if (type == KmerType::UNTRUSTED) {
+		return "UNTRUSTED";
+	} else if (type == KmerType::UNIQUE) {
+		return "UNIQUE";
+	} else if (type == KmerType::REPEAT) {
+		return "REPEAT";
+	} else {
+		throw std::runtime_error("Unknown k-mer type!");
+	}
+}
 
 inline std::string errorTypeToString(ErrorType type) {
 	if (type == ErrorType::CORRECT) {

@@ -25,7 +25,7 @@
 
 #include <unordered_map>
 #include <utility>
-#include "../util/error_type.hpp"
+#include "../util/enums.hpp"
 
 namespace seq_correct {
 namespace eval {
@@ -34,9 +34,9 @@ using namespace util;
 
 // row in confusion matrix : true error type
 // column in confusion matrix: predicted error type
-class EvaluationData {
+class ErrorEvaluationData {
 public:
-	EvaluationData();
+	ErrorEvaluationData();
 	size_t truePositives(ErrorType type) const;
 	size_t falsePositives(ErrorType type) const;
 	size_t trueNegatives(ErrorType type) const;
@@ -50,6 +50,22 @@ public:
 private:
 	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t, EnumClassPairHash> baseConfusionMatrix;
 	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t, EnumClassPairHash> gapConfusionMatrix;
+};
+
+class KmerEvaluationData {
+public:
+	KmerEvaluationData();
+	size_t truePositives(KmerType type) const;
+	size_t falsePositives(KmerType type) const;
+	size_t trueNegatives(KmerType type) const;
+	size_t falseNegatives(KmerType type) const;
+	size_t getEntry(KmerType trueType, KmerType predictedType) const;
+	size_t sumAllEntries() const;
+	size_t sumTruth(KmerType type) const; // row sum
+	size_t sumPredicted(KmerType type) const; // column sum
+	void update(KmerType trueType, KmerType predictedType);
+private:
+	std::unordered_map<std::pair<KmerType, KmerType>, size_t, EnumClassPairHash> kmerConfusionMatrix;
 };
 
 } // end of namespace seq_correct::eval

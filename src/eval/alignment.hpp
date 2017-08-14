@@ -24,7 +24,8 @@
 #pragma once
 
 #include <vector>
-#include "../util/error_type.hpp"
+
+#include "../util/enums.hpp"
 
 namespace seq_correct {
 namespace eval {

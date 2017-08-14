@@ -14,7 +14,6 @@
 #include <fstream>
 #include <cstdlib>
 #include "external/tclap/CmdLine.h"
-#include "util/genome_type.hpp"
 
 using namespace seq_correct;
 using namespace util;
@@ -36,7 +35,7 @@ void createReadsOnly(const std::string& pathToOriginalReads) {
 	writer.close();
 }
 
-void printEvaluationData(const eval::EvaluationData& evalData) {
+void printErrorEvaluationData(const eval::ErrorEvaluationData& evalData) {
 	for (ErrorType type : AllErrorTypeIterator()) {
 		std::cout << errorTypeToString(type) << ":\n";
 		std::cout << "  TP:          " << eval::truePositives(type, evalData) << "\n";
@@ -69,6 +68,34 @@ void printEvaluationData(const eval::EvaluationData& evalData) {
 	for (ErrorType e1 : GapTypeIterator()) {
 		for (ErrorType e2 : GapTypeIterator()) {
 			std::cout << "[" << util::errorTypeToString(e1) << "][" << util::errorTypeToString(e2) << "]: "
+					<< evalData.getEntry(e1, e2) << "\n";
+		}
+	}
+}
+
+void printKmerEvaluationData(const eval::KmerEvaluationData& evalData) {
+	for (KmerType type : KmerTypeIterator()) {
+		std::cout << kmerTypeToString(type) << ":\n";
+		std::cout << "  TP:          " << eval::truePositives(type, evalData) << "\n";
+		std::cout << "  TN:          " << eval::trueNegatives(type, evalData) << "\n";
+		std::cout << "  FP:          " << eval::falsePositives(type, evalData) << "\n";
+		std::cout << "  FN:          " << eval::falseNegatives(type, evalData) << "\n";
+		std::cout << "  Accuracy:    " << eval::computeAccuracy(type, evalData) << "\n";
+		std::cout << "  Precision:   " << eval::computePrecision(type, evalData) << "\n";
+		std::cout << "  Recall:      " << eval::computeRecall(type, evalData) << "\n";
+		std::cout << "  Specificity: " << eval::computeSpecificity(type, evalData) << "\n";
+		std::cout << "  Sensitivity: " << eval::computeSensitivity(type, evalData) << "\n";
+		std::cout << "  Gain:        " << eval::computeGain(type, evalData) << "\n";
+		std::cout << "  F1-score:    " << eval::computeF1Score(type, evalData) << "\n";
+	}
+	std::cout << "\n";
+	std::cout << "Unweighted Average F1-score: " << eval::computeUnweightedAverageF1Score(evalData) << "\n";
+	std::cout << "NMI-score:                   " << eval::computeNMIScore(evalData) << "\n";
+
+	std::cout << "\n Confusion Matrix:\n";
+	for (KmerType e1 : KmerTypeIterator()) {
+		for (KmerType e2 : KmerTypeIterator()) {
+			std::cout << "[" << util::kmerTypeToString(e1) << "][" << util::kmerTypeToString(e2) << "]: "
 					<< evalData.getEntry(e1, e2) << "\n";
 		}
 	}
@@ -115,8 +142,8 @@ void cmd_correct(const std::string& pathToOriginalReads, GenomeType genomeType, 
 }
 
 // TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?
-void cmd_eval(const std::string& pathToOriginalReads, const std::string& pathToCorrectedReads,
-		const std::string& pathToGenome, const std::string& outputPath) {
+void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
+		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath) {
 	std::string alignmentPath = pathToOriginalReads.substr(0, pathToOriginalReads.find_last_of('.')) + ".bam";
 	std::ifstream alignmentFile(alignmentPath);
 	if (!alignmentFile.good()) {
@@ -159,8 +186,22 @@ void cmd_eval(const std::string& pathToOriginalReads, const std::string& pathToC
 	}
 	alignmentFile.close();
 
-	eval::EvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads, pathToGenome);
-	printEvaluationData(res);
+	eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
+			pathToGenome);
+	printErrorEvaluationData(res);
+
+	createReadsOnly(pathToOriginalReads);
+
+	std::cout << "k-mer size used: " << k << "\n";
+	std::cout << "My own k-mer classification: \n";
+	eval::KmerEvaluationData resKmer = eval::classifyKmersTestSarah(k, genomeType, alignmentPath, pathToOriginalReads,
+			pathToGenome);
+	printKmerEvaluationData(resKmer);
+
+	std::cout << "\nRead-based k-mer classification: \n";
+	eval::KmerEvaluationData resKmer2 = eval::classifyKmersTestReadbased(k, genomeType, alignmentPath,
+			pathToOriginalReads, pathToGenome);
+	printKmerEvaluationData(resKmer2);
 }
 
 int main(int argc, char* argv[]) {
@@ -177,6 +218,7 @@ int main(int argc, char* argv[]) {
 	std::string outputPath;
 	std::string algoName;
 	correction::CorrectionAlgorithm algo = correction::CorrectionAlgorithm::SIMPLE_KMER;
+	size_t k;
 
 	try {
 		TCLAP::CmdLine cmd("SeqCorrect - an error correction toolkit for next-generation whole-genome sequencing reads",
@@ -192,6 +234,8 @@ int main(int argc, char* argv[]) {
 		cmd.add(genomeArg);
 		TCLAP::ValueArg<size_t> genomeSizeArg("s", "size", "Estimated genome size", false, 0, "unsigned int");
 		cmd.add(genomeSizeArg);
+		TCLAP::ValueArg<size_t> kmerSizeArg("k", "kmer", "K-mer size to use", false, 19, "unsigned int");
+		cmd.add(kmerSizeArg);
 		TCLAP::ValueArg<std::string> outputArg("o", "output", "Path to the output file", true, "", "string");
 		cmd.add(outputArg);
 		TCLAP::SwitchArg circularArg("c", "circular", "Circular genome", false);
@@ -220,7 +264,8 @@ int main(int argc, char* argv[]) {
 		correctMode = correctArg.getValue();
 		evalMode = evalArg.getValue();
 		genomeSize = genomeSizeArg.getValue();
-		algoName = algoArg.getValue(); // TODO: Parse the algo arg
+		algoName = algoArg.getValue();
+		k = kmerSizeArg.getValue();
 	} catch (TCLAP::ArgException &e) // catch any exceptions
 	{
 		std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
@@ -265,11 +310,11 @@ int main(int argc, char* argv[]) {
 	if (circular && linear) {
 		throw std::runtime_error("A genome cannot be both circular and linear");
 	}
-	if (correctMode && !(circular || linear)) {
+	if ((correctMode || evalMode) && !(circular || linear)) {
 		throw std::runtime_error("Either --circular or --linear is required");
 	}
-	if (!correctMode && (circular || linear)) {
-		throw std::runtime_error("Genome type only required for --correct mode!");
+	if (!(correctMode || evalMode) && (circular || linear)) {
+		throw std::runtime_error("Genome type only required for --correct and --eval mode!");
 	}
 	if (evalMode && pathToGenome.empty()) {
 		throw std::runtime_error("Path to genome is missing");
@@ -290,16 +335,17 @@ int main(int argc, char* argv[]) {
 				"Please do not specify any other parameters than --output, when using the --demo mode");
 	}
 
+	if (circular) {
+		genomeType = GenomeType::CIRCULAR;
+	} else {
+		genomeType = GenomeType::LINEAR;
+	}
+
 	if (demoMode) {
 		cmd_demo(outputPath);
 	} else if (correctMode) {
-		if (circular) {
-			genomeType = GenomeType::CIRCULAR;
-		} else {
-			genomeType = GenomeType::LINEAR;
-		}
 		cmd_correct(pathToOriginalReads, genomeType, outputPath, genomeSize, algo);
 	} else if (evalMode) {
-		cmd_eval(pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);
+		cmd_eval(k, genomeType, pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);
 	}
 }

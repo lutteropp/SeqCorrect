@@ -31,9 +31,12 @@
 #include "../io/read_with_alignments.hpp"
 #include "../io/sequence_io.hpp"
 #include "alignment.hpp"
+#include "../kmer/classification.hpp"
 
 namespace seq_correct {
 namespace eval {
+
+using namespace classification;
 
 std::string extractCigarString(const seqan::String< seqan::CigarElement<char> >& cigar) {
 	std::string cigarString = "";
@@ -51,7 +54,7 @@ void handleChimericBreak(ReadWithAlignments& rwa, size_t cigarCount, HandlingInf
 	 - info.softClippedBases + info.deletedBases;*/
 	unsigned realPositionInRead = info.positionInRead + info.hardClippedBases; // the position of the first base of the chimeric break
 
-	assert(realPositionInRead < readLength);
+	assert(realPositionInRead < rwa.seq.size());
 
 	if (realPositionInRead == 0) { // in this case, take the position of the last base of the chimeric break
 		realPositionInRead += cigarCount;
@@ -86,7 +89,7 @@ void handleInsertion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& i
 		 - info.softClippedBases + info.deletedBases;*/
 		size_t realPositionInRead = info.positionInRead + info.hardClippedBases;
 
-		assert(realPositionInRead < readLength);
+		assert(realPositionInRead < rwa.seq.size());
 
 		char fromBase = nucleotideInRead;
 
@@ -99,7 +102,7 @@ void handleInsertion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& i
 
 void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& info, const std::string& genome) {
 	size_t realPositionInRead = info.positionInRead + info.hardClippedBases - 1;
-	assert(realPositionInRead < readLength);
+	assert(realPositionInRead < rwa.seq.size());
 	char fromBase = rwa.seq[realPositionInRead];
 	if (fromBase == 'S') {
 		throw std::runtime_error("this should not happen");
@@ -125,7 +128,7 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 		nucleotideInReference = genome[nucleotidePositionInReference + j];
 		toBases += nucleotideInReference;
 	}
-	assert(toBases.size() == cigar[i].count);
+	assert(toBases.size() == cigarCount);
 	if (cigarCount == 1) {
 		if (nucleotideInReference == 'A') {
 			info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_A, fromBase));
@@ -306,8 +309,8 @@ std::vector<std::vector<int> > fillDPMatrix(const std::string& s1, const std::st
  }
  */
 
-void handleUndetectedError(size_t posTruth, ErrorType typeTruth, EvaluationData& data, std::vector<bool>& fineBases,
-		std::vector<bool>& fineGaps) {
+void handleUndetectedError(size_t posTruth, ErrorType typeTruth, ErrorEvaluationData& data,
+		std::vector<bool>& fineBases, std::vector<bool>& fineGaps) {
 	if (isBaseErrorType(typeTruth)) {
 		data.update(typeTruth, ErrorType::CORRECT);
 		fineBases[posTruth] = false;
@@ -317,7 +320,7 @@ void handleUndetectedError(size_t posTruth, ErrorType typeTruth, EvaluationData&
 	}
 }
 
-void handleMisdetectedError(size_t posPredicted, ErrorType typePredicted, EvaluationData& data,
+void handleMisdetectedError(size_t posPredicted, ErrorType typePredicted, ErrorEvaluationData& data,
 		std::vector<bool>& fineBases, std::vector<bool>& fineGaps) {
 	if (isBaseErrorType(typePredicted)) {
 		data.update(ErrorType::CORRECT, typePredicted);
@@ -329,7 +332,7 @@ void handleMisdetectedError(size_t posPredicted, ErrorType typePredicted, Evalua
 }
 
 // requires the detected errors to be sorted by position in read
-void updateEvaluationData(EvaluationData& data, const std::vector<Correction>& errorsTruth,
+void updateEvaluationData(ErrorEvaluationData& data, const std::vector<Correction>& errorsTruth,
 		const std::vector<Correction>& errorsPredicted, size_t readLength, const std::string& mappedSequence) {
 	size_t truthIdx = 0;
 	size_t predictedIdx = 0;
@@ -500,9 +503,9 @@ void sortCorrectedReads(const std::string& correctedReadsFilepath, const std::st
 	output.close();
 }
 
-EvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFilepath,
+ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFilepath,
 		const std::string& correctedReadsFilepath, const std::string& genomeFilepath) {
-	EvaluationData data;
+	ErrorEvaluationData data;
 	std::string genome = io::readReferenceGenome(genomeFilepath);
 	BAMIterator it(alignedReadsFilepath);
 
@@ -536,6 +539,92 @@ EvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFil
 		std::vector<Correction> errorsTruth = extractErrors(rwa, genome);
 		std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
 		updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
+	}
+	return data;
+}
+
+KmerEvaluationData classifyKmersTestSarah(size_t k, GenomeType genomeType, const std::string& alignmentFilepath,
+		const std::string& pathToOriginalReads, const std::string& genomeFilepath) {
+	KmerEvaluationData data;
+	std::string genome = io::readReferenceGenome(genomeFilepath);
+	BAMIterator it(alignmentFilepath);
+
+	std::string pathToReadsOnly = pathToOriginalReads + ".readsOnly.txt";
+	counting::FMIndexMatcher fmReads(pathToReadsOnly);
+	counting::FMIndexMatcher fmGenome(genomeFilepath);
+	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
+	pusm::PerfectUniformSequencingModel pusm(genomeType, genome.size(), readLengths);
+	coverage::CoverageBiasUnitMulti biasUnit;
+
+	while (it.hasReadsLeft()) {
+		ReadWithAlignments rwa = it.next();
+		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
+			std::string kmer = rwa.seq.substr(i, k);
+			size_t trueCount = fmGenome.countKmer(kmer);
+			KmerType trueType;
+			if (trueCount == 0) {
+				trueType = KmerType::UNTRUSTED;
+			} else if (trueCount == 1) {
+				trueType = KmerType::UNIQUE;
+			} else {
+				trueType = KmerType::REPEAT;
+			}
+			KmerType predictedType = classifyKmer(kmer, fmReads, pusm);
+			data.update(trueType, predictedType);
+		}
+	}
+	return data;
+}
+
+KmerEvaluationData classifyKmersTestReadbased(size_t k, GenomeType genomeType, const std::string& alignmentFilepath,
+		const std::string& pathToOriginalReads, const std::string& genomeFilepath) {
+	KmerEvaluationData data;
+	std::string genome = io::readReferenceGenome(genomeFilepath);
+	BAMIterator it(alignmentFilepath);
+
+	std::string pathToReadsOnly = pathToOriginalReads + ".readsOnly.txt";
+	counting::FMIndexMatcher fmReads(pathToReadsOnly);
+	counting::FMIndexMatcher fmGenome(genomeFilepath);
+	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
+	pusm::PerfectUniformSequencingModel pusm(genomeType, genome.size(), readLengths);
+	coverage::CoverageBiasUnitMulti biasUnit;
+
+	while (it.hasReadsLeft()) {
+		ReadWithAlignments rwa = it.next();
+
+		std::vector<size_t> kmerCounts;
+		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
+			std::string kmer = rwa.seq.substr(i, k);
+			size_t count = fmReads.countKmer(kmer);
+			kmerCounts.push_back(count);
+		}
+		double medianCount = 0;
+		std::vector<size_t> kmerCountsSorted;
+		for (size_t i = 0; i < kmerCounts.size(); ++i) {
+			kmerCountsSorted.push_back(kmerCounts[i]);
+		}
+		std::sort(kmerCountsSorted.begin(), kmerCountsSorted.end());
+		if (kmerCountsSorted.size() % 2 == 1) {
+			medianCount = (double) kmerCountsSorted[(kmerCountsSorted.size() + 1) / 2];
+		} else {
+			medianCount = ((double) kmerCountsSorted[kmerCountsSorted.size() / 2]
+					+ (double) kmerCountsSorted[kmerCountsSorted.size() / 2 + 1]) / 2;
+		}
+
+		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
+			std::string kmer = rwa.seq.substr(i, k);
+			size_t trueCount = fmGenome.countKmer(kmer);
+			KmerType trueType;
+			if (trueCount == 0) {
+				trueType = KmerType::UNTRUSTED;
+			} else if (trueCount == 1) {
+				trueType = KmerType::UNIQUE;
+			} else {
+				trueType = KmerType::REPEAT;
+			}
+			KmerType predictedType = classifyKmerReadBased(k, i, kmerCounts, medianCount, rwa.seq);
+			data.update(trueType, predictedType);
+		}
 	}
 	return data;
 }

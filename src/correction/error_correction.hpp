@@ -29,6 +29,7 @@
 #include "../io/sequence_io.hpp"
 #include "../counting/fm_count.hpp"
 #include "../pusm/pusm.hpp"
+#include "../util/enums.hpp"
 
 namespace seq_correct {
 namespace correction {
@@ -36,10 +37,7 @@ namespace correction {
 using namespace io;
 using namespace counting;
 using namespace pusm;
-
-enum class CorrectionAlgorithm {
-	NONE, SIMPLE_KMER, ADAPTIVE_KMER, PARTIAL_MSA, SUFFIX_TREE, FULL_MSA
-};
+using namespace util;
 
 void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, FMIndexMatcher& kmerCounter,
 		PerfectUniformSequencingModel& pusm, const std::string& outputPath);

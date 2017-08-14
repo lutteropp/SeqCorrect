@@ -21,16 +21,25 @@
  Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
  */
 
+#include "error_evaluation_data.hpp"
+
 #include <stdexcept>
 #include <iostream>
-#include "evaluation_data.hpp"
 
 namespace seq_correct {
 namespace eval {
 
 using namespace util;
 
-EvaluationData::EvaluationData() {
+KmerEvaluationData::KmerEvaluationData() {
+	for (KmerType k1: KmerTypeIterator()) {
+		for (KmerType k2: KmerTypeIterator()) {
+			kmerConfusionMatrix[std::make_pair(k1, k2)] = 0;
+		}
+	}
+}
+
+ErrorEvaluationData::ErrorEvaluationData() {
 	for (ErrorType e1 : BaseTypeIterator()) {
 		for (ErrorType e2 : BaseTypeIterator()) {
 			baseConfusionMatrix[std::make_pair(e1, e2)] = 0;
@@ -43,7 +52,11 @@ EvaluationData::EvaluationData() {
 	}
 }
 
-size_t EvaluationData::truePositives(ErrorType type) const {
+size_t KmerEvaluationData::truePositives(KmerType type) const {
+	return kmerConfusionMatrix.at(std::make_pair(type, type));
+}
+
+size_t ErrorEvaluationData::truePositives(ErrorType type) const {
 	if (isBaseErrorType(type)) {
 		return baseConfusionMatrix.at(std::make_pair(type, type));
 	} else {
@@ -51,7 +64,17 @@ size_t EvaluationData::truePositives(ErrorType type) const {
 	}
 }
 
-size_t EvaluationData::falsePositives(ErrorType type) const {
+size_t KmerEvaluationData::falsePositives(KmerType type) const {
+	size_t count = 0;
+	for (KmerType t : KmerTypeIterator()) {
+		if (t != type) {
+			count += kmerConfusionMatrix.at(std::make_pair(t, type));
+		}
+	}
+	return count;
+}
+
+size_t ErrorEvaluationData::falsePositives(ErrorType type) const {
 	size_t count = 0;
 	if (isBaseErrorType(type)) {
 		for (ErrorType e : BaseTypeIterator()) {
@@ -69,7 +92,21 @@ size_t EvaluationData::falsePositives(ErrorType type) const {
 	return count;
 }
 
-size_t EvaluationData::trueNegatives(ErrorType type) const {
+size_t KmerEvaluationData::trueNegatives(KmerType type) const {
+	size_t count = 0;
+	for (KmerType t : KmerTypeIterator()) {
+		if (t != type) {
+			for (KmerType u : KmerTypeIterator()) {
+				if (u != type) {
+					count += kmerConfusionMatrix.at(std::make_pair(t, u));
+				}
+			}
+		}
+	}
+	return count;
+}
+
+size_t ErrorEvaluationData::trueNegatives(ErrorType type) const {
 	size_t count = 0;
 	if (isBaseErrorType(type)) {
 		for (ErrorType e : BaseTypeIterator()) {
@@ -95,7 +132,17 @@ size_t EvaluationData::trueNegatives(ErrorType type) const {
 	return count;
 }
 
-size_t EvaluationData::falseNegatives(ErrorType type) const {
+size_t KmerEvaluationData::falseNegatives(KmerType type) const {
+	size_t count = 0;
+	for (KmerType t : KmerTypeIterator()) {
+		if (t != type) {
+			count += kmerConfusionMatrix.at(std::make_pair(type, t));
+		}
+	}
+	return count;
+}
+
+size_t ErrorEvaluationData::falseNegatives(ErrorType type) const {
 	size_t count = 0;
 	if (isBaseErrorType(type)) {
 		for (ErrorType e : BaseTypeIterator()) {
@@ -113,7 +160,11 @@ size_t EvaluationData::falseNegatives(ErrorType type) const {
 	return count;
 }
 
-size_t EvaluationData::getEntry(ErrorType trueType, ErrorType predictedType) const {
+size_t KmerEvaluationData::getEntry(KmerType trueType, KmerType predictedType) const {
+	return kmerConfusionMatrix.at(std::make_pair(trueType, predictedType));
+}
+
+size_t ErrorEvaluationData::getEntry(ErrorType trueType, ErrorType predictedType) const {
 	if (isBaseErrorType(trueType) && isBaseErrorType(predictedType)) {
 		return baseConfusionMatrix.at(std::make_pair(trueType, predictedType));
 	} else if (isGapErrorType(trueType) && isGapErrorType(predictedType)) {
@@ -137,7 +188,7 @@ size_t EvaluationData::getEntry(ErrorType trueType, ErrorType predictedType) con
 	}
 }
 
-size_t EvaluationData::sumAllBaseEntries() const {
+size_t ErrorEvaluationData::sumAllBaseEntries() const {
 	size_t count = 0;
 	for (ErrorType e : BaseTypeIterator()) {
 		for (ErrorType f : BaseTypeIterator()) {
@@ -147,7 +198,7 @@ size_t EvaluationData::sumAllBaseEntries() const {
 	return count;
 }
 
-size_t EvaluationData::sumAllGapEntries() const {
+size_t ErrorEvaluationData::sumAllGapEntries() const {
 	size_t count = 0;
 	for (ErrorType e : GapTypeIterator()) {
 		for (ErrorType f : GapTypeIterator()) {
@@ -157,7 +208,25 @@ size_t EvaluationData::sumAllGapEntries() const {
 	return count;
 }
 
-size_t EvaluationData::sumTruth(ErrorType type) const {
+size_t KmerEvaluationData::sumAllEntries() const {
+	size_t count = 0;
+	for (KmerType e : KmerTypeIterator()) {
+		for (KmerType f : KmerTypeIterator()) {
+			count += kmerConfusionMatrix.at(std::make_pair(e, f));
+		}
+	}
+	return count;
+}
+
+size_t KmerEvaluationData::sumTruth(KmerType type) const {
+	size_t sum = 0;
+	for (KmerType t : KmerTypeIterator()) {
+		sum += kmerConfusionMatrix.at(std::make_pair(type, t));
+	}
+	return sum;
+}
+
+size_t ErrorEvaluationData::sumTruth(ErrorType type) const {
 	size_t sum = 0;
 	if (isBaseErrorType(type)) {
 		for (ErrorType e : BaseTypeIterator()) {
@@ -171,7 +240,15 @@ size_t EvaluationData::sumTruth(ErrorType type) const {
 	return sum;
 }
 
-size_t EvaluationData::sumPredicted(ErrorType type) const {
+size_t KmerEvaluationData::sumPredicted(KmerType type) const {
+	size_t sum = 0;
+	for (KmerType t : KmerTypeIterator()) {
+		sum += kmerConfusionMatrix.at(std::make_pair(t, type));
+	}
+	return sum;
+}
+
+size_t ErrorEvaluationData::sumPredicted(ErrorType type) const {
 	size_t sum = 0;
 	if (isBaseErrorType(type)) {
 		for (ErrorType e : BaseTypeIterator()) {
@@ -185,7 +262,11 @@ size_t EvaluationData::sumPredicted(ErrorType type) const {
 	return sum;
 }
 
-void EvaluationData::update(ErrorType trueType, ErrorType predictedType) {
+void KmerEvaluationData::update(KmerType trueType, KmerType predictedType) {
+	kmerConfusionMatrix[std::make_pair(trueType, predictedType)]++;
+}
+
+void ErrorEvaluationData::update(ErrorType trueType, ErrorType predictedType) {
 	if (isBaseErrorType(trueType) && isBaseErrorType(predictedType)) {
 		baseConfusionMatrix[std::make_pair(trueType, predictedType)]++;
 	} else if (isGapErrorType(trueType) && isGapErrorType(predictedType)) {

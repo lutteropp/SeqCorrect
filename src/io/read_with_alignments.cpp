@@ -30,7 +30,7 @@
 #include <stdexcept>
 
 #include "../util/util.hpp"
-#include "../util/error_type.hpp"
+#include "../util/enums.hpp"
 
 namespace seq_correct {
 namespace eval {
