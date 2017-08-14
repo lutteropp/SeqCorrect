@@ -641,11 +641,11 @@ KmerEvaluationData classifyKmersTestSarah(size_t k, GenomeType genomeType, const
 		}
 
 		if (!correctlyClassified) {
-			std::cout << "Read K-mer-decomposition:\n";
+			/*std::cout << "Read K-mer-decomposition:\n";
 			for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
 				std::cout << "  " << kmerTypeToString(trueTypes[i]) << " -> " << kmerTypeToString(predictedTypes[i])
 						<< ": " << kmerCounts[i] << "\n";
-			}
+			}*/
 
 			numWrong++;
 		} else {
@@ -700,11 +700,11 @@ KmerEvaluationData classifyKmersTestReadbased(size_t k, GenomeType genomeType, c
 		}
 
 		if (!correctlyClassified) {
-			std::cout << "Read K-mer-decomposition:\n";
+			/*std::cout << "Read K-mer-decomposition:\n";
 			for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
 				std::cout << "  " << kmerTypeToString(trueTypes[i]) << " -> " << kmerTypeToString(predictedTypes[i])
 						<< ": " << kmerCounts[i] << "\n";
-			}
+			}*/
 		}
 	}
 	return data;
