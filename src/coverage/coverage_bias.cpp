@@ -112,8 +112,8 @@ std::vector<CoverageBiasData> computeMedianBiases(size_t k, std::vector<std::vec
  */
 double inferBias(const std::string& kmer, counting::Matcher& readsIndex,
 		counting::Matcher& genomeIndex) {
-	size_t countObserved = readsIndex.countKmer(kmer);
-	size_t countGenome = genomeIndex.countKmer(kmer);
+	size_t countObserved = readsIndex.countKmer(kmer) + readsIndex.countKmer(util::reverseComplementString(kmer));
+	size_t countGenome = genomeIndex.countKmer(kmer) + genomeIndex.countKmer(util::reverseComplementString(kmer));
 	return countObserved / (double) countGenome;
 }
 
@@ -128,7 +128,7 @@ double inferBias(const std::string& kmer, counting::Matcher& readsIndex,
  */
 double inferBias(size_t k, const std::string& kmer, counting::Matcher& readsIndex,
 		pusm::PerfectUniformSequencingModel &pusm) {
-	size_t countObserved = readsIndex.countKmer(kmer);
+	size_t countObserved = readsIndex.countKmer(kmer) + readsIndex.countKmer(util::reverseComplementString(kmer));
 	double countExpected = pusm.expectedCount(k).expectation;
 	if (countObserved >= countExpected * 0.2) {
 		// if this condition is left out, the coverage biases will be very low due to erroneous k-mers

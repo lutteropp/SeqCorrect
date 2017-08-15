@@ -56,7 +56,7 @@ inline KmerType classifyKmer(const T& kmer, counting::Matcher& kmerCounter,
 		throw std::runtime_error("The kmer is empty");
 	}
 	pusm::PusmData pusmData = pusm.expectedCount(kmer.size());
-	size_t observedCount = kmerCounter.countKmer(kmer);
+	size_t observedCount = kmerCounter.countKmer(kmer) + kmerCounter.countKmer(util::reverseComplementString(kmer));
 	double correctedCount = (double) 1.0 / biasUnit.computeCoverageBias(kmer) * observedCount;
 	return classifyKmer(pusmData, correctedCount);
 }
@@ -72,7 +72,7 @@ inline KmerType classifyKmer(const T& kmer, size_t observedCount,
 	return classifyKmer(pusmData, correctedCount);
 }
 
-inline KmerType classifyKmerReadBased(size_t k, size_t posInRead, const std::vector<size_t>& kmerCounts, size_t medianCount,
+inline KmerType classifyKmerReadBased(size_t k, size_t posInRead, const std::vector<uint16_t>& kmerCounts, double medianCount,
 		const std::string& readSequence) {
 	KmerType type;
 

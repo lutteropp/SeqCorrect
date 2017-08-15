@@ -575,9 +575,9 @@ std::vector<KmerType> computeTrueTypes(size_t k, const std::string& sequence, co
 	return trueTypes;
 }
 
-double computeMedianKmerCount(const std::vector<size_t>& counts) {
+double computeMedianKmerCount(const std::vector<uint16_t>& counts) {
 	double medianCount = 0;
-	std::vector<size_t> kmerCountsSorted;
+	std::vector<uint16_t> kmerCountsSorted;
 	for (size_t i = 0; i < counts.size(); ++i) {
 		kmerCountsSorted.push_back(counts[i]);
 	}
@@ -591,11 +591,11 @@ double computeMedianKmerCount(const std::vector<size_t>& counts) {
 	return medianCount;
 }
 
-std::vector<size_t> computeKmerCountsRead(size_t k, const std::string& sequence, counting::Matcher& fmReads) {
-	std::vector<size_t> kmerCounts;
+std::vector<uint16_t> computeKmerCountsRead(size_t k, const std::string& sequence, counting::Matcher& fmReads) {
+	std::vector<uint16_t> kmerCounts;
 	for (size_t i = 0; i < sequence.size() - k; ++i) {
 		std::string kmer = sequence.substr(i, k);
-		size_t count = fmReads.countKmer(kmer);
+		uint16_t count = fmReads.countKmer(kmer) + fmReads.countKmer(util::reverseComplementString(kmer));
 		kmerCounts.push_back(count);
 	}
 	return kmerCounts;
@@ -615,12 +615,13 @@ KmerEvaluationData classifyKmersTestSarah(size_t k, GenomeType genomeType, const
 	pusm::PerfectUniformSequencingModel pusm(genomeType, genome.size(), readLengths);
 	coverage::CoverageBiasUnitSingle biasUnit;
 	biasUnit.preprocess(k, pathToOriginalReads, fmReads, pusm);
+	biasUnit.printMedianCoverageBiases();
 
 	double minProgress = 0.0;
 	while (it.hasReadsLeft()) {
 		ReadWithAlignments rwa = it.next();
 
-		std::vector<size_t> kmerCounts = computeKmerCountsRead(k, rwa.seq, fmReads);
+		std::vector<uint16_t> kmerCounts = computeKmerCountsRead(k, rwa.seq, fmReads);
 		std::vector<KmerType> trueTypes = computeTrueTypes(k, rwa.seq, fmGenome);
 		std::vector<KmerType> predictedTypes;
 		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
@@ -678,7 +679,7 @@ KmerEvaluationData classifyKmersTestReadbased(size_t k, GenomeType genomeType, c
 	while (it.hasReadsLeft()) {
 		ReadWithAlignments rwa = it.next();
 
-		std::vector<size_t> kmerCounts = computeKmerCountsRead(k, rwa.seq, fmReads);
+		std::vector<uint16_t> kmerCounts = computeKmerCountsRead(k, rwa.seq, fmReads);
 		double medianCount = computeMedianKmerCount(kmerCounts);
 		std::vector<KmerType> trueTypes = computeTrueTypes(k, rwa.seq, fmGenome);
 		std::vector<KmerType> predictedTypes;

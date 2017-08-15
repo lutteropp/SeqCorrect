@@ -31,7 +31,7 @@
 namespace seq_correct {
 namespace counting {
 
-size_t FMIndexMatcher::countKmer(const std::string& kmer) {
+uint16_t FMIndexMatcher::countKmer(const std::string& kmer) {
 	if (useBuffer && buffer.find(kmer) != buffer.end()) {
 		return buffer[kmer];
 	}
@@ -82,15 +82,15 @@ FMIndexMatcherMulti::FMIndexMatcherMulti(const std::string& filename) :
 	}
 }
 
-std::vector<size_t> FMIndexMatcherMulti::countKmerMultiPositions(const std::string& kmer,
+std::vector<uint16_t> FMIndexMatcherMulti::countKmerMultiPositions(const std::string& kmer,
 		bool returnEmptyIfDoubleOccs) {
 	auto locations = sdsl::locate(fmIndex, kmer.begin(), kmer.end());
 	std::sort(locations.begin(), locations.end());
-	std::vector<size_t> res;
-	std::unordered_set<size_t> documents;
+	std::vector<uint16_t> res;
+	std::unordered_set<uint16_t> documents;
 	for (size_t i = 0; i < locations.size(); ++i) {
 		if (returnEmptyIfDoubleOccs && documents.find(documentID[locations[i]]) != documents.end()) {
-			return std::vector<size_t>();
+			return std::vector<uint16_t>();
 		}
 		if (returnEmptyIfDoubleOccs) {
 			documents.insert(documentID[locations[i]]);
@@ -107,7 +107,7 @@ NaiveBufferedMatcher::NaiveBufferedMatcher(const std::string& filename, size_t k
 	std::ifstream test(filenameNaive);
 	if (test.good()) {
 		std::string kmer;
-		size_t count;
+		uint16_t count;
 		while (test >> kmer >> count) {
 			buffer[kmer] = count;
 		}
@@ -139,7 +139,7 @@ NaiveBufferedMatcher::NaiveBufferedMatcher(const std::string& filename, size_t k
 	}
 }
 
-size_t NaiveBufferedMatcher::countKmer(const std::string& kmer) {
+uint16_t NaiveBufferedMatcher::countKmer(const std::string& kmer) {
 	return buffer[kmer];
 }
 

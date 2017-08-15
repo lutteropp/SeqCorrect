@@ -40,35 +40,35 @@ typedef csa_wt<wt_huff<bit_vector, rank_support_v5<>, select_support_scan<>, sel
 
 class Matcher {
 public:
-	virtual size_t countKmer(const std::string& kmer) = 0;
+	virtual uint16_t countKmer(const std::string& kmer) = 0;
 };
 
 class NaiveBufferedMatcher : public Matcher {
 public:
 	NaiveBufferedMatcher(const std::string& filename, size_t k);
-	size_t countKmer(const std::string& kmer);
+	uint16_t countKmer(const std::string& kmer);
 protected:
-	std::unordered_map<std::string, size_t> buffer;
+	std::unordered_map<std::string, uint16_t> buffer;
 };
 
 class FMIndexMatcher : public Matcher {
 public:
 	FMIndexMatcher(const std::string& filename);
-	size_t countKmer(const std::string &kmer);
+	uint16_t countKmer(const std::string &kmer);
 	void enableBuffer();
 	void disableBuffer();
 protected:
 	bool useBuffer;
 	FMIndex fmIndex;
-	std::unordered_map<std::string, size_t> buffer;
+	std::unordered_map<std::string, uint16_t> buffer;
 };
 
 class FMIndexMatcherMulti: public FMIndexMatcher {
 public:
 	FMIndexMatcherMulti(const std::string& filename);
-	std::vector<size_t> countKmerMultiPositions(const std::string &kmer, bool returnEmptyIfDoubleOccs);
+	std::vector<uint16_t> countKmerMultiPositions(const std::string &kmer, bool returnEmptyIfDoubleOccs);
 private:
-	std::vector<size_t> documentID; // TODO: there should be smth better with bit vectors and rank
+	std::vector<uint16_t> documentID; // TODO: there should be smth better with bit vectors and rank
 };
 
 } // end of namespace seq_correct::counting
