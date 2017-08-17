@@ -64,7 +64,7 @@ void backtrack(size_t i, size_t j, const std::string& originalRead, const std::s
 				<< originalRead << "\n\tCorrectedRead: " << correctedRead << "\n";
 	}
 	if (info[actCoord][0] == 1) { // match or mismatch
-		if (originalRead[i] != correctedRead[j]) {
+		if ((originalRead[i] != correctedRead[j]) && (correctedRead[j] != 'N')) { // ignore 'N' substitutions/ bases
 			res.push_back(std::make_pair(i, util::inferSubstitutionFrom(correctedRead[j])));
 		}
 		backtrack(i-1, j-1, originalRead, correctedRead, M, info, res);

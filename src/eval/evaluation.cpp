@@ -521,30 +521,44 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 	io::ReadInput input;
 	input.openFile(sortedReadsFilepath);
 
-#pragma omp parallel
+//#pragma omp parallel
 	{
-#pragma omp single
+//#pragma omp single
 		{
 			while (it.hasReadsLeft() && input.hasNext()) {
 				io::Read correctedRead = input.readNext(true, true, true);
+				//std::cout << "correctedRead = " << correctedRead.name << "\n";
 
 				ReadWithAlignments rwa = it.next();
+				//std::cout << "rwa = " << rwa.name << "\n";
 				while (hasFlagUnmapped(rwa.records[0])) {
 					std::cout << "skipping " << rwa.name << " because it's unmapped\n";
 					rwa = it.next();
+					//std::cout << "rwa = " << rwa.name << "\n";
 					std::cout << "skipping " << correctedRead.name << "\n";
 					correctedRead = input.readNext(true, true, true);
+					//std::cout << "correctedRead = " << correctedRead.name << "\n";
+				}
+
+				while (rwa.records.size() > 1) {
+					std::cout << "skipping " << rwa.name << " because it's chimeric\n";
+					rwa = it.next();
+					//std::cout << "rwa = " << rwa.name << "\n";
+					std::cout << "skipping " << correctedRead.name << "\n";
+					correctedRead = input.readNext(true, true, true);
+					//std::cout << "correctedRead = " << correctedRead.name << "\n";
 				}
 
 				if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0, correctedRead.name.find('/'))
 						!= rwa.name) {
 					correctedRead = input.readNext(true, true, true);
+					//std::cout << "correctedRead = " << correctedRead.name << "\n";
 					/*throw std::runtime_error(
 					 "Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: "
 					 + correctedRead.name + "\nOriginal read name: " + rwa.name);*/
 				}
 
-#pragma omp task shared(genome, data), firstprivate(rwa, correctedRead)
+//#pragma omp task shared(genome, data), firstprivate(rwa, correctedRead)
 				{
 					std::vector<Correction> errorsTruth = extractErrors(rwa, genome);
 					std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
@@ -643,10 +657,10 @@ KmerEvaluationData classifyKmersTestSarah(size_t k, GenomeType genomeType, const
 
 		if (!correctlyClassified) {
 			/*std::cout << "Read K-mer-decomposition:\n";
-			for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
-				std::cout << "  " << kmerTypeToString(trueTypes[i]) << " -> " << kmerTypeToString(predictedTypes[i])
-						<< ": " << kmerCounts[i] << "\n";
-			}*/
+			 for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
+			 std::cout << "  " << kmerTypeToString(trueTypes[i]) << " -> " << kmerTypeToString(predictedTypes[i])
+			 << ": " << kmerCounts[i] << "\n";
+			 }*/
 
 			numWrong++;
 		} else {
@@ -702,10 +716,10 @@ KmerEvaluationData classifyKmersTestReadbased(size_t k, GenomeType genomeType, c
 
 		if (!correctlyClassified) {
 			/*std::cout << "Read K-mer-decomposition:\n";
-			for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
-				std::cout << "  " << kmerTypeToString(trueTypes[i]) << " -> " << kmerTypeToString(predictedTypes[i])
-						<< ": " << kmerCounts[i] << "\n";
-			}*/
+			 for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
+			 std::cout << "  " << kmerTypeToString(trueTypes[i]) << " -> " << kmerTypeToString(predictedTypes[i])
+			 << ": " << kmerCounts[i] << "\n";
+			 }*/
 		}
 	}
 	return data;
