@@ -549,7 +549,7 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 					//std::cout << "correctedRead = " << correctedRead.name << "\n";
 				}
 
-				if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0, correctedRead.name.find('/'))
+				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0, correctedRead.name.find('/'))
 						!= rwa.name) {
 					correctedRead = input.readNext(true, true, true);
 					//std::cout << "correctedRead = " << correctedRead.name << "\n";
