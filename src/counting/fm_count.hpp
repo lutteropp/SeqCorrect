@@ -41,6 +41,7 @@ typedef csa_wt<wt_huff<bit_vector, rank_support_v5<>, select_support_scan<>, sel
 class Matcher {
 public:
 	virtual uint16_t countKmer(const std::string& kmer) = 0;
+	virtual ~Matcher() = default;
 };
 
 class NaiveBufferedMatcher : public Matcher {
@@ -54,7 +55,7 @@ protected:
 class FMIndexMatcher : public Matcher {
 public:
 	FMIndexMatcher(const std::string& filename);
-	uint16_t countKmer(const std::string &kmer);
+	uint16_t countKmer(const std::string& kmer);
 	void enableBuffer();
 	void disableBuffer();
 protected:
@@ -66,7 +67,7 @@ protected:
 class FMIndexMatcherMulti: public FMIndexMatcher {
 public:
 	FMIndexMatcherMulti(const std::string& filename);
-	std::vector<uint16_t> countKmerMultiPositions(const std::string &kmer, bool returnEmptyIfDoubleOccs);
+	std::vector<uint16_t> countKmerMultiPositions(const std::string& kmer, bool returnEmptyIfDoubleOccs);
 private:
 	std::vector<uint16_t> documentID; // TODO: there should be smth better with bit vectors and rank
 };
