@@ -60,7 +60,7 @@ void updateEvaluationData(ErrorEvaluationData& data, const std::vector<Correctio
  const std::string& genomeFilepath);*/
 
 ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepath,
-		const std::string& correctedReadsFilepath, const std::string& genomeFilepath);
+		const std::string& correctedReadsFilepath, const std::string& genomeFilepath, bool circular);
 
 KmerEvaluationData classifyKmersTestSarah(size_t k, util::GenomeType genomeType, const std::string& alignmentFilepath,
 		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads, counting::Matcher& fmGenome);

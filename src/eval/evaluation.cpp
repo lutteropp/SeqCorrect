@@ -96,6 +96,9 @@ void handleInsertion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& i
 		size_t correctionPosition = realPositionInRead;
 
 		info.corrections.push_back(Correction(correctionPosition, ErrorType::INSERTION, fromBase));
+
+		rwa.seq[correctionPosition] = tolower(rwa.seq[correctionPosition]); // mark the insertion
+		//rwa.seq = rwa.seq.substr(0, correctionPosition) + rwa.seq.substr(correctionPosition + 1, std::string::npos);
 	}
 	info.insertedBases += cigarCount;
 }
@@ -144,21 +147,40 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 	} else {
 		info.corrections.push_back(Correction(correctionPosition, ErrorType::MULTIDEL, fromBase));
 	}
+
+	std::string deletedBases = "";
+	for (size_t i = 0; i < cigarCount; ++i) {
+		deletedBases += "D";
+	}
+	rwa.seq = rwa.seq.substr(0, correctionPosition + 1) + deletedBases + rwa.seq.substr(correctionPosition + 1, std::string::npos);
+
 	info.positionInRead += cigarCount;
 }
 
 // Assumes that indels have already been detected
-void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const std::string& genome) {
+void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const std::string& genome, bool circular) {
 	int genomeIdx = info.beginPos - 1;
 
 	for (size_t i = 0; i < rwa.seq.size(); ++i) {
-		if (rwa.seq[i] == 'S') {
+		if (rwa.seq[i] == 'S' || islower(rwa.seq[i])) {
 			continue;
 		} else {
 			genomeIdx++;
 		}
 
 		char baseInRead = rwa.seq[i];
+		if (baseInRead == 'D') { // marked position of a deletion error
+			continue;
+		}
+
+		if (genomeIdx >= (int) genome.size()) {
+			if (circular) {
+				genomeIdx -= genome.size();
+			} else {
+				throw std::runtime_error("genomeIdx >= genome.size() in a linear genome!");
+			}
+		}
+
 		char baseInGenome = genome[genomeIdx];
 
 		size_t correctionPos = i;
@@ -205,18 +227,28 @@ void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const
 	rwa.endPos = genomeIdx - 1;
 }
 
-std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string &genome) {
+void fixReadBackToNormal(ReadWithAlignments& rwa) {
+	std::string seq = "";
+	for (size_t i = 0; i < rwa.seq.size(); ++i) {
+		if (rwa.seq[i] != 'D') {
+			seq += toupper(rwa.seq[i]);
+		}
+	}
+	rwa.seq = seq;
+}
+
+std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string &genome, bool circular) {
 	if (hasFlagUnmapped(rwa.records[0])) {
 		throw std::runtime_error("The read is unmapped");
 	}
 	// warn about searching errors in soft-clipped non-chimeric reads
-	if (rwa.records.size() == 1) {
+	/*if (rwa.records.size() == 1) {
 		for (size_t i = 0; i < length(rwa.records[0].cigar); ++i) {
 			if (rwa.records[0].cigar[i].operation == 'S') {
 				std::cout << "WARNING: Searching errors in soft-clipped non-chimeric read" << std::endl;
 			}
 		}
-	}
+	}*/
 	// warn about searching errors in reads with chimeric breaks
 	if (rwa.records.size() > 1) {
 		std::cout << "WARNING: chimeric break detected" << std::endl;
@@ -256,7 +288,8 @@ std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string
 			}
 		}
 		// now that indels have been fixed, fix the substitution errors.
-		handleSubstitutionErrors(rwa, info, genome);
+		handleSubstitutionErrors(rwa, info, genome, circular);
+		fixReadBackToNormal(rwa);
 	}
 
 	if (hasFlagRC(rwa.records[0])) {
@@ -336,6 +369,10 @@ void updateEvaluationData(ErrorEvaluationData& data, const std::vector<Correctio
 		const std::vector<Correction>& errorsPredicted, size_t readLength, const std::string& mappedSequence) {
 	size_t truthIdx = 0;
 	size_t predictedIdx = 0;
+
+	if (readLength != mappedSequence.size()) {
+		throw std::runtime_error("This should currently not happen as CorrectionALgorithm = NONE");
+	}
 
 	std::vector<bool> fineBases(readLength, true);
 	std::vector<bool> fineGaps(readLength, true);
@@ -504,7 +541,7 @@ void sortCorrectedReads(const std::string& correctedReadsFilepath, const std::st
 }
 
 ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFilepath,
-		const std::string& correctedReadsFilepath, const std::string& genomeFilepath) {
+		const std::string& correctedReadsFilepath, const std::string& genomeFilepath, bool circular) {
 	ErrorEvaluationData data;
 	std::string genome = io::readReferenceGenome(genomeFilepath);
 	BAMIterator it(alignedReadsFilepath);
@@ -521,9 +558,9 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 	io::ReadInput input;
 	input.openFile(sortedReadsFilepath);
 
-//#pragma omp parallel
+#pragma omp parallel
 	{
-//#pragma omp single
+#pragma omp single
 		{
 			while (it.hasReadsLeft() && input.hasNext()) {
 				io::Read correctedRead = input.readNext(true, true, true);
@@ -558,15 +595,21 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 					 + correctedRead.name + "\nOriginal read name: " + rwa.name);*/
 				}
 
-//#pragma omp task shared(genome, data), firstprivate(rwa, correctedRead)
+#pragma omp task shared(genome, data), firstprivate(rwa, correctedRead)
 				{
-					std::vector<Correction> errorsTruth = extractErrors(rwa, genome);
+					std::vector<Correction> errorsTruth = extractErrors(rwa, genome, circular);
+
+					if (rwa.seq.size() != correctedRead.seq.size()) {
+						throw std::runtime_error("WHAT ThE FUCK");
+					}
+
 					std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
 							rwa.seq);
 					updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
 				}
 			}
 		}
+#pragma omp taskwait
 	}
 	return data;
 }

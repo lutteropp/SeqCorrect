@@ -144,7 +144,7 @@ void cmd_correct(size_t k, const std::string& pathToOriginalReads, GenomeType ge
 
 // TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?
 void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
-		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath) {
+		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath, bool circular) {
 	std::string alignmentPath = pathToOriginalReads.substr(0, pathToOriginalReads.find_last_of('.')) + ".bam";
 	std::ifstream alignmentFile(alignmentPath);
 	if (!alignmentFile.good()) {
@@ -188,7 +188,7 @@ void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginal
 	alignmentFile.close();
 
 	eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
-			pathToGenome);
+			pathToGenome, circular);
 	printErrorEvaluationData(res);
 
 	createReadsOnly(pathToOriginalReads);
@@ -350,6 +350,6 @@ int main(int argc, char* argv[]) {
 	} else if (correctMode) {
 		cmd_correct(k, pathToOriginalReads, genomeType, outputPath, genomeSize, algo);
 	} else if (evalMode) {
-		cmd_eval(k, genomeType, pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);
+		cmd_eval(k, genomeType, pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath, circular);
 	}
 }

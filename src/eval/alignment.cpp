@@ -56,12 +56,20 @@ void backtrack(size_t i, size_t j, const std::string& originalRead, const std::s
 	}
 	size_t n = originalRead.size();
 	size_t m = correctedRead.size();
+
+	if (n != m) {
+		throw std::runtime_error("n!=m");
+	}
+
 	std::function<size_t(size_t, size_t)> coord = std::bind(coordinate, m, std::placeholders::_1,
 			std::placeholders::_2);
 	size_t actCoord = coord(i, j);
 	if (info[actCoord].count() > 1) {
 		std::cout << "WARNING: These sequences have multiple optimal alignments... \n" << "\tOriginal Read: "
 				<< originalRead << "\n\tCorrectedRead: " << correctedRead << "\n";
+
+		throw std::runtime_error("Just because the debugger is an idiot");
+
 	}
 	if (info[actCoord][0] == 1) { // match or mismatch
 		if ((originalRead[i] != correctedRead[j]) && (correctedRead[j] != 'N')) { // ignore 'N' substitutions/ bases
@@ -126,6 +134,9 @@ std::vector<std::pair<size_t, util::ErrorType> > align(const std::string& origin
 		for (size_t j = 1; j < m + 1; ++j) {
 			// check matrix M
 			size_t mismatch = (originalRead[i - 1] != correctedRead[j - 1]) ? mis : 0;
+			if (originalRead[i-1] == 'S') { // soft-clipped bases always match
+				mis = 0;
+			}
 			size_t min = min3(M[coord(i - 1, j - 1)] + mismatch, M[coord(i, j - 1)] + ins, M[coord(i - 1, j)] + del);
 
 			if (M[coord(i - 1, j - 1)] + mismatch == min) {
