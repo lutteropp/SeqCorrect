@@ -67,12 +67,9 @@ void backtrack(size_t i, size_t j, const std::string& originalRead, const std::s
 	if (info[actCoord].count() > 1) {
 		std::cout << "WARNING: These sequences have multiple optimal alignments... \n" << "\tOriginal Read: "
 				<< originalRead << "\n\tCorrectedRead: " << correctedRead << "\n";
-
-		throw std::runtime_error("Just because the debugger is an idiot");
-
 	}
 	if (info[actCoord][0] == 1) { // match or mismatch
-		if ((originalRead[i] != correctedRead[j]) && (correctedRead[j] != 'N')) { // ignore 'N' substitutions/ bases
+		if ((originalRead[i] != correctedRead[j]) && (correctedRead[j] != 'N') && (correctedRead[j] != 'S')) { // ignore 'N' or 'S' substitutions/ bases
 			res.push_back(std::make_pair(i, util::inferSubstitutionFrom(correctedRead[j])));
 		}
 		backtrack(i-1, j-1, originalRead, correctedRead, M, info, res);
