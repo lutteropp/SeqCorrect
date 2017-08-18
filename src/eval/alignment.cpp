@@ -132,18 +132,24 @@ std::vector<std::pair<size_t, util::ErrorType> > align(const std::string& origin
 			// check matrix M
 			size_t mismatch = (originalRead[i - 1] != correctedRead[j - 1]) ? mis : 0;
 			if (originalRead[i-1] == 'S') { // soft-clipped bases always match
-				mis = 0;
+				mismatch = 0;
 			}
 			size_t min = min3(M[coord(i - 1, j - 1)] + mismatch, M[coord(i, j - 1)] + ins, M[coord(i - 1, j)] + del);
 
 			if (M[coord(i - 1, j - 1)] + mismatch == min) {
 				info[coord(i, j)][0] = 1;
+			} else {
+				info[coord(i, j)][0] = 0;
 			}
 			if (M[coord(i, j - 1)] + ins == min) {
 				info[coord(i, j)][1] = 1;
+			} else {
+				info[coord(i, j)][1] = 0;
 			}
 			if (M[coord(i - 1, j)] + del == min) {
 				info[coord(i, j)][2] = 1;
+			} else {
+				info[coord(i, j)][2] = 0;
 			}
 
 			if (info[coord(i,j)] == 0) {
