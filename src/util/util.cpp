@@ -97,5 +97,31 @@ std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type) 
 	return newKmer;
 }
 
+uint16_t baseToNumber(const char& c) {
+	if (c == 'A') {
+		return 0;
+	} else if (c == 'C') {
+		return 1;
+	} else if (c == 'G') {
+		return 2;
+	} else if (c == 'T') {
+		return 3;
+	} else {
+		throw std::runtime_error("This base is not accepted: " + std::to_string(c));
+	}
+}
+
+uint16_t kmerToNumber(const std::string& kmer) {
+	uint16_t res = 0;
+	for (size_t i = 0; i < kmer.size(); ++i) {
+		//res +=
+	}
+	return res;
+}
+
+std::string numberToKmer(uint16_t n) {
+	return "";
+}
+
 } // end of namespace seq_correct::util
 } // end of namespace seq_correct

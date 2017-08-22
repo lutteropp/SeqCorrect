@@ -65,6 +65,8 @@ class CoverageBiasUnitMulti {
 public:
 	CoverageBiasUnitMulti();
 	// using linear interpolation to compute coverage bias factor
+	double computeCoverageBias(size_t k, double gc, const std::string& filepath,
+			counting::Matcher& matcher, pusm::PerfectUniformSequencingModel& pusm);
 	double computeCoverageBias(const std::string &kmer, const std::string& filepath, counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel& pusm);
 	double computeCoverageBias(const std::string &kmer, const std::string& genome, counting::Matcher& readsIndex, counting::Matcher& genomeIndex);
 	void printMedianCoverageBiases();

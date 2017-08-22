@@ -84,7 +84,7 @@ void fixMissingBiases(std::vector<CoverageBiasData>& data) {
  * @param biases a vector containing vectors of bias factors as inferred from the dataset
  */
 std::vector<CoverageBiasData> computeMedianBiases(size_t k, std::vector<std::vector<double> >& biases) {
-	std::vector<CoverageBiasData> data(k+1);
+	std::vector<CoverageBiasData> data(k + 1);
 	for (size_t i = 0; i < biases.size(); ++i) {
 		std::sort(biases[i].begin(), biases[i].end());
 		data[i].gc = i / (double) k;
@@ -110,8 +110,7 @@ std::vector<CoverageBiasData> computeMedianBiases(size_t k, std::vector<std::vec
  * @param readsIndex A structure for querying how often the k-mer occurs in the read dataset
  * @param genomeIndex A structure for querying how often the k-mer occurs in the genome
  */
-double inferBias(const std::string& kmer, counting::Matcher& readsIndex,
-		counting::Matcher& genomeIndex) {
+double inferBias(const std::string& kmer, counting::Matcher& readsIndex, counting::Matcher& genomeIndex) {
 	size_t countObserved = readsIndex.countKmer(kmer) + readsIndex.countKmer(util::reverseComplementString(kmer));
 	size_t countGenome = genomeIndex.countKmer(kmer) + genomeIndex.countKmer(util::reverseComplementString(kmer));
 	return countObserved / (double) countGenome;
@@ -302,32 +301,57 @@ void CoverageBiasUnitSingle::printMedianCoverageBiases() {
 	}
 }
 
+CoverageBiasUnitMulti::CoverageBiasUnitMulti() {
+}
 
-
-CoverageBiasUnitMulti::CoverageBiasUnitMulti() {}
-
-double CoverageBiasUnitMulti::computeCoverageBias(const std::string& kmer, const std::string& filepath, counting::Matcher& matcher, pusm::PerfectUniformSequencingModel& pusm) {
+/**
+ * Compute the expected coverage bias of a k-mer.
+ * @param kmer The k-mer
+ */
+double CoverageBiasUnitMulti::computeCoverageBias(const std::string& kmer, const std::string& filepath,
+		counting::Matcher& matcher, pusm::PerfectUniformSequencingModel& pusm) {
 	size_t k = kmer.size();
 	if (biasUnits.find(k) != biasUnits.end()) {
 		return biasUnits[k].computeCoverageBias(kmer);
 	} else {
 		CoverageBiasUnitSingle cbsSingle;
-		biasUnits[k] = cbsSingle;
 		cbsSingle.preprocess(k, filepath, matcher, pusm);
+		biasUnits[k] = cbsSingle;
 		return cbsSingle.computeCoverageBias(kmer);
 	}
 }
 
-double CoverageBiasUnitMulti::computeCoverageBias(const std::string &kmer, const std::string& genome, counting::Matcher& readsIndex, counting::Matcher& genomeIndex) {
+/**
+ * Compute the expected coverage bias of a k-mer.
+ * @param kmer The k-mer
+ */
+double CoverageBiasUnitMulti::computeCoverageBias(const std::string &kmer, const std::string& genome,
+		counting::Matcher& readsIndex, counting::Matcher& genomeIndex) {
 	size_t k = kmer.size();
-		if (biasUnits.find(k) != biasUnits.end()) {
-			return biasUnits[k].computeCoverageBias(kmer);
-		} else {
-			CoverageBiasUnitSingle cbsSingle;
-			biasUnits[k] = cbsSingle;
-			cbsSingle.preprocess(k, genome, readsIndex, genomeIndex);
-			return cbsSingle.computeCoverageBias(kmer);
-		}
+	if (biasUnits.find(k) != biasUnits.end()) {
+		return biasUnits[k].computeCoverageBias(kmer);
+	} else {
+		CoverageBiasUnitSingle cbsSingle;
+		cbsSingle.preprocess(k, genome, readsIndex, genomeIndex);
+		biasUnits[k] = cbsSingle;
+		return cbsSingle.computeCoverageBias(kmer);
+	}
+}
+
+/**
+ * Computes the expected coverage bias of a k-mer, based on its GC-content.
+ * @param gc The GC-content of the k-mer
+ */
+double CoverageBiasUnitMulti::computeCoverageBias(size_t k, double gc, const std::string& filepath,
+		counting::Matcher& matcher, pusm::PerfectUniformSequencingModel& pusm) {
+	if (biasUnits.find(k) != biasUnits.end()) {
+		return biasUnits[k].computeCoverageBias(gc);
+	} else {
+		CoverageBiasUnitSingle cbsSingle;
+		cbsSingle.preprocess(k, filepath, matcher, pusm);
+		biasUnits[k] = cbsSingle;
+		return cbsSingle.computeCoverageBias(gc);
+	}
 }
 
 void CoverageBiasUnitMulti::printMedianCoverageBiases() {
@@ -337,7 +361,6 @@ void CoverageBiasUnitMulti::printMedianCoverageBiases() {
 		std::cout << "\n";
 	}
 }
-
 
 } // end of namespace seq_correct::coverage
 } // end of namespace seq_correct

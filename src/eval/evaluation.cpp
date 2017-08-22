@@ -152,7 +152,8 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 	for (size_t i = 0; i < cigarCount; ++i) {
 		deletedBases += "D";
 	}
-	rwa.seq = rwa.seq.substr(0, correctionPosition + 1) + deletedBases + rwa.seq.substr(correctionPosition + 1, std::string::npos);
+	rwa.seq = rwa.seq.substr(0, correctionPosition + 1) + deletedBases
+			+ rwa.seq.substr(correctionPosition + 1, std::string::npos);
 
 	info.positionInRead += cigarCount;
 }
@@ -243,12 +244,12 @@ std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string
 	}
 	// warn about searching errors in soft-clipped non-chimeric reads
 	/*if (rwa.records.size() == 1) {
-		for (size_t i = 0; i < length(rwa.records[0].cigar); ++i) {
-			if (rwa.records[0].cigar[i].operation == 'S') {
-				std::cout << "WARNING: Searching errors in soft-clipped non-chimeric read" << std::endl;
-			}
-		}
-	}*/
+	 for (size_t i = 0; i < length(rwa.records[0].cigar); ++i) {
+	 if (rwa.records[0].cigar[i].operation == 'S') {
+	 std::cout << "WARNING: Searching errors in soft-clipped non-chimeric read" << std::endl;
+	 }
+	 }
+	 }*/
 	// warn about searching errors in reads with chimeric breaks
 	if (rwa.records.size() > 1) {
 		std::cout << "WARNING: chimeric break detected" << std::endl;
@@ -586,8 +587,8 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 					//std::cout << "correctedRead = " << correctedRead.name << "\n";
 				}
 
-				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0, correctedRead.name.find('/'))
-						!= rwa.name) {
+				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
+						correctedRead.name.find('/')) != rwa.name) {
 					correctedRead = input.readNext(true, true, true);
 					//std::cout << "correctedRead = " << correctedRead.name << "\n";
 					/*throw std::runtime_error(
@@ -658,21 +659,13 @@ std::vector<uint16_t> computeKmerCountsRead(size_t k, const std::string& sequenc
 	return kmerCounts;
 }
 
-KmerEvaluationData classifyKmersTestSarah(size_t k, GenomeType genomeType, const std::string& alignmentFilepath,
+KmerEvaluationData classifyKmersTest(size_t k, GenomeType genomeType, const std::string& alignmentFilepath,
 		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
-		counting::Matcher& fmGenome) {
+		counting::Matcher& fmGenome, std::function<KmerType(const std::string&, uint16_t)> func) {
 	size_t numCorrect = 0;
 	size_t numWrong = 0;
 	KmerEvaluationData data;
-	std::string genome = io::readReferenceGenome(genomeFilepath);
 	BAMIterator it(alignmentFilepath);
-
-	std::string pathToReadsOnly = pathToOriginalReads + ".readsOnly.txt";
-	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
-	pusm::PerfectUniformSequencingModel pusm(genomeType, genome.size(), readLengths);
-	coverage::CoverageBiasUnitSingle biasUnit;
-	biasUnit.preprocess(k, pathToOriginalReads, fmReads, pusm);
-	biasUnit.printMedianCoverageBiases();
 
 	double minProgress = 0.0;
 	while (it.hasReadsLeft()) {
@@ -683,7 +676,7 @@ KmerEvaluationData classifyKmersTestSarah(size_t k, GenomeType genomeType, const
 		std::vector<KmerType> predictedTypes;
 		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
 			std::string kmer = rwa.seq.substr(i, k);
-			KmerType predictedType = classifyKmer(kmer, kmerCounts[i], pusm, biasUnit);
+			KmerType predictedType = func(kmer, kmerCounts[i]);
 			predictedTypes.push_back(predictedType);
 		}
 
@@ -704,7 +697,6 @@ KmerEvaluationData classifyKmersTestSarah(size_t k, GenomeType genomeType, const
 			 std::cout << "  " << kmerTypeToString(trueTypes[i]) << " -> " << kmerTypeToString(predictedTypes[i])
 			 << ": " << kmerCounts[i] << "\n";
 			 }*/
-
 			numWrong++;
 		} else {
 			numCorrect++;
@@ -722,6 +714,33 @@ KmerEvaluationData classifyKmersTestSarah(size_t k, GenomeType genomeType, const
 	return data;
 }
 
+KmerEvaluationData classifyKmersTestSarah(size_t k, GenomeType genomeType, const std::string& alignmentFilepath,
+		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
+		counting::Matcher& fmGenome) {
+	std::string genome = io::readReferenceGenome(genomeFilepath);
+	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
+	pusm::PerfectUniformSequencingModel pusm(genomeType, genome.size(), readLengths);
+	coverage::CoverageBiasUnitSingle biasUnit;
+	biasUnit.preprocess(k, pathToOriginalReads, fmReads, pusm);
+	biasUnit.printMedianCoverageBiases();
+	std::function<KmerType(const std::string&, uint16_t)> func = std::bind(classifyKmerSarah, std::placeholders::_1,
+			std::placeholders::_2, pusm, biasUnit);
+	return classifyKmersTest(k, genomeType, alignmentFilepath, pathToOriginalReads, genomeFilepath, fmReads, fmGenome,
+			func);
+}
+
+double computeAverageBias(size_t k, const std::string& sequence, coverage::CoverageBiasUnitMulti& biasUnit,
+		const std::string& pathToOriginalReads, counting::Matcher& fmReads, pusm::PerfectUniformSequencingModel& pusm) {
+	double biasSum = 0;
+	size_t biasNum = 0;
+	for (size_t i = 0; i < sequence.size() - k; ++i) {
+		std::string kmer = sequence.substr(i, k);
+		biasSum += biasUnit.computeCoverageBias(kmer, pathToOriginalReads, fmReads, pusm);
+		biasNum++;
+	}
+	return biasSum / biasNum;
+}
+
 KmerEvaluationData classifyKmersTestReadbased(size_t k, GenomeType genomeType, const std::string& alignmentFilepath,
 		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
 		counting::Matcher& fmGenome) {
@@ -737,12 +756,18 @@ KmerEvaluationData classifyKmersTestReadbased(size_t k, GenomeType genomeType, c
 		ReadWithAlignments rwa = it.next();
 
 		std::vector<uint16_t> kmerCounts = computeKmerCountsRead(k, rwa.seq, fmReads);
-		double medianCount = computeMedianKmerCount(kmerCounts);
+		//double medianCount = computeMedianKmerCount(kmerCounts);
+
+		double averageBias = computeAverageBias(k, rwa.seq, biasUnit, pathToOriginalReads, fmReads, pusm);
+
 		std::vector<KmerType> trueTypes = computeTrueTypes(k, rwa.seq, fmGenome);
 		std::vector<KmerType> predictedTypes;
 		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
 			std::string kmer = rwa.seq.substr(i, k);
-			KmerType predictedType = classifyKmerReadBased(k, i, kmerCounts, medianCount, rwa.seq);
+
+			KmerType predictedType = classifyKmer(kmerCounts[i], pusm.expectedCount(k).expectation, averageBias);
+
+			//KmerType predictedType = classifyKmerReadBased(k, i, kmerCounts, medianCount, rwa.seq);
 			predictedTypes.push_back(predictedType);
 		}
 

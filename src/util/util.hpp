@@ -85,5 +85,8 @@ inline std::unordered_map<size_t, size_t> countReadLengths(const std::string& re
 
 std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type);
 
+uint16_t kmerToNumber(const std::string& kmer);
+std::string numberToKmer(uint16_t n);
+
 } // end of namespace seq_correct::util
 } // end of namespace seq_correct

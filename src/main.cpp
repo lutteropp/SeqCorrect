@@ -59,16 +59,18 @@ void printErrorEvaluationData(const eval::ErrorEvaluationData& evalData) {
 	std::cout << "\n Base Confusion Matrix:\n";
 	for (ErrorType e1 : BaseTypeIterator()) {
 		for (ErrorType e2 : BaseTypeIterator()) {
+			double percentage = (double) evalData.getEntry(e1, e2) / evalData.sumTruth(e1);
 			std::cout << "[" << util::errorTypeToString(e1) << "][" << util::errorTypeToString(e2) << "]: "
-					<< evalData.getEntry(e1, e2) << "\n";
+					<< evalData.getEntry(e1, e2) << " = " << percentage * 100 << "%" << "\n";
 		}
 	}
 
 	std::cout << "\n Gap Confusion Matrix:\n";
 	for (ErrorType e1 : GapTypeIterator()) {
 		for (ErrorType e2 : GapTypeIterator()) {
+			double percentage = (double) evalData.getEntry(e1, e2) / evalData.sumTruth(e1);
 			std::cout << "[" << util::errorTypeToString(e1) << "][" << util::errorTypeToString(e2) << "]: "
-					<< evalData.getEntry(e1, e2) << "\n";
+					<< evalData.getEntry(e1, e2) << " = " << percentage * 100 << "%" << "\n";
 		}
 	}
 }
@@ -95,8 +97,9 @@ void printKmerEvaluationData(const eval::KmerEvaluationData& evalData) {
 	std::cout << "\n Confusion Matrix:\n";
 	for (KmerType e1 : KmerTypeIterator()) {
 		for (KmerType e2 : KmerTypeIterator()) {
+			double percentage = (double) evalData.getEntry(e1, e2) / evalData.sumTruth(e1);
 			std::cout << "[" << util::kmerTypeToString(e1) << "][" << util::kmerTypeToString(e2) << "]: "
-					<< evalData.getEntry(e1, e2) << "\n";
+					<< evalData.getEntry(e1, e2) << " = " << percentage * 100 << "%" << "\n";
 		}
 	}
 }
@@ -197,10 +200,10 @@ void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginal
 	counting::NaiveBufferedMatcher fmGenome(pathToGenome,k, true);
 
 	std::cout << "k-mer size used: " << k << "\n";
-	std::cout << "My own k-mer classification: \n";
+	/*std::cout << "My own k-mer classification: \n";
 	eval::KmerEvaluationData resKmer = eval::classifyKmersTestSarah(k, genomeType, alignmentPath, pathToOriginalReads,
 			pathToGenome, fmReads, fmGenome);
-	printKmerEvaluationData(resKmer);
+	printKmerEvaluationData(resKmer);*/
 
 	std::cout << "\nRead-based k-mer classification: \n";
 	eval::KmerEvaluationData resKmer2 = eval::classifyKmersTestReadbased(k, genomeType, alignmentPath,

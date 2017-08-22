@@ -35,48 +35,38 @@ using namespace util;
 
 /**
  * Classify a k-mer as either UNTRUSTED, UNIQUE, or REPETITIVE.
- * @param kmer The k-mer
- * @param pusmData The expected count and standard deviation of the k-mer in an idealized sequencing setting
  * @param observedCount Count of the k-mer in the read dataset
+ * @param expectedCount The expected count of the k-mer in an idealized sequencing setting
+ * @param bias The G/C bias
  */
-inline KmerType classifyKmer(const pusm::PusmData& pusmData, double correctedCount) {
-	if ((correctedCount < 2) || (correctedCount < 0.5 * pusmData.expectation)) {
+inline KmerType classifyKmer(size_t observedCount, double expectedCount, double bias) {
+	double correctedCount = (double) 1.0 / bias * observedCount;
+	if ((correctedCount < 2) || (correctedCount < 0.5 * expectedCount)) {
 		return KmerType::UNTRUSTED;
-	} else if (correctedCount <= 1.5 * pusmData.expectation) {
+	} else if (correctedCount <= 1.5 * expectedCount) {
 		return KmerType::UNIQUE;
 	} else {
 		return KmerType::REPEAT;
 	}
 }
 
-template<typename T>
-inline KmerType classifyKmer(const T& kmer, size_t observedCount,
+inline KmerType classifyKmerSarah(const std::string& kmer, size_t observedCount,
 		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitSingle& biasUnit) {
 	if (kmer.empty()) {
 		throw std::runtime_error("The kmer is empty");
 	}
 	pusm::PusmData pusmData = pusm.expectedCount(kmer.size());
-	double correctedCount = (double) 1.0 / biasUnit.computeCoverageBias(kmer) * observedCount;
-
-	/*std::cout << "kmer: " << kmer << "\n";
-	std::cout << " observed count: " << observedCount << "\n";
-	std::cout << " expected count: " << pusmData.expectation << "\n";
-	std::cout << " bias: " << biasUnit.computeCoverageBias(kmer) << "\n";
-	std::cout << " corrected count: " << correctedCount << "\n";*/
-
-	return classifyKmer(pusmData, correctedCount);
+	return classifyKmer(observedCount, pusmData.expectation, biasUnit.computeCoverageBias(kmer));
 }
 
-template<typename T>
-inline KmerType classifyKmer(const T& kmer, counting::Matcher& kmerCounter,
+inline KmerType classifyKmer(const std::string& kmer, counting::Matcher& kmerCounter,
 		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitSingle& biasUnit) {
-	return classifyKmer(kmer, kmerCounter.countKmer(kmer), pusm, biasUnit);
+	return classifyKmerSarah(kmer, kmerCounter.countKmer(kmer), pusm, biasUnit);
 }
 
 inline KmerType classifyKmerReadBased(size_t k, size_t posInRead, const std::vector<uint16_t>& kmerCounts, double medianCount,
 		const std::string& readSequence) {
 	KmerType type;
-
 	size_t count = kmerCounts[posInRead];
 	if (count > medianCount * 1.5) {
 		type = KmerType::REPEAT;
@@ -85,7 +75,6 @@ inline KmerType classifyKmerReadBased(size_t k, size_t posInRead, const std::vec
 	} else {
 		type = KmerType::UNIQUE;
 	}
-
 	return type;
 }
 
