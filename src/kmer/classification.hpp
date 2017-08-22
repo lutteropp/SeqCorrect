@@ -66,16 +66,7 @@ inline KmerType classifyKmer(const std::string& kmer, counting::Matcher& kmerCou
 
 inline KmerType classifyKmerReadBased(size_t k, size_t posInRead, const std::vector<uint16_t>& kmerCounts, double medianCount,
 		const std::string& readSequence) {
-	KmerType type;
-	size_t count = kmerCounts[posInRead];
-	if (count > medianCount * 1.5) {
-		type = KmerType::REPEAT;
-	} else if (count < medianCount * 0.5) {
-		type = KmerType::UNTRUSTED;
-	} else {
-		type = KmerType::UNIQUE;
-	}
-	return type;
+	return classifyKmer(kmerCounts[posInRead], medianCount, 1.0);
 }
 
 } // end of namespace seq_correct::kmer

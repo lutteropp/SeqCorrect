@@ -750,6 +750,7 @@ void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& a
 	KmerEvaluationData dataRead;
 
 	BAMIterator it(alignmentFilepath);
+	double expectedCount = pusm.expectedCount(k).expectation;
 
 	double minProgress = 0.0;
 	while (it.hasReadsLeft()) {
@@ -763,21 +764,21 @@ void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& a
 		double biasReadK = biasUnit.computeCoverageBias(k, (double) util::countGC(rwa.seq) / rwa.seq.size(),
 				pathToOriginalReads, fmReads, pusm);
 
-		std::vector<KmerType> predictedTypesThesis;
-		std::vector<KmerType> predictedTypesThesisRead1;
-		std::vector<KmerType> predictedTypesThesisRead2;
-		std::vector<KmerType> predictedTypesRead;
+		std::vector<KmerType> predictedTypesThesis(rwa.seq.size() - k);
+		std::vector<KmerType> predictedTypesThesisRead1(rwa.seq.size() - k);
+		std::vector<KmerType> predictedTypesThesisRead2(rwa.seq.size() - k);
+		std::vector<KmerType> predictedTypesRead(rwa.seq.size() - k);
+#pragma omp parallel for
 		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
 			std::string kmer = rwa.seq.substr(i, k);
 
 			size_t observedCount = kmerCounts[i];
-			double expectedCount = pusm.expectedCount(k).expectation;
 			double biasKmer = biasUnit.computeCoverageBias(kmer, pathToOriginalReads, fmReads, pusm);
 
-			predictedTypesThesis.push_back(classifyKmer(observedCount, expectedCount, biasKmer));
-			predictedTypesThesisRead1.push_back(classifyKmer(observedCount, expectedCount, biasReadAverage));
-			predictedTypesThesisRead2.push_back(classifyKmer(observedCount, expectedCount, biasReadK));
-			predictedTypesRead.push_back(classifyKmerReadBased(k, i, kmerCounts, medianCount, rwa.seq));
+			predictedTypesThesis[i] = classifyKmer(observedCount, expectedCount, biasKmer);
+			predictedTypesThesisRead1[i] = classifyKmer(observedCount, expectedCount, biasReadAverage);
+			predictedTypesThesisRead2[i] = classifyKmer(observedCount, expectedCount, biasReadK);
+			predictedTypesRead[i] = classifyKmerReadBased(k, i, kmerCounts, medianCount, rwa.seq);
 		}
 
 		update(trueTypes, predictedTypesThesis, dataThesis, numCorrectThesis, numWrongThesis);
@@ -791,28 +792,36 @@ void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& a
 		}
 	}
 
-	std::cout << "numCorrectThesis: " << numCorrectThesis << "\n";
-	std::cout << "numWrongThesis: " << numWrongThesis << "\n";
+	std::cout << "numCorrectThesis: " << numCorrectThesis << " = "
+			<< (double) numCorrectThesis * 100 / (numCorrectThesis + numWrongThesis) << "% \n";
+	std::cout << "numWrongThesis: " << numWrongThesis << " = "
+			<< (double) numWrongThesis * 100 / (numCorrectThesis + numWrongThesis) << "% \n";
 
-	std::cout << "numCorrectThesisRead1: " << numCorrectThesisRead1 << "\n";
-	std::cout << "numWrongThesisRead1: " << numWrongThesisRead1 << "\n";
+	std::cout << "numCorrectThesisRead1: " << numCorrectThesisRead1 << " = "
+			<< (double) numCorrectThesisRead1 * 100 / (numCorrectThesisRead1 + numWrongThesisRead1) << "% \n";
+	std::cout << "numWrongThesisRead1: " << numWrongThesisRead1 << " = "
+			<< (double) numWrongThesisRead1 * 100 / (numCorrectThesisRead1 + numWrongThesisRead1) << "% \n";
 
-	std::cout << "numCorrectThesisRead2: " << numCorrectThesisRead2 << "\n";
-	std::cout << "numWrongThesisRead2: " << numWrongThesisRead2 << "\n";
+	std::cout << "numCorrectThesisRead2: " << numCorrectThesisRead2 << " = "
+			<< (double) numCorrectThesisRead2 * 100 / (numCorrectThesisRead2 + numWrongThesisRead2) << "% \n";
+	std::cout << "numWrongThesisRead2: " << numWrongThesisRead2 << " = "
+			<< (double) numWrongThesisRead2 * 100 / (numCorrectThesisRead2 + numWrongThesisRead2) << "% \n";
 
-	std::cout << "numCorrectRead: " << numCorrectRead << "\n";
-	std::cout << "numWrongRead: " << numWrongRead << "\n";
+	std::cout << "numCorrectRead: " << numCorrectRead << (double) numCorrectRead * 100 / (numCorrectRead + numWrongRead)
+			<< "% \n";
+	std::cout << "numWrongRead: " << numWrongRead << (double) numWrongRead * 100 / (numCorrectRead + numWrongRead)
+			<< "% \n";
 
 	std::cout << "Variant Thesis k-mer classification: \n";
 	printKmerEvaluationData(dataThesis);
 
-	std::cout << "Variant ThesisRead1 k-mer classification: \n";
+	std::cout << "\nVariant ThesisRead1 k-mer classification: \n";
 	printKmerEvaluationData(dataThesisRead1);
 
-	std::cout << "Variant ThesisRead2 k-mer classification: \n";
+	std::cout << "\nVariant ThesisRead2 k-mer classification: \n";
 	printKmerEvaluationData(dataThesisRead2);
 
-	std::cout << "Variant Read k-mer classification: \n";
+	std::cout << "\nVariant Read k-mer classification: \n";
 	printKmerEvaluationData(dataRead);
 }
 

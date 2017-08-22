@@ -31,11 +31,28 @@
 namespace seq_correct {
 namespace counting {
 
+bool isSelfReverseComplement(const std::string& kmer) {
+	if (kmer.size() % 2 == 1) {
+		return false;
+	}
+	bool same = true;
+	for (size_t i = 0; i < kmer.size() / 2; ++i) {
+		if (kmer[i] != util::reverseComplementChar(kmer[kmer.size() - i - 1])) {
+			same = false;
+			break;
+		}
+	}
+	return same;
+}
+
 uint16_t FMIndexMatcher::countKmer(const std::string& kmer) {
 	if (useBuffer && buffer.find(kmer) != buffer.end()) {
 		return buffer[kmer];
 	}
 	size_t count = sdsl::count(fmIndex, kmer.begin(), kmer.end());
+	if (isSelfReverseComplement(kmer)) {
+		count /= 2;
+	}
 	if (useBuffer) {
 		buffer[kmer] = count;
 	}
@@ -148,7 +165,11 @@ NaiveBufferedMatcher::NaiveBufferedMatcher(const std::string& filename, size_t k
 }
 
 uint16_t NaiveBufferedMatcher::countKmer(const std::string& kmer) {
-	return buffer[kmer];
+	uint16_t count = buffer[kmer];
+	if (isSelfReverseComplement(kmer)) {
+		count /= 2;
+	}
+	return count;
 }
 
 } // end of namespace seq_correct::counting
