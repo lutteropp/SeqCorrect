@@ -100,10 +100,10 @@ std::vector<uint16_t> FMIndexMatcherMulti::countKmerMultiPositions(const std::st
 	return res;
 }
 
-NaiveBufferedMatcher::NaiveBufferedMatcher(const std::string& filename, size_t k) {
+NaiveBufferedMatcher::NaiveBufferedMatcher(const std::string& filename, size_t k, bool revCompExtra) {
 	io::ReadInput input;
 
-	std::string filenameNaive = filename + ".naive";
+	std::string filenameNaive = filename + "." + std::to_string(k) + ".naive";
 	std::ifstream test(filenameNaive);
 	if (test.good()) {
 		std::string kmer;
@@ -127,6 +127,15 @@ NaiveBufferedMatcher::NaiveBufferedMatcher(const std::string& filename, size_t k
 				} else {
 					buffer[kmer] = 1;
 				}
+
+				if (revCompExtra) {
+					kmer = util::reverseComplementString(kmer);
+					if (buffer.find(kmer) != buffer.end()) {
+						buffer[kmer]++;
+					} else {
+						buffer[kmer] = 1;
+					}
+				}
 			}
 		}
 
@@ -135,7 +144,6 @@ NaiveBufferedMatcher::NaiveBufferedMatcher(const std::string& filename, size_t k
 			testOut << kv.first << " " << kv.second << "\n";
 		}
 		testOut.close();
-
 	}
 }
 

@@ -128,7 +128,7 @@ double inferBias(const std::string& kmer, counting::Matcher& readsIndex,
  */
 double inferBias(size_t k, const std::string& kmer, counting::Matcher& readsIndex,
 		pusm::PerfectUniformSequencingModel &pusm) {
-	size_t countObserved = readsIndex.countKmer(kmer) + readsIndex.countKmer(util::reverseComplementString(kmer));
+	size_t countObserved = readsIndex.countKmer(kmer);
 	double countExpected = pusm.expectedCount(k).expectation;
 	if (countObserved >= countExpected * 0.2) {
 		// if this condition is left out, the coverage biases will be very low due to erroneous k-mers

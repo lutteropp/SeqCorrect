@@ -46,7 +46,7 @@ public:
 
 class NaiveBufferedMatcher : public Matcher {
 public:
-	NaiveBufferedMatcher(const std::string& filename, size_t k);
+	NaiveBufferedMatcher(const std::string& filename, size_t k, bool revCompExtra);
 	uint16_t countKmer(const std::string& kmer);
 protected:
 	std::unordered_map<std::string, uint16_t> buffer;

@@ -50,18 +50,6 @@ inline KmerType classifyKmer(const pusm::PusmData& pusmData, double correctedCou
 }
 
 template<typename T>
-inline KmerType classifyKmer(const T& kmer, counting::Matcher& kmerCounter,
-		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitSingle& biasUnit) {
-	if (kmer.empty()) {
-		throw std::runtime_error("The kmer is empty");
-	}
-	pusm::PusmData pusmData = pusm.expectedCount(kmer.size());
-	size_t observedCount = kmerCounter.countKmer(kmer) + kmerCounter.countKmer(util::reverseComplementString(kmer));
-	double correctedCount = (double) 1.0 / biasUnit.computeCoverageBias(kmer) * observedCount;
-	return classifyKmer(pusmData, correctedCount);
-}
-
-template<typename T>
 inline KmerType classifyKmer(const T& kmer, size_t observedCount,
 		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitSingle& biasUnit) {
 	if (kmer.empty()) {
@@ -69,7 +57,20 @@ inline KmerType classifyKmer(const T& kmer, size_t observedCount,
 	}
 	pusm::PusmData pusmData = pusm.expectedCount(kmer.size());
 	double correctedCount = (double) 1.0 / biasUnit.computeCoverageBias(kmer) * observedCount;
+
+	/*std::cout << "kmer: " << kmer << "\n";
+	std::cout << " observed count: " << observedCount << "\n";
+	std::cout << " expected count: " << pusmData.expectation << "\n";
+	std::cout << " bias: " << biasUnit.computeCoverageBias(kmer) << "\n";
+	std::cout << " corrected count: " << correctedCount << "\n";*/
+
 	return classifyKmer(pusmData, correctedCount);
+}
+
+template<typename T>
+inline KmerType classifyKmer(const T& kmer, counting::Matcher& kmerCounter,
+		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitSingle& biasUnit) {
+	return classifyKmer(kmer, kmerCounter.countKmer(kmer), pusm, biasUnit);
 }
 
 inline KmerType classifyKmerReadBased(size_t k, size_t posInRead, const std::vector<uint16_t>& kmerCounts, double medianCount,
