@@ -618,7 +618,7 @@ std::vector<KmerType> computeTrueTypes(size_t k, const std::string& sequence, co
 	std::vector<KmerType> trueTypes;
 	for (size_t i = 0; i < sequence.size() - k; ++i) {
 		std::string kmer = sequence.substr(i, k);
-		size_t trueCount = fmGenome.countKmer(kmer) + fmGenome.countKmer(util::reverseComplementString(kmer)); // because the genome file does not have the reverse-compement after it
+		size_t trueCount = fmGenome.countKmer(kmer);
 		KmerType trueType;
 		if (trueCount == 0) {
 			trueType = KmerType::UNTRUSTED;
