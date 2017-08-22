@@ -147,7 +147,8 @@ void cmd_correct(size_t k, const std::string& pathToOriginalReads, GenomeType ge
 
 // TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?
 void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
-		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath, bool circular) {
+		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath,
+		bool circular) {
 	std::string alignmentPath = pathToOriginalReads.substr(0, pathToOriginalReads.find_last_of('.')) + ".bam";
 	std::ifstream alignmentFile(alignmentPath);
 	if (!alignmentFile.good()) {
@@ -191,24 +192,16 @@ void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginal
 	alignmentFile.close();
 
 	/*eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
-			pathToGenome, circular);
-	printErrorEvaluationData(res);*/
+	 pathToGenome, circular);
+	 printErrorEvaluationData(res);*/
 
 	createReadsOnly(pathToOriginalReads);
 
-	counting::NaiveBufferedMatcher fmReads(pathToOriginalReads,k, true);
-	counting::NaiveBufferedMatcher fmGenome(pathToGenome,k, true);
+	counting::NaiveBufferedMatcher fmReads(pathToOriginalReads, k, true);
+	counting::NaiveBufferedMatcher fmGenome(pathToGenome, k, true);
 
 	std::cout << "k-mer size used: " << k << "\n";
-	/*std::cout << "My own k-mer classification: \n";
-	eval::KmerEvaluationData resKmer = eval::classifyKmersTestSarah(k, genomeType, alignmentPath, pathToOriginalReads,
-			pathToGenome, fmReads, fmGenome);
-	printKmerEvaluationData(resKmer);*/
-
-	std::cout << "\nRead-based k-mer classification: \n";
-	eval::KmerEvaluationData resKmer2 = eval::classifyKmersTestReadbased(k, genomeType, alignmentPath,
-			pathToOriginalReads, pathToGenome, fmReads, fmGenome);
-	printKmerEvaluationData(resKmer2);
+	eval::classifyKmersVariants(k, genomeType, alignmentPath, pathToOriginalReads, pathToGenome, fmReads, fmGenome);
 }
 
 int main(int argc, char* argv[]) {
@@ -241,7 +234,7 @@ int main(int argc, char* argv[]) {
 		cmd.add(genomeArg);
 		TCLAP::ValueArg<size_t> genomeSizeArg("s", "size", "Estimated genome size", false, 0, "unsigned int");
 		cmd.add(genomeSizeArg);
-		TCLAP::ValueArg<size_t> kmerSizeArg("k", "kmer", "K-mer size to use", false, 31, "unsigned int");
+		TCLAP::ValueArg<size_t> kmerSizeArg("k", "kmer", "K-mer size to use", false, 17, "unsigned int");
 		cmd.add(kmerSizeArg);
 		TCLAP::ValueArg<std::string> outputArg("o", "output", "Path to the output file", true, "", "string");
 		cmd.add(outputArg);

@@ -71,7 +71,7 @@ public:
 	double computeCoverageBias(const std::string &kmer, const std::string& genome, counting::Matcher& readsIndex, counting::Matcher& genomeIndex);
 	void printMedianCoverageBiases();
 private:
-	std::unordered_map<size_t, CoverageBiasUnitSingle> biasUnits; //TODO: maybe change into an std::vector
+	std::unordered_map<uint16_t, CoverageBiasUnitSingle> biasUnits; //TODO: maybe change into an std::vector
 };
 
 } // end of namespace seq_correct::coverage
