@@ -50,22 +50,15 @@ inline KmerType classifyKmer(size_t observedCount, double expectedCount, double 
 	}
 }
 
-inline KmerType classifyKmerSarah(const std::string& kmer, size_t observedCount,
-		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitSingle& biasUnit) {
-	if (kmer.empty()) {
-		throw std::runtime_error("The kmer is empty");
-	}
-	pusm::PusmData pusmData = pusm.expectedCount(kmer.size());
-	return classifyKmer(observedCount, pusmData.expectation, biasUnit.computeCoverageBias(kmer));
+inline KmerType classifyKmer(const std::string& kmer, counting::Matcher& readsIndex,
+		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
+		const std::string& pathToOriginalReads) {
+	return classifyKmer(readsIndex.countKmer(kmer), pusm.expectedCount(kmer.size()).expectation,
+			biasUnit.computeCoverageBias(kmer, pathToOriginalReads, readsIndex, pusm));
 }
 
-inline KmerType classifyKmer(const std::string& kmer, counting::Matcher& kmerCounter,
-		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitSingle& biasUnit) {
-	return classifyKmerSarah(kmer, kmerCounter.countKmer(kmer), pusm, biasUnit);
-}
-
-inline KmerType classifyKmerReadBased(size_t k, size_t posInRead, const std::vector<uint16_t>& kmerCounts, double medianCount,
-		const std::string& readSequence) {
+inline KmerType classifyKmerReadBased(size_t k, size_t posInRead, const std::vector<uint16_t>& kmerCounts,
+		double medianCount, const std::string& readSequence) {
 	return classifyKmer(kmerCounts[posInRead], medianCount, 1.0);
 }
 

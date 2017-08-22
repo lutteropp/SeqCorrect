@@ -807,9 +807,9 @@ void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& a
 	std::cout << "numWrongThesisRead2: " << numWrongThesisRead2 << " = "
 			<< (double) numWrongThesisRead2 * 100 / (numCorrectThesisRead2 + numWrongThesisRead2) << "% \n";
 
-	std::cout << "numCorrectRead: " << numCorrectRead << (double) numCorrectRead * 100 / (numCorrectRead + numWrongRead)
+	std::cout << "numCorrectRead: " << numCorrectRead << " = " << (double) numCorrectRead * 100 / (numCorrectRead + numWrongRead)
 			<< "% \n";
-	std::cout << "numWrongRead: " << numWrongRead << (double) numWrongRead * 100 / (numCorrectRead + numWrongRead)
+	std::cout << "numWrongRead: " << numWrongRead << " = " << (double) numWrongRead * 100 / (numCorrectRead + numWrongRead)
 			<< "% \n";
 
 	std::cout << "Variant Thesis k-mer classification: \n";

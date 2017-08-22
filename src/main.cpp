@@ -140,8 +140,7 @@ void cmd_correct(size_t k, const std::string& pathToOriginalReads, GenomeType ge
 	counting::FMIndexMatcher fm(pathToReadsOnly);
 	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
 	pusm::PerfectUniformSequencingModel pusm(genomeType, genomeSize, readLengths);
-	coverage::CoverageBiasUnitSingle biasUnit;
-	biasUnit.preprocess(k, pathToOriginalReads, fm, pusm);
+	coverage::CoverageBiasUnitMulti biasUnit;
 	correction::correctReads(pathToOriginalReads, algo, fm, pusm, biasUnit, outputPath);
 }
 

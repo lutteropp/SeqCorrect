@@ -40,8 +40,10 @@ using namespace counting;
 using namespace pusm;
 using namespace util;
 
-void correctReads(const std::string& readsFilepath, CorrectionAlgorithm algo, Matcher& kmerCounter,
-		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitSingle& biasUnit, const std::string& outputPath);
+bool readIsPerfect(const std::string& read, size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit);
+
+void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm algo, Matcher& kmerCounter,
+		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit, const std::string& outputPath);
 
 } // end of namespace seq_correct::correction
 } // end of namespace seq_correct
