@@ -44,4 +44,5 @@
 #include "io/read_with_alignments.hpp"
 #include "external/bloom_filter.hpp"
 #include "kmer/classification.hpp"
+#include "kmer/bloom_filter_classifier.hpp"
 #include "util/enums.hpp"
