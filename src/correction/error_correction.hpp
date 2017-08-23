@@ -40,6 +40,9 @@ using namespace counting;
 using namespace pusm;
 using namespace util;
 
+uint8_t numUntrustedKmers(const std::string& read, size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads);
+
 std::vector<uint8_t> badKmerCoverage(const std::string& read, size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads);
 
