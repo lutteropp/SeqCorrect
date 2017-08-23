@@ -23,6 +23,8 @@
 
 #include <stdexcept>
 #include <functional>
+#include <algorithm>
+#include <vector>
 #include "error_correction.hpp"
 #include "../kmer/classification.hpp"
 
@@ -46,6 +48,21 @@ Read correctRead_full_msa(const Read& read, Matcher& kmerCounter, PerfectUniform
 		coverage::CoverageBiasUnitMulti& biasUnit, bool correctSingleIndels = true, bool correctMultidels = false);
 Read correctRead_partial_msa(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		coverage::CoverageBiasUnitMulti& biasUnit, bool correctSingleIndels = true, bool correctMultidels = false);
+
+std::vector<std::pair<size_t, uint8_t> > rankPotentialErrorPositions(const std::vector<uint8_t>& badKmerCov) {
+	std::vector<std::pair<size_t, uint8_t> > res(badKmerCov.size());
+
+	for (size_t i = 0; i < badKmerCov.size(); ++i) {
+		res[i] = std::make_pair(i, badKmerCov[i]);
+	}
+	auto cmp =
+			[](const std::pair<size_t, uint8_t>& left, const std::pair<size_t, uint8_t>& right) {return left.second < right.second;};
+	std::make_heap(res.begin(), res.end(), cmp);
+	/*std::pop_heap(res.begin(), res.end());
+	 auto largest = res.back();
+	 res.pop_back();*/
+	return res;
+}
 
 /**
  * For each position, count the number of UNTRUSTED k-mers covered by the position.
