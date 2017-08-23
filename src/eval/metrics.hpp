@@ -24,7 +24,7 @@
 #pragma once
 
 #include "../util/enums.hpp"
-#include "error_evaluation_data.hpp"
+#include "evaluation_data.hpp"
 
 namespace seq_correct {
 namespace eval {

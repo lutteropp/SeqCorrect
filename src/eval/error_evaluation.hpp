@@ -29,7 +29,7 @@
 #include "../counting/fm_count.hpp"
 #include "../pusm/pusm.hpp"
 #include "../coverage/coverage_bias.hpp"
-#include "error_evaluation_data.hpp"
+#include "evaluation_data.hpp"
 #include "metrics.hpp"
 
 namespace seq_correct {
@@ -62,10 +62,6 @@ void updateEvaluationData(ErrorEvaluationData& data, const std::vector<Correctio
 
 ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignmentFilepath,
 		const std::string& correctedReadsFilepath, const std::string& genomeFilepath, bool circular);
-
-void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& alignmentFilepath,
-		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
-		counting::Matcher& fmGenome);
 
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct

@@ -21,10 +21,9 @@
  Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
  */
 
-#include "error_evaluation_data.hpp"
-
 #include <stdexcept>
 #include <iostream>
+#include "evaluation_data.hpp"
 
 namespace seq_correct {
 namespace eval {
