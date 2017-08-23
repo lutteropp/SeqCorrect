@@ -57,9 +57,9 @@ BloomFilterClassifier::BloomFilterClassifier() {
 	parameters.false_positive_probability = 0.01;
 	parameters.random_seed = 0xA5A5A5A5;
 	parameters.compute_optimal_parameters();
-	filter_untrusted(parameters);
-	filter_unique(parameters);
-	filter_repeat(parameters);
+	filter_untrusted = bloom_filter(parameters);
+	filter_unique = bloom_filter(parameters);
+	filter_repeat = bloom_filter(parameters);
 }
 
 KmerType BloomFilterClassifier::classifyKmer(const std::string& kmer, counting::Matcher& kmerCounter,
@@ -79,7 +79,7 @@ KmerType BloomFilterClassifier::classifyKmer(const std::string& kmer, counting::
 		}
 	}
 
-	KmerType type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+	KmerType type = classification::classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
 	if (sum == 0) {
 		if (type == KmerType::UNTRUSTED) {
 			filter_untrusted.insert(kmer);
