@@ -177,7 +177,7 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 #ifdef USE_BLOOM_FILTER
 		filter.insert(&seqRead.seq[0], k);
 #else
-		visited.insert(kmerPtr.toString());
+		visited.insert(kmer);
 #endif
 
 		for (size_t i = 1; i + k < seqRead.seq.size(); ++i) {
@@ -192,7 +192,7 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 #ifdef USE_BLOOM_FILTER
 			if (!filter.contains(&seqRead.seq[i], k)) {
 #else
-				if (visited.find(kmerPtr.toString()) == visited.end()) {
+				if (visited.find(kmer) == visited.end()) {
 #endif
 				double bias = inferBias(k, kmer, readsIndex, pusm);
 				if (bias > 0) {
