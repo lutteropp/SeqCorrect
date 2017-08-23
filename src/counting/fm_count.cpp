@@ -31,20 +31,6 @@
 namespace seq_correct {
 namespace counting {
 
-bool isSelfReverseComplement(const std::string& kmer) {
-	if (kmer.size() % 2 == 1) {
-		return false;
-	}
-	bool same = true;
-	for (size_t i = 0; i < kmer.size() / 2; ++i) {
-		if (kmer[i] != util::reverseComplementChar(kmer[kmer.size() - i - 1])) {
-			same = false;
-			break;
-		}
-	}
-	return same;
-}
-
 void createReadsOnly(const std::string& readsPath) {
 	// create the readsOnly file if it doesn't exist yet
 	std::ifstream testInput(readsPath + ".readsOnly.txt");
@@ -69,7 +55,7 @@ uint16_t FMIndexMatcher::countKmer(const std::string& kmer) {
 		return buffer[kmer];
 	}
 	size_t count = sdsl::count(fmIndex, kmer.begin(), kmer.end());
-	if (isSelfReverseComplement(kmer)) {
+	if (util::isSelfReverseComplement(kmer)) {
 		count /= 2;
 	}
 	if (useBuffer) {
@@ -137,61 +123,6 @@ std::vector<uint16_t> FMIndexMatcherMulti::countKmerMultiPositions(const std::st
 		res.push_back(documentID[locations[i]]);
 	}
 	return res;
-}
-
-NaiveBufferedMatcher::NaiveBufferedMatcher(const std::string& filename, size_t k, bool revCompExtra) {
-	io::ReadInput input;
-
-	std::string filenameNaive = filename + "." + std::to_string(k) + ".naive";
-	std::ifstream test(filenameNaive);
-	if (test.good()) {
-		std::string kmer;
-		uint16_t count;
-		while (test >> kmer >> count) {
-			buffer[kmer] = count;
-		}
-	} else {
-		input.openFile(filename);
-		double minProgress = 0;
-		while (input.hasNext()) {
-			if (input.progress() > minProgress) {
-				std::cout << input.progress() << "\n";
-				minProgress += 1;
-			}
-			io::Read read = input.readNext(true, false, false);
-			for (size_t i = 0; i < read.seq.size() - k; ++i) {
-				std::string kmer = read.seq.substr(i, k);
-				if (buffer.find(kmer) != buffer.end()) {
-					buffer[kmer]++;
-				} else {
-					buffer[kmer] = 1;
-				}
-
-				if (revCompExtra) {
-					kmer = util::reverseComplementString(kmer);
-					if (buffer.find(kmer) != buffer.end()) {
-						buffer[kmer]++;
-					} else {
-						buffer[kmer] = 1;
-					}
-				}
-			}
-		}
-
-		std::ofstream testOut(filenameNaive);
-		for (auto kv : buffer) {
-			testOut << kv.first << " " << kv.second << "\n";
-		}
-		testOut.close();
-	}
-}
-
-uint16_t NaiveBufferedMatcher::countKmer(const std::string& kmer) {
-	uint16_t count = buffer[kmer];
-	if (isSelfReverseComplement(kmer)) {
-		count /= 2;
-	}
-	return count;
 }
 
 } // end of namespace seq_correct::counting

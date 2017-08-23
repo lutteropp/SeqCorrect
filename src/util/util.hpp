@@ -68,6 +68,20 @@ inline size_t countGC(const T& kmer) {
 	return gcCount;
 }
 
+inline bool isSelfReverseComplement(const std::string& kmer) {
+	if (kmer.size() % 2 == 1) {
+		return false;
+	}
+	bool same = true;
+	for (size_t i = 0; i < kmer.size() / 2; ++i) {
+		if (kmer[i] != util::reverseComplementChar(kmer[kmer.size() - i - 1])) {
+			same = false;
+			break;
+		}
+	}
+	return same;
+}
+
 inline std::unordered_map<size_t, size_t> countReadLengths(const std::string& readFilepath) {
 	std::unordered_map<size_t, size_t> res;
 	io::ReadInput reader;

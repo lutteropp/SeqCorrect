@@ -31,7 +31,7 @@
 
 #include "coverage/coverage_bias.hpp"
 #include "correction/error_correction.hpp"
-#include "counting/fm_count.hpp"
+#include "counting/counting.hpp"
 #include "eval/eval.hpp"
 #include "profile/error_profile.hpp"
 #include "pusm/pusm.hpp"

@@ -23,40 +23,22 @@
 
 #pragma once
 
-#include <sdsl/csa_wt.hpp>
-#include <sdsl/int_vector.hpp>
-#include <sdsl/rank_support_v5.hpp>
-#include <sdsl/select_support_scan.hpp>
-#include <sdsl/wt_huff.hpp>
-#include <sdsl/suffix_arrays.hpp>
+#include <unordered_map>
+#include <iostream>
 
 #include "matcher.hpp"
 #include "../io/sequence_io.hpp"
+#include "../util/util.hpp"
 
 namespace seq_correct {
 namespace counting {
 
-using namespace sdsl;
-typedef csa_wt<wt_huff<bit_vector, rank_support_v5<>, select_support_scan<>, select_support_scan<0>>, 1 << 20, 1 << 20> FMIndex;
-
-class FMIndexMatcher : public Matcher {
+class NaiveBufferedMatcher: public Matcher {
 public:
-	FMIndexMatcher(const std::string& filename);
+	NaiveBufferedMatcher(const std::string& filename, size_t k, bool revCompExtra);
 	uint16_t countKmer(const std::string& kmer);
-	void enableBuffer();
-	void disableBuffer();
 protected:
-	bool useBuffer;
-	FMIndex fmIndex;
 	std::unordered_map<std::string, uint16_t> buffer;
-};
-
-class FMIndexMatcherMulti: public FMIndexMatcher {
-public:
-	FMIndexMatcherMulti(const std::string& filename);
-	std::vector<uint16_t> countKmerMultiPositions(const std::string& kmer, bool returnEmptyIfDoubleOccs);
-private:
-	std::vector<uint16_t> documentID; // TODO: there should be smth better with bit vectors and rank
 };
 
 } // end of namespace seq_correct::counting
