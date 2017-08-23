@@ -45,6 +45,25 @@ bool isSelfReverseComplement(const std::string& kmer) {
 	return same;
 }
 
+void createReadsOnly(const std::string& readsPath) {
+	// create the readsOnly file if it doesn't exist yet
+	std::ifstream testInput(readsPath + ".readsOnly.txt");
+	if (testInput.good()) {
+		testInput.close();
+		return; // file already exists, do nothing.
+	}
+	std::cout << "Creating " << readsPath + ".readsOnly.txt" << "...\n";
+	io::ReadInput reader;
+	reader.openFile(readsPath);
+	std::ofstream writer(readsPath + ".readsOnly.txt");
+	while (reader.hasNext()) {
+		std::string seq = reader.readNext(true, false, false).seq;
+		writer << seq << "$" << util::reverseComplementString(seq) << "$"; // use '$' as a delimiter
+	}
+	writer.close();
+	std::cout << "Successfully created " << readsPath + ".readsOnly.txt" << "...\n";
+}
+
 uint16_t FMIndexMatcher::countKmer(const std::string& kmer) {
 	if (useBuffer && buffer.find(kmer) != buffer.end()) {
 		return buffer[kmer];
@@ -59,7 +78,10 @@ uint16_t FMIndexMatcher::countKmer(const std::string& kmer) {
 	return count;
 }
 
-FMIndexMatcher::FMIndexMatcher(const std::string& filename) {
+FMIndexMatcher::FMIndexMatcher(const std::string& readsPath) {
+	createReadsOnly(readsPath);
+	std::string filename = readsPath + ".readsOnly.txt";
+
 	std::ifstream infile(filename);
 	if (!infile.good()) {
 		throw std::runtime_error("This file does not exist! " + filename);

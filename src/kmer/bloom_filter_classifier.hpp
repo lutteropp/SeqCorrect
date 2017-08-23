@@ -50,7 +50,7 @@ private:
 	bloom_filter filter_repeat;
 };
 
-BloomFilterClassifier::BloomFilterClassifier() {
+inline BloomFilterClassifier::BloomFilterClassifier() {
 	// set up bloom filter for keeping track of already classified k-mers
 	bloom_parameters parameters;
 	parameters.projected_element_count = 100000; // expected number of k-mer to insert into the bloom filter
@@ -62,7 +62,7 @@ BloomFilterClassifier::BloomFilterClassifier() {
 	filter_repeat = bloom_filter(parameters);
 }
 
-KmerType BloomFilterClassifier::classifyKmer(const std::string& kmer, counting::Matcher& kmerCounter,
+inline KmerType BloomFilterClassifier::classifyKmer(const std::string& kmer, counting::Matcher& kmerCounter,
 		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
 		const std::string& pathToOriginalReads) {
 	bool inUntrusted = filter_untrusted.contains(kmer);

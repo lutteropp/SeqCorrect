@@ -18,23 +18,6 @@
 using namespace seq_correct;
 using namespace util;
 
-void createReadsOnly(const std::string& pathToOriginalReads) {
-	// create the readsOnly file if it doesn't exist yet
-	std::ifstream testInput(pathToOriginalReads + ".readsOnly.txt");
-	if (testInput.good()) {
-		testInput.close();
-		return; // file already exists, do nothing.
-	}
-	io::ReadInput reader;
-	reader.openFile(pathToOriginalReads);
-	std::ofstream writer(pathToOriginalReads + ".readsOnly.txt");
-	while (reader.hasNext()) {
-		std::string seq = reader.readNext(true, false, false).seq;
-		writer << seq << "$" << util::reverseComplementString(seq) << "$"; // use '$' as a delimiter
-	}
-	writer.close();
-}
-
 void printErrorEvaluationData(const eval::ErrorEvaluationData& evalData) {
 	for (ErrorType type : AllErrorTypeIterator()) {
 		std::cout << errorTypeToString(type) << ":\n";
@@ -135,9 +118,7 @@ void cmd_demo(const std::string& outputPath) {
 
 void cmd_correct(size_t k, const std::string& pathToOriginalReads, GenomeType genomeType, const std::string& outputPath,
 		size_t genomeSize, correction::CorrectionAlgorithm algo) {
-	createReadsOnly(pathToOriginalReads);
-	std::string pathToReadsOnly = pathToOriginalReads + ".readsOnly.txt";
-	counting::FMIndexMatcher fm(pathToReadsOnly);
+	counting::FMIndexMatcher fm(pathToOriginalReads);
 	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
 	pusm::PerfectUniformSequencingModel pusm(genomeType, genomeSize, readLengths);
 	coverage::CoverageBiasUnitMulti biasUnit;
@@ -193,8 +174,6 @@ void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginal
 	/*eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
 	 pathToGenome, circular);
 	 printErrorEvaluationData(res);*/
-
-	createReadsOnly(pathToOriginalReads);
 
 	counting::NaiveBufferedMatcher fmReads(pathToOriginalReads, k, true);
 	counting::NaiveBufferedMatcher fmGenome(pathToGenome, k, true);

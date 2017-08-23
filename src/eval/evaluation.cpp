@@ -32,6 +32,7 @@
 #include "../io/sequence_io.hpp"
 #include "alignment.hpp"
 #include "../kmer/classification.hpp"
+#include "../kmer/bloom_filter_classifier.hpp"
 
 namespace seq_correct {
 namespace eval {
