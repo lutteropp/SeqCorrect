@@ -40,6 +40,10 @@ using namespace counting;
 using namespace pusm;
 using namespace util;
 
+std::string findReplacement(const std::string& kmer, ErrorType errorType, size_t posInKmer);
+
+std::string kmerAfterError(const std::string& kmer, ErrorType error, int posOfError);
+
 uint8_t numUntrustedKmers(const std::string& read, size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads);
 

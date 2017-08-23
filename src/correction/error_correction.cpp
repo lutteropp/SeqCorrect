@@ -49,6 +49,42 @@ Read correctRead_full_msa(const Read& read, Matcher& kmerCounter, PerfectUniform
 Read correctRead_partial_msa(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		coverage::CoverageBiasUnitMulti& biasUnit, bool correctSingleIndels = true, bool correctMultidels = false);
 
+std::string findReplacement(const std::string& kmer, ErrorType errorType, size_t posInKmer) {
+	std::string replacement;
+	if (errorType == ErrorType::SUB_OF_A) {
+		replacement = "A";
+	} else if (errorType == ErrorType::SUB_OF_C) {
+		replacement = "C";
+	} else if (errorType == ErrorType::SUB_OF_G) {
+		replacement = "G";
+	} else if (errorType == ErrorType::SUB_OF_T) {
+		replacement = "T";
+	} else if (errorType == ErrorType::INSERTION) {
+		replacement = ""; // TODO: This will lead to k-mers of even size. Is this a problem?
+	} else {
+		replacement = "";
+		replacement += kmer[posInKmer];
+		if (errorType == ErrorType::DEL_OF_A) {
+			replacement += "A";
+		} else if (errorType == ErrorType::DEL_OF_C) {
+			replacement += "C";
+		} else if (errorType == ErrorType::DEL_OF_G) {
+			replacement += "G";
+		} else if (errorType == ErrorType::DEL_OF_T) {
+			replacement += "T";
+		} else {
+			throw std::runtime_error("Multidel not supported yet!");
+		}
+	}
+	return replacement;
+}
+
+std::string kmerAfterError(const std::string& kmer, ErrorType error, int posOfError) {
+	std::string res = kmer;
+	res.replace(posOfError, 1, findReplacement(res, error, posOfError));
+	return res;
+}
+
 std::vector<std::pair<size_t, uint8_t> > rankPotentialErrorPositions(const std::vector<uint8_t>& badKmerCov) {
 	std::vector<std::pair<size_t, uint8_t> > res(badKmerCov.size());
 
