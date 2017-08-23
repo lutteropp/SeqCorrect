@@ -47,6 +47,33 @@ Read correctRead_full_msa(const Read& read, Matcher& kmerCounter, PerfectUniform
 Read correctRead_partial_msa(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		coverage::CoverageBiasUnitMulti& biasUnit, bool correctSingleIndels = true, bool correctMultidels = false);
 
+bool readIsPerfect(const std::string& read, size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads) {
+	bool perfect = true;
+	size_t i = 0;
+	while (i < read.size() - minK) {
+		size_t k = minK;
+		std::string kmer = read.substr(i, k);
+		KmerType type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+
+		while (type == KmerType::REPEAT) {
+			k += 2;
+			if (i + k >= read.size()) {
+				break;
+			}
+			kmer = read.substr(i,k);
+			type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+		}
+
+		if (type == KmerType::UNTRUSTED) {
+			perfect = false;
+			break;
+		}
+		i++;
+	}
+	return perfect;
+}
+
 size_t findSmallestNonrepetitive(const std::string& str, size_t pos, Matcher& readsIndex,
 		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
 		const std::string& pathToOriginalReads) {
