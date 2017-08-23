@@ -28,10 +28,9 @@
 namespace seq_correct {
 namespace util {
 
-Dataset::Dataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath,
-		const std::string& readsOnlyFilepath) :
-		genomeType(genomeType), genomeSize(genomeSize), readFilepath(readFilepath), readsOnlyFilepath(readsOnlyFilepath) {
-	readLengths = countReadLengths(readFilepath);
+Dataset::Dataset(GenomeType genomeType, size_t genomeSize, const std::string& pathToOriginalReads) :
+		genomeType(genomeType), genomeSize(genomeSize), pathToOriginalReads(pathToOriginalReads) {
+	readLengths = countReadLengths(pathToOriginalReads);
 }
 
 size_t Dataset::getGenomeSize() {
@@ -42,21 +41,17 @@ GenomeType Dataset::getGenomeType() {
 	return genomeType;
 }
 
-std::string Dataset::getReadFilepath() {
-	return readFilepath;
+std::string Dataset::getPathToOriginalReads() {
+	return pathToOriginalReads;
 }
 
 std::unordered_map<size_t, size_t> Dataset::getReadLengths() {
 	return readLengths;
 }
 
-std::string Dataset::getReadsOnlyFilepath() {
-	return readsOnlyFilepath;
-}
-
-ReferenceDataset::ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath,
-		const std::string& referenceGenomePath, const std::string& readsOnlyFilepath) :
-		Dataset(genomeType, genomeSize, readFilepath, readsOnlyFilepath), referenceGenomePath(referenceGenomePath) {
+ReferenceDataset::ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::string& pathToOriginalReads,
+		const std::string& referenceGenomePath) :
+		Dataset(genomeType, genomeSize, pathToOriginalReads), referenceGenomePath(referenceGenomePath) {
 	referenceGenome = io::readReferenceGenome(referenceGenomePath);
 }
 

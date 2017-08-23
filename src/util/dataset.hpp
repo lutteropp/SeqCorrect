@@ -33,9 +33,8 @@ namespace util {
 
 class Dataset {
 public:
-	Dataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath, const std::string& readsOnlyFilepath = "");
-	std::string getReadFilepath();
-	std::string getReadsOnlyFilepath();
+	Dataset(GenomeType genomeType, size_t genomeSize, const std::string& pathToOriginalReads);
+	std::string getPathToOriginalReads();
 	std::unordered_map<size_t, size_t> getReadLengths();
 	size_t getGenomeSize();
 	GenomeType getGenomeType();
@@ -43,14 +42,13 @@ private:
 	GenomeType genomeType;
 	size_t genomeSize;
 	std::unordered_map<size_t, size_t> readLengths;
-	std::string readFilepath;
-	std::string readsOnlyFilepath;
+	std::string pathToOriginalReads;
 };
 
 class ReferenceDataset: public Dataset {
 public:
-	ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::string& readFilepath,
-			const std::string& referenceGenomePath, const std::string& readsOnlyFilepath = "");
+	ReferenceDataset(GenomeType genomeType, size_t genomeSize, const std::string& pathToOriginalReads,
+			const std::string& referenceGenomePath);
 	std::string getReferenceGenomePath();
 	std::string getReferenceGenome();
 private:

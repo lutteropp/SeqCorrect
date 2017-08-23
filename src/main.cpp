@@ -90,8 +90,7 @@ void printKmerEvaluationData(const eval::KmerEvaluationData& evalData) {
 void cmd_demo(const std::string& outputPath) {
 	// Specify an example Ebola Illumina dataset
 	util::Dataset dataset(util::GenomeType::LINEAR, 18959,
-			"/home/sarah/Documents/Master Thesis Topic Extension/thesis_zipped/SOFTWARE_AND_DATA/data/Simulated Datasets/Ebola/Illumina/ebola_illumina_simulated.fastq",
-			"/home/sarah/Documents/Master Thesis Topic Extension/thesis_zipped/SOFTWARE_AND_DATA/data/Simulated Datasets/Ebola/Illumina/ebola_illumina_simulated.fastq.readsOnly.txt");
+			"/home/sarah/Documents/Master Thesis Topic Extension/thesis_zipped/SOFTWARE_AND_DATA/data/Simulated Datasets/Ebola/Illumina/ebola_illumina_simulated.fastq");
 
 	// Read the reads and write them
 	/*io::ReadInput reader;
@@ -104,7 +103,7 @@ void cmd_demo(const std::string& outputPath) {
 	 }*/
 
 	// count the k-mer "ACGGT" in all the reads
-	counting::FMIndexMatcher matcher(dataset.getReadFilepath());
+	counting::FMIndexMatcher matcher(dataset.getPathToOriginalReads());
 	size_t count = matcher.countKmer("ACGGT");
 	std::cout << "The kmer 'ACGGT' or its reverse-complement occurs " << count << " times in the read dataset\n";
 
@@ -112,7 +111,7 @@ void cmd_demo(const std::string& outputPath) {
 	pusm::PerfectUniformSequencingModel pusm(dataset.getGenomeType(), dataset.getGenomeSize(),
 			dataset.getReadLengths());
 	coverage::CoverageBiasUnitSingle biasUnit;
-	biasUnit.preprocess(21, dataset.getReadFilepath(), matcher, pusm);
+	biasUnit.preprocess(21, dataset.getPathToOriginalReads(), matcher, pusm);
 	biasUnit.printMedianCoverageBiases();
 }
 
