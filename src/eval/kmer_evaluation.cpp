@@ -31,6 +31,10 @@ namespace eval {
 
 using namespace classification;
 
+void classifyKmersVariants(size_t k, GenomeType genomeType,
+		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
+		counting::Matcher& fmGenome);
+
 std::vector<KmerType> computeTrueTypes(size_t k, const std::string& sequence, counting::Matcher& fmGenome) {
 	std::vector<KmerType> trueTypes;
 	for (size_t i = 0; i < sequence.size() - k; ++i) {

@@ -30,12 +30,7 @@
 namespace seq_correct {
 namespace eval {
 
-// actually, only this function is needed from the outside
 void eval_kmers(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads, const std::string& pathToGenome);
-
-void classifyKmersVariants(size_t k, GenomeType genomeType,
-		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
-		counting::Matcher& fmGenome);
 
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct
