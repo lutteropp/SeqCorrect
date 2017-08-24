@@ -128,50 +128,50 @@ void eval_corrections(size_t k, GenomeType genomeType, const std::string& pathTo
 		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath,
 		bool circular) {
 	std::string alignmentPath = pathToOriginalReads.substr(0, pathToOriginalReads.find_last_of('.')) + ".bam";
-		std::ifstream alignmentFile(alignmentPath);
-		if (!alignmentFile.good()) {
-			std::cout << "Alignment file " << alignmentPath << " not found. Building alignment now...\n";
-			std::string indexGenomeCall = "bwa index " + pathToGenome;
-			std::cout << "Calling: " << indexGenomeCall << "\n";
-			int status = std::system(indexGenomeCall.c_str());
-			if (!WIFEXITED(status)) {
-				throw std::runtime_error("Something went wrong while indexing genome!");
-			}
-			std::string alignReadsCall = "bwa mem -L 999999999 " + pathToGenome + " " + pathToOriginalReads
-					+ " > myreads_aln.sam";
-			std::cout << "Calling: " << alignReadsCall << "\n";
-			status = std::system(alignReadsCall.c_str());
-			if (!WIFEXITED(status)) {
-				throw std::runtime_error("Something went wrong while aligning reads!");
-			}
-			std::string removeUnmappedAndCompressCall = "samtools view -bS -F 4 myreads_aln.sam > myreads_aln.bam";
-			std::cout << "Calling: " << removeUnmappedAndCompressCall << "\n";
-			status = std::system(removeUnmappedAndCompressCall.c_str());
-			if (!WIFEXITED(status)) {
-				throw std::runtime_error("Something went wrong while removing unmapped reads and compressing the file!");
-			}
-			std::string sortCall = "samtools sort -n -o " + alignmentPath + " myreads_aln.bam";
-			std::cout << "Calling: " << sortCall << "\n";
-			status = std::system(sortCall.c_str());
-			if (!WIFEXITED(status)) {
-				throw std::runtime_error("Something went wrong while sorting the file!");
-			}
-			std::string removeCall1 = "rm myreads_aln.sam";
-			status = std::system(removeCall1.c_str());
-			if (!WIFEXITED(status)) {
-				throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.sam!");
-			}
-			std::string removeCall2 = "rm myreads_aln.bam";
-			status = std::system(removeCall2.c_str());
-			if (!WIFEXITED(status)) {
-				throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.bam!");
-			}
+	std::ifstream alignmentFile(alignmentPath);
+	if (!alignmentFile.good()) {
+		std::cout << "Alignment file " << alignmentPath << " not found. Building alignment now...\n";
+		std::string indexGenomeCall = "bwa index " + pathToGenome;
+		std::cout << "Calling: " << indexGenomeCall << "\n";
+		int status = std::system(indexGenomeCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while indexing genome!");
 		}
-		alignmentFile.close();
+		std::string alignReadsCall = "bwa mem -L 999999999 " + pathToGenome + " " + pathToOriginalReads
+				+ " > myreads_aln.sam";
+		std::cout << "Calling: " << alignReadsCall << "\n";
+		status = std::system(alignReadsCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while aligning reads!");
+		}
+		std::string removeUnmappedAndCompressCall = "samtools view -bS -F 4 myreads_aln.sam > myreads_aln.bam";
+		std::cout << "Calling: " << removeUnmappedAndCompressCall << "\n";
+		status = std::system(removeUnmappedAndCompressCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing unmapped reads and compressing the file!");
+		}
+		std::string sortCall = "samtools sort -n -o " + alignmentPath + " myreads_aln.bam";
+		std::cout << "Calling: " << sortCall << "\n";
+		status = std::system(sortCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while sorting the file!");
+		}
+		std::string removeCall1 = "rm myreads_aln.sam";
+		status = std::system(removeCall1.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.sam!");
+		}
+		std::string removeCall2 = "rm myreads_aln.bam";
+		status = std::system(removeCall2.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.bam!");
+		}
+	}
+	alignmentFile.close();
 
-		eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
-				pathToGenome, circular);
-		printErrorEvaluationData(res);
+	eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
+			pathToGenome, circular);
+	printErrorEvaluationData(res);
 }
 
 // TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?
