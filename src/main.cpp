@@ -55,7 +55,6 @@ void cmd_correct(size_t k, const std::string& pathToOriginalReads, GenomeType ge
 	correction::correctReads(pathToOriginalReads, algo, fm, pusm, biasUnit, outputPath);
 }
 
-// TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?
 void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
 		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath) {
 	eval::eval_corrections(k, genomeType, pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);

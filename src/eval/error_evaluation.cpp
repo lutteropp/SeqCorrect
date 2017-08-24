@@ -654,6 +654,7 @@ void printErrorEvaluationData(const eval::ErrorEvaluationData& evalData) {
 	}
 }
 
+// TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?
 void eval_corrections(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
 		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath) {
 	std::string alignmentPath = pathToOriginalReads.substr(0, pathToOriginalReads.find_last_of('.')) + ".bam";
