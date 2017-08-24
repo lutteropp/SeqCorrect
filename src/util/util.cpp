@@ -111,16 +111,31 @@ uint16_t baseToNumber(const char& c) {
 	}
 }
 
-uint16_t kmerToNumber(const std::string& kmer) {
-	uint16_t res = 0;
+size_t kmerToNumber(const std::string& kmer) {
+	size_t res = 0;
 	for (size_t i = 0; i < kmer.size(); ++i) {
-		//res +=
+		if (kmer[i] == 'A') {
+			continue;
+		}
+		size_t backIdx = kmer.size() - i - 1;
+		size_t pow4 = (1 << (2 * backIdx));
+		if (kmer[i] == 'C') {
+			res += pow4;
+		} else if (kmer[i] == 'G') {
+			res += 2 * pow4;
+		} else if (kmer[i] == 'T') {
+			res += 3 * pow4;
+		} else if (kmer[i] == 'N') {
+			return std::numeric_limits<size_t>::max();
+		} else {
+			throw std::runtime_error("Unknown char in k-mer: " + std::to_string(kmer[i]));
+		}
 	}
 	return res;
 }
 
-std::string numberToKmer(uint16_t n) {
-	return "";
+std::string numberToKmer(size_t n) {
+	throw std::runtime_error("Not implemented yet");
 }
 
 } // end of namespace seq_correct::util

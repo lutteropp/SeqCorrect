@@ -23,6 +23,7 @@
 
 #include "kmer_evaluation.hpp"
 #include "../kmer/classification.hpp"
+#include "../kmer/hash_classifier.hpp"
 #include "../io/bam_iterator.hpp"
 #include "../counting/counting.hpp"
 
@@ -31,9 +32,8 @@ namespace eval {
 
 using namespace classification;
 
-void classifyKmersVariants(size_t k, GenomeType genomeType,
-		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
-		counting::Matcher& fmGenome);
+void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
+		const std::string& genomeFilepath, counting::Matcher& fmReads, counting::Matcher& fmGenome);
 
 std::vector<KmerType> computeTrueTypes(size_t k, const std::string& sequence, counting::Matcher& fmGenome) {
 	std::vector<KmerType> trueTypes;
@@ -48,6 +48,16 @@ std::vector<KmerType> computeTrueTypes(size_t k, const std::string& sequence, co
 		} else {
 			trueType = KmerType::REPEAT;
 		}
+		trueTypes.push_back(trueType);
+	}
+	return trueTypes;
+}
+
+std::vector<KmerType> computeTrueTypes(size_t k, const std::string& sequence, HashClassifierGenome& clsfyGenome) {
+	std::vector<KmerType> trueTypes;
+	for (size_t i = 0; i < sequence.size() - k; ++i) {
+		std::string kmer = sequence.substr(i, k);
+		KmerType trueType = clsfyGenome.classifyKmer(kmer);
 		trueTypes.push_back(trueType);
 	}
 	return trueTypes;
@@ -147,9 +157,8 @@ void printKmerEvaluationData(const eval::KmerEvaluationData& evalData) {
 	}
 }
 
-void classifyKmersVariants(size_t k, GenomeType genomeType,
-		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
-		counting::Matcher& fmGenome) {
+void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
+		const std::string& genomeFilepath, counting::Matcher& fmReads, counting::Matcher& fmGenome) {
 	std::string genome = io::readReferenceGenome(genomeFilepath);
 	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
 	pusm::PerfectUniformSequencingModel pusm(genomeType, genome.size(), readLengths);
@@ -227,10 +236,10 @@ void classifyKmersVariants(size_t k, GenomeType genomeType,
 	std::cout << "numWrongThesisRead2: " << numWrongThesisRead2 << " = "
 			<< (double) numWrongThesisRead2 * 100 / (numCorrectThesisRead2 + numWrongThesisRead2) << "% \n";
 
-	std::cout << "numCorrectRead: " << numCorrectRead << " = " << (double) numCorrectRead * 100 / (numCorrectRead + numWrongRead)
-			<< "% \n";
-	std::cout << "numWrongRead: " << numWrongRead << " = " << (double) numWrongRead * 100 / (numCorrectRead + numWrongRead)
-			<< "% \n";
+	std::cout << "numCorrectRead: " << numCorrectRead << " = "
+			<< (double) numCorrectRead * 100 / (numCorrectRead + numWrongRead) << "% \n";
+	std::cout << "numWrongRead: " << numWrongRead << " = "
+			<< (double) numWrongRead * 100 / (numCorrectRead + numWrongRead) << "% \n";
 
 	std::cout << "Variant Thesis k-mer classification: \n";
 	printKmerEvaluationData(dataThesis);
@@ -245,12 +254,65 @@ void classifyKmersVariants(size_t k, GenomeType genomeType,
 	printKmerEvaluationData(dataRead);
 }
 
-void eval_kmers(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads, const std::string& pathToGenome) {
-	counting::NaiveBufferedMatcher fmReads(pathToOriginalReads, k, true);
-	counting::NaiveBufferedMatcher fmGenome(pathToGenome, k, true);
+void classifyKmers(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
+		const std::string& genomeFilepath, counting::Matcher& fmReads, counting::Matcher& fmGenome) {
+	std::string genome = io::readReferenceGenome(genomeFilepath);
+	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
+	pusm::PerfectUniformSequencingModel pusm(genomeType, genome.size(), readLengths);
+	coverage::CoverageBiasUnitMulti biasUnit;
+	biasUnit.preprocess(k, pathToOriginalReads, fmReads, pusm);
+	HashClassifier clsfyReads(fmReads, pusm, biasUnit, pathToOriginalReads);
+	HashClassifierGenome clsfyGenome(fmGenome);
+
+	size_t numCorrectThesis = 0;
+	size_t numWrongThesis = 0;
+
+	KmerEvaluationData dataThesis;
+
+	io::ReadInput readInput(pathToOriginalReads);
+
+	double minProgress = 0.0;
+	while (readInput.hasNext()) {
+		std::string seq = readInput.readNext(true, false, false).seq;
+
+		std::vector<KmerType> trueTypes = computeTrueTypes(k, seq, clsfyGenome);
+
+		std::vector<KmerType> predictedTypesThesis(seq.size() - k);
+#pragma omp parallel for
+		for (size_t i = 0; i < seq.size() - k; ++i) {
+			std::string kmer = seq.substr(i, k);
+			predictedTypesThesis[i] = clsfyReads.classifyKmer(kmer);
+		}
+
+		update(trueTypes, predictedTypesThesis, dataThesis, numCorrectThesis, numWrongThesis);
+
+		if (readInput.progress() > minProgress) {
+			minProgress += 1;
+			std::cout << readInput.progress() << "\n";
+		}
+	}
+
+	std::cout << "numCorrectThesis: " << numCorrectThesis << " = "
+			<< (double) numCorrectThesis * 100 / (numCorrectThesis + numWrongThesis) << "% \n";
+	std::cout << "numWrongThesis: " << numWrongThesis << " = "
+			<< (double) numWrongThesis * 100 / (numCorrectThesis + numWrongThesis) << "% \n";
+
+	std::cout << "Variant Thesis k-mer classification: \n";
+	printKmerEvaluationData(dataThesis);
+}
+
+void eval_kmers(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
+		const std::string& pathToGenome) {
+	//counting::NaiveBufferedMatcher fmReads(pathToOriginalReads, k, true);
+	//counting::NaiveBufferedMatcher fmGenome(pathToGenome, k, true);
+
+	counting::FMIndexMatcher fmReads(pathToOriginalReads);
+	counting::FMIndexMatcher fmGenome(pathToGenome);
 
 	std::cout << "k-mer size used: " << k << "\n";
-	eval::classifyKmersVariants(k, genomeType, pathToOriginalReads, pathToGenome, fmReads, fmGenome);
+	eval::classifyKmers(k, genomeType, pathToOriginalReads, pathToGenome, fmReads, fmGenome);
+
+	//eval::classifyKmersVariants(k, genomeType, pathToOriginalReads, pathToGenome, fmReads, fmGenome);
 }
 
 } // end of namespace seq_correct::eval

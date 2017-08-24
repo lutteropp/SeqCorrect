@@ -24,6 +24,8 @@
 #pragma once
 
 #include <vector>
+#include <unordered_set>
+#include <unordered_map>
 #include "../pusm/pusm.hpp"
 #include "../io/sequence_io.hpp"
 #include "../counting/fm_count.hpp"
@@ -64,6 +66,8 @@ private:
 class CoverageBiasUnitMulti {
 public:
 	CoverageBiasUnitMulti();
+	void preprocess(size_t k, const std::string& filepath, counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel& pusm);
+	void preprocess(size_t k, const std::string& genome, counting::Matcher& readsIndex, counting::Matcher& genomeIndex);
 	// using linear interpolation to compute coverage bias factor
 	double computeCoverageBias(size_t k, double gc, const std::string& filepath,
 			counting::Matcher& matcher, pusm::PerfectUniformSequencingModel& pusm);

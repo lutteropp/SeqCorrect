@@ -30,11 +30,14 @@
 #include "../external/bloom_filter.hpp"
 #include "../util/util.hpp"
 #include "../io/sequence_io.hpp"
+#include "../external/sparsepp/spp.h"
 
 namespace seq_correct {
 namespace coverage {
 
-#define USE_BLOOM_FILTER 1
+using spp::sparse_hash_set;
+
+#define USE_BLOOM_FILTER 0
 
 /**
  * Fix biases with value 0 by applying linear interpolation. Zero-value biases occur if the dataset does not contain
@@ -154,17 +157,18 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 #ifdef USE_BLOOM_FILTER
 	// set up bloom filter for keeping track of already visited k-mers
 	bloom_parameters parameters;
-	parameters.projected_element_count = 100000; // expected number of k-mer to insert into the bloom filter
+	parameters.projected_element_count = 100000000; // expected number of k-mer to insert into the bloom filter
 	parameters.false_positive_probability = 0.01;
 	parameters.random_seed = 0xA5A5A5A5;
 	parameters.compute_optimal_parameters();
 	bloom_filter filter(parameters);
 #else
-	std::unordered_set<std::string> visited;
+	sparse_hash_set<std::string> visited;
 #endif
 
 	io::ReadInput reader(filepath);
 
+	double minProgress = 0.0;
 	while (reader.hasNext()) {
 		io::Read seqRead = reader.readNext(true, false, false);
 		std::string kmer = seqRead.seq.substr(0, k);
@@ -204,7 +208,14 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 #endif
 			}
 		}
+		if (reader.progress() >= minProgress) {
+			std::cout << reader.progress() << "\n";
+			minProgress += 1;
+		}
 	}
+#ifdef USE_BLOOM_FILTER
+	filter.clear();
+#endif
 	return computeMedianBiases(k, biases);
 }
 
@@ -251,8 +262,10 @@ std::vector<CoverageBiasData> preprocessWithGenome(size_t k, const std::string& 
  */
 void CoverageBiasUnitSingle::preprocess(size_t k, const std::string &filepath, counting::Matcher& readsIndex,
 		pusm::PerfectUniformSequencingModel& pusm) {
+	std::cout << "preprocessing Coverage bias unit for k = " << k << "...\n";
 	gcStep = 1 / (double) k;
 	medianCoverageBiases = preprocessWithoutGenome(k, filepath, readsIndex, pusm);
+	std::cout << "finished computing coverage biases for k = " << k << "...\n";
 }
 
 /**
@@ -301,6 +314,23 @@ void CoverageBiasUnitSingle::printMedianCoverageBiases() {
 }
 
 CoverageBiasUnitMulti::CoverageBiasUnitMulti() {
+}
+
+void CoverageBiasUnitMulti::preprocess(size_t k, const std::string& filepath, counting::Matcher& readsIndex,
+		pusm::PerfectUniformSequencingModel& pusm) {
+	if (biasUnits.find(k) == biasUnits.end()) {
+		CoverageBiasUnitSingle cbsSingle;
+		cbsSingle.preprocess(k, filepath, readsIndex, pusm);
+		biasUnits[k] = cbsSingle;
+	}
+}
+void CoverageBiasUnitMulti::preprocess(size_t k, const std::string& genome, counting::Matcher& readsIndex,
+		counting::Matcher& genomeIndex) {
+	if (biasUnits.find(k) == biasUnits.end()) {
+		CoverageBiasUnitSingle cbsSingle;
+		cbsSingle.preprocess(k, genome, readsIndex, genomeIndex);
+		biasUnits[k] = cbsSingle;
+	}
 }
 
 /**

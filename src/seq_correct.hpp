@@ -44,8 +44,11 @@
 #include "io/bam_iterator.hpp"
 #include "io/read_with_alignments.hpp"
 #include "external/bloom_filter.hpp"
+#include "external/sparsepp/spp.h"
+#include "external/genesis/bitvector.hpp"
 #include "kmer/classification.hpp"
 #include "kmer/bloom_filter_classifier.hpp"
+#include "kmer/hash_classifier.hpp"
 #include "util/enums.hpp"
 
 namespace seq_correct {
@@ -86,7 +89,7 @@ private:
 	std::shared_ptr<counting::Matcher> readsIndex;
 	pusm::PerfectUniformSequencingModel pusm;
 	coverage::CoverageBiasUnitMulti biasUnit;
-	classification::BloomFilterClassifier kmerClassifier;
+	classification::HashClassifier kmerClassifier;
 };
 
 } // end of namespace seq_correct
