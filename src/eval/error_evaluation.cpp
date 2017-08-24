@@ -160,7 +160,7 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 }
 
 // Assumes that indels have already been detected
-void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const std::string& genome, bool circular) {
+void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const std::string& genome, GenomeType genomeType) {
 	int genomeIdx = info.beginPos - 1;
 
 	for (size_t i = 0; i < rwa.seq.size(); ++i) {
@@ -176,7 +176,7 @@ void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const
 		}
 
 		if (genomeIdx >= (int) genome.size()) {
-			if (circular) {
+			if (genomeType == GenomeType::CIRCULAR) {
 				genomeIdx -= genome.size();
 			} else {
 				throw std::runtime_error("genomeIdx >= genome.size() in a linear genome!");
@@ -239,7 +239,7 @@ void fixReadBackToNormal(ReadWithAlignments& rwa) {
 	rwa.seq = seq;
 }
 
-std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string &genome, bool circular) {
+std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string &genome, GenomeType genomeType) {
 	if (hasFlagUnmapped(rwa.records[0])) {
 		throw std::runtime_error("The read is unmapped");
 	}
@@ -290,7 +290,7 @@ std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string
 			}
 		}
 		// now that indels have been fixed, fix the substitution errors.
-		handleSubstitutionErrors(rwa, info, genome, circular);
+		handleSubstitutionErrors(rwa, info, genome, genomeType);
 		fixReadBackToNormal(rwa);
 	}
 
@@ -542,7 +542,7 @@ void sortCorrectedReads(const std::string& correctedReadsFilepath, const std::st
 }
 
 ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedReadsFilepath,
-		const std::string& correctedReadsFilepath, const std::string& genomeFilepath, bool circular) {
+		const std::string& correctedReadsFilepath, const std::string& genomeFilepath, util::GenomeType genomeType) {
 	ErrorEvaluationData data;
 	std::string genome = io::readReferenceGenome(genomeFilepath);
 	BAMIterator it(alignedReadsFilepath);
@@ -597,7 +597,7 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 
 #pragma omp task shared(genome, data), firstprivate(rwa, correctedRead)
 				{
-					std::vector<Correction> errorsTruth = extractErrors(rwa, genome, circular);
+					std::vector<Correction> errorsTruth = extractErrors(rwa, genome, genomeType);
 
 					if (rwa.seq.size() != correctedRead.seq.size()) {
 						throw std::runtime_error("WHAT ThE FUCK");
@@ -612,6 +612,95 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 #pragma omp taskwait
 	}
 	return data;
+}
+
+void printErrorEvaluationData(const eval::ErrorEvaluationData& evalData) {
+	for (ErrorType type : AllErrorTypeIterator()) {
+		std::cout << errorTypeToString(type) << ":\n";
+		std::cout << "  TP:          " << eval::truePositives(type, evalData) << "\n";
+		std::cout << "  TN:          " << eval::trueNegatives(type, evalData) << "\n";
+		std::cout << "  FP:          " << eval::falsePositives(type, evalData) << "\n";
+		std::cout << "  FN:          " << eval::falseNegatives(type, evalData) << "\n";
+		std::cout << "  Accuracy:    " << eval::computeAccuracy(type, evalData) << "\n";
+		std::cout << "  Precision:   " << eval::computePrecision(type, evalData) << "\n";
+		std::cout << "  Recall:      " << eval::computeRecall(type, evalData) << "\n";
+		std::cout << "  Specificity: " << eval::computeSpecificity(type, evalData) << "\n";
+		std::cout << "  Sensitivity: " << eval::computeSensitivity(type, evalData) << "\n";
+		std::cout << "  Gain:        " << eval::computeGain(type, evalData) << "\n";
+		std::cout << "  F1-score:    " << eval::computeF1Score(type, evalData) << "\n";
+	}
+	std::cout << "\n";
+	std::cout << "Unweighted Average Base F1-score: " << eval::computeUnweightedAverageBaseF1Score(evalData) << "\n";
+	std::cout << "Base NMI-score:                   " << eval::computeBaseNMIScore(evalData) << "\n";
+	std::cout << "Unweighted Average Gap F1-score:  " << eval::computeUnweightedAverageGapF1Score(evalData) << "\n";
+	std::cout << "Gap NMI-score:                    " << eval::computeGapNMIScore(evalData) << "\n";
+
+	std::cout << "\n Base Confusion Matrix:\n";
+	for (ErrorType e1 : BaseTypeIterator()) {
+		for (ErrorType e2 : BaseTypeIterator()) {
+			double percentage = (double) evalData.getEntry(e1, e2) / evalData.sumTruth(e1);
+			std::cout << "[" << util::errorTypeToString(e1) << "][" << util::errorTypeToString(e2) << "]: "
+					<< evalData.getEntry(e1, e2) << " = " << percentage * 100 << "%" << "\n";
+		}
+	}
+
+	std::cout << "\n Gap Confusion Matrix:\n";
+	for (ErrorType e1 : GapTypeIterator()) {
+		for (ErrorType e2 : GapTypeIterator()) {
+			double percentage = (double) evalData.getEntry(e1, e2) / evalData.sumTruth(e1);
+			std::cout << "[" << util::errorTypeToString(e1) << "][" << util::errorTypeToString(e2) << "]: "
+					<< evalData.getEntry(e1, e2) << " = " << percentage * 100 << "%" << "\n";
+		}
+	}
+}
+
+void eval_corrections(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
+		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath) {
+	std::string alignmentPath = pathToOriginalReads.substr(0, pathToOriginalReads.find_last_of('.')) + ".bam";
+	std::ifstream alignmentFile(alignmentPath);
+	if (!alignmentFile.good()) {
+		std::cout << "Alignment file " << alignmentPath << " not found. Building alignment now...\n";
+		std::string indexGenomeCall = "bwa index " + pathToGenome;
+		std::cout << "Calling: " << indexGenomeCall << "\n";
+		int status = std::system(indexGenomeCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while indexing genome!");
+		}
+		std::string alignReadsCall = "bwa mem -L 999999999 " + pathToGenome + " " + pathToOriginalReads
+				+ " > myreads_aln.sam";
+		std::cout << "Calling: " << alignReadsCall << "\n";
+		status = std::system(alignReadsCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while aligning reads!");
+		}
+		std::string removeUnmappedAndCompressCall = "samtools view -bS -F 4 myreads_aln.sam > myreads_aln.bam";
+		std::cout << "Calling: " << removeUnmappedAndCompressCall << "\n";
+		status = std::system(removeUnmappedAndCompressCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing unmapped reads and compressing the file!");
+		}
+		std::string sortCall = "samtools sort -n -o " + alignmentPath + " myreads_aln.bam";
+		std::cout << "Calling: " << sortCall << "\n";
+		status = std::system(sortCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while sorting the file!");
+		}
+		std::string removeCall1 = "rm myreads_aln.sam";
+		status = std::system(removeCall1.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.sam!");
+		}
+		std::string removeCall2 = "rm myreads_aln.bam";
+		status = std::system(removeCall2.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.bam!");
+		}
+	}
+	alignmentFile.close();
+
+	eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
+			pathToGenome, genomeType);
+	printErrorEvaluationData(res);
 }
 
 } // end of namespace seq_correct::eval
