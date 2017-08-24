@@ -170,9 +170,9 @@ void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginal
 	}
 	alignmentFile.close();
 
-	/*eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
-	 pathToGenome, circular);
-	 printErrorEvaluationData(res);*/
+	eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
+			pathToGenome, circular);
+	printErrorEvaluationData(res);
 
 	counting::NaiveBufferedMatcher fmReads(pathToOriginalReads, k, true);
 	counting::NaiveBufferedMatcher fmGenome(pathToGenome, k, true);
