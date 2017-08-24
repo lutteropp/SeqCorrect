@@ -18,35 +18,6 @@
 using namespace seq_correct::util;
 using namespace seq_correct;
 
-void printKmerEvaluationData(const eval::KmerEvaluationData& evalData) {
-	for (KmerType type : KmerTypeIterator()) {
-		std::cout << kmerTypeToString(type) << ":\n";
-		std::cout << "  TP:          " << eval::truePositives(type, evalData) << "\n";
-		std::cout << "  TN:          " << eval::trueNegatives(type, evalData) << "\n";
-		std::cout << "  FP:          " << eval::falsePositives(type, evalData) << "\n";
-		std::cout << "  FN:          " << eval::falseNegatives(type, evalData) << "\n";
-		std::cout << "  Accuracy:    " << eval::computeAccuracy(type, evalData) << "\n";
-		std::cout << "  Precision:   " << eval::computePrecision(type, evalData) << "\n";
-		std::cout << "  Recall:      " << eval::computeRecall(type, evalData) << "\n";
-		std::cout << "  Specificity: " << eval::computeSpecificity(type, evalData) << "\n";
-		std::cout << "  Sensitivity: " << eval::computeSensitivity(type, evalData) << "\n";
-		std::cout << "  Gain:        " << eval::computeGain(type, evalData) << "\n";
-		std::cout << "  F1-score:    " << eval::computeF1Score(type, evalData) << "\n";
-	}
-	std::cout << "\n";
-	std::cout << "Unweighted Average F1-score: " << eval::computeUnweightedAverageF1Score(evalData) << "\n";
-	std::cout << "NMI-score:                   " << eval::computeNMIScore(evalData) << "\n";
-
-	std::cout << "\n Confusion Matrix:\n";
-	for (KmerType e1 : KmerTypeIterator()) {
-		for (KmerType e2 : KmerTypeIterator()) {
-			double percentage = (double) evalData.getEntry(e1, e2) / evalData.sumTruth(e1);
-			std::cout << "[" << util::kmerTypeToString(e1) << "][" << util::kmerTypeToString(e2) << "]: "
-					<< evalData.getEntry(e1, e2) << " = " << percentage * 100 << "%" << "\n";
-		}
-	}
-}
-
 void cmd_demo(const std::string& outputPath) {
 	// Specify an example Ebola Illumina dataset
 	util::Dataset dataset(util::GenomeType::LINEAR, 18959,
@@ -84,19 +55,11 @@ void cmd_correct(size_t k, const std::string& pathToOriginalReads, GenomeType ge
 	correction::correctReads(pathToOriginalReads, algo, fm, pusm, biasUnit, outputPath);
 }
 
-void eval_kmers(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads, const std::string& pathToGenome) {
-	counting::NaiveBufferedMatcher fmReads(pathToOriginalReads, k, true);
-	counting::NaiveBufferedMatcher fmGenome(pathToGenome, k, true);
-
-	std::cout << "k-mer size used: " << k << "\n";
-	eval::classifyKmersVariants(k, genomeType, pathToOriginalReads, pathToGenome, fmReads, fmGenome);
-}
-
 // TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?
 void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
 		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath) {
 	eval::eval_corrections(k, genomeType, pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);
-	eval_kmers(k, genomeType, pathToOriginalReads, pathToGenome);
+	eval::eval_kmers(k, genomeType, pathToOriginalReads, pathToGenome);
 }
 
 int main(int argc, char* argv[]) {

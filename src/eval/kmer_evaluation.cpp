@@ -24,6 +24,7 @@
 #include "kmer_evaluation.hpp"
 #include "../kmer/classification.hpp"
 #include "../io/bam_iterator.hpp"
+#include "../counting/counting.hpp"
 
 namespace seq_correct {
 namespace eval {
@@ -238,6 +239,14 @@ void classifyKmersVariants(size_t k, GenomeType genomeType,
 
 	std::cout << "\nVariant Read k-mer classification: \n";
 	printKmerEvaluationData(dataRead);
+}
+
+void eval_kmers(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads, const std::string& pathToGenome) {
+	counting::NaiveBufferedMatcher fmReads(pathToOriginalReads, k, true);
+	counting::NaiveBufferedMatcher fmGenome(pathToGenome, k, true);
+
+	std::cout << "k-mer size used: " << k << "\n";
+	eval::classifyKmersVariants(k, genomeType, pathToOriginalReads, pathToGenome, fmReads, fmGenome);
 }
 
 } // end of namespace seq_correct::eval
