@@ -27,8 +27,6 @@ namespace seq_correct {
 namespace counting {
 
 NaiveBufferedMatcher::NaiveBufferedMatcher(const std::string& filename, size_t k, bool revCompExtra) {
-	io::ReadInput input;
-
 	std::string filenameNaive = filename + "." + std::to_string(k) + ".naive";
 	std::ifstream test(filenameNaive);
 	if (test.good()) {
@@ -38,7 +36,7 @@ NaiveBufferedMatcher::NaiveBufferedMatcher(const std::string& filename, size_t k
 			buffer[kmer] = count;
 		}
 	} else {
-		input.openFile(filename);
+		io::ReadInput input(filename);
 		double minProgress = 0;
 		while (input.hasNext()) {
 			if (input.progress() > minProgress) {

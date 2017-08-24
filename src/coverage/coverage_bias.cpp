@@ -163,8 +163,7 @@ std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::strin
 	std::unordered_set<std::string> visited;
 #endif
 
-	io::ReadInput reader;
-	reader.openFile(filepath);
+	io::ReadInput reader(filepath);
 
 	while (reader.hasNext()) {
 		io::Read seqRead = reader.readNext(true, false, false);

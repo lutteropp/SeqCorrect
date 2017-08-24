@@ -142,7 +142,7 @@ void printKmerEvaluationData(const eval::KmerEvaluationData& evalData) {
 	}
 }
 
-void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& alignmentFilepath,
+void classifyKmersVariants(size_t k, GenomeType genomeType,
 		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
 		counting::Matcher& fmGenome) {
 	std::string genome = io::readReferenceGenome(genomeFilepath);
@@ -164,28 +164,28 @@ void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& a
 	KmerEvaluationData dataThesisRead2;
 	KmerEvaluationData dataRead;
 
-	BAMIterator it(alignmentFilepath);
+	io::ReadInput readInput(pathToOriginalReads);
 	double expectedCount = pusm.expectedCount(k).expectation;
 
 	double minProgress = 0.0;
-	while (it.hasReadsLeft()) {
-		ReadWithAlignments rwa = it.next();
+	while (readInput.hasNext()) {
+		std::string seq = readInput.readNext(true, false, false).seq;
 
-		std::vector<uint16_t> kmerCounts = computeKmerCountsRead(k, rwa.seq, fmReads);
+		std::vector<uint16_t> kmerCounts = computeKmerCountsRead(k, seq, fmReads);
 		double medianCount = computeMedianKmerCount(kmerCounts);
-		std::vector<KmerType> trueTypes = computeTrueTypes(k, rwa.seq, fmGenome);
+		std::vector<KmerType> trueTypes = computeTrueTypes(k, seq, fmGenome);
 
-		double biasReadAverage = computeAverageBias(k, rwa.seq, biasUnit, pathToOriginalReads, fmReads, pusm);
-		double biasReadK = biasUnit.computeCoverageBias(k, (double) util::countGC(rwa.seq) / rwa.seq.size(),
+		double biasReadAverage = computeAverageBias(k, seq, biasUnit, pathToOriginalReads, fmReads, pusm);
+		double biasReadK = biasUnit.computeCoverageBias(k, (double) util::countGC(seq) / seq.size(),
 				pathToOriginalReads, fmReads, pusm);
 
-		std::vector<KmerType> predictedTypesThesis(rwa.seq.size() - k);
-		std::vector<KmerType> predictedTypesThesisRead1(rwa.seq.size() - k);
-		std::vector<KmerType> predictedTypesThesisRead2(rwa.seq.size() - k);
-		std::vector<KmerType> predictedTypesRead(rwa.seq.size() - k);
+		std::vector<KmerType> predictedTypesThesis(seq.size() - k);
+		std::vector<KmerType> predictedTypesThesisRead1(seq.size() - k);
+		std::vector<KmerType> predictedTypesThesisRead2(seq.size() - k);
+		std::vector<KmerType> predictedTypesRead(seq.size() - k);
 #pragma omp parallel for
-		for (size_t i = 0; i < rwa.seq.size() - k; ++i) {
-			std::string kmer = rwa.seq.substr(i, k);
+		for (size_t i = 0; i < seq.size() - k; ++i) {
+			std::string kmer = seq.substr(i, k);
 
 			size_t observedCount = kmerCounts[i];
 			double biasKmer = biasUnit.computeCoverageBias(kmer, pathToOriginalReads, fmReads, pusm);
@@ -193,7 +193,7 @@ void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& a
 			predictedTypesThesis[i] = classifyKmer(observedCount, expectedCount, biasKmer);
 			predictedTypesThesisRead1[i] = classifyKmer(observedCount, expectedCount, biasReadAverage);
 			predictedTypesThesisRead2[i] = classifyKmer(observedCount, expectedCount, biasReadK);
-			predictedTypesRead[i] = classifyKmerReadBased(k, i, kmerCounts, medianCount, rwa.seq);
+			predictedTypesRead[i] = classifyKmerReadBased(k, i, kmerCounts, medianCount, seq);
 		}
 
 		update(trueTypes, predictedTypesThesis, dataThesis, numCorrectThesis, numWrongThesis);
@@ -201,9 +201,9 @@ void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& a
 		update(trueTypes, predictedTypesThesisRead2, dataThesisRead2, numCorrectThesisRead2, numWrongThesisRead2);
 		update(trueTypes, predictedTypesRead, dataRead, numCorrectRead, numWrongRead);
 
-		if (it.progress() > minProgress) {
+		if (readInput.progress() > minProgress) {
 			minProgress += 1;
-			std::cout << it.progress() << "\n";
+			std::cout << readInput.progress() << "\n";
 		}
 	}
 

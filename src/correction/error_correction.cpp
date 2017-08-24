@@ -307,8 +307,7 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 	io::ReadOutput printer;
 	printer.createFile(outputPath);
 
-	io::ReadInput reader;
-	reader.openFile(pathToOriginalReads);
+	io::ReadInput reader(pathToOriginalReads);
 
 #pragma omp parallel
 	{

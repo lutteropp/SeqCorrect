@@ -528,8 +528,7 @@ void sortCorrectedReads(const std::string& correctedReadsFilepath, const std::st
 	output.createFile(sortedFilepath);
 
 	std::vector<io::Read> allReads;
-	io::ReadInput input;
-	input.openFile(correctedReadsFilepath);
+	io::ReadInput input(correctedReadsFilepath);
 	while (input.hasNext()) {
 		allReads.push_back(input.readNext(true, true, true));
 	}
@@ -557,8 +556,7 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 	std::string sortedReadsFilepath = correctedReadsFilepath + ".sorted";
 	sortCorrectedReads(correctedReadsFilepath, sortedReadsFilepath);
 
-	io::ReadInput input;
-	input.openFile(sortedReadsFilepath);
+	io::ReadInput input(sortedReadsFilepath);
 
 #pragma omp parallel
 	{

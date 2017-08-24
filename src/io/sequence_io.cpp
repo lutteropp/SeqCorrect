@@ -69,6 +69,10 @@ bool ReadInput::hasNext() {
 	return res;
 }
 
+ReadInput::ReadInput(const std::string& filepath) {
+	openFile(filepath);
+}
+
 /**
  * Open a FASTA or FASTQ file containing the reads.
  * @param filepath The file containing the reads

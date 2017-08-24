@@ -30,7 +30,7 @@
 namespace seq_correct {
 namespace eval {
 
-void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& alignmentFilepath,
+void classifyKmersVariants(size_t k, GenomeType genomeType,
 		const std::string& pathToOriginalReads, const std::string& genomeFilepath, counting::Matcher& fmReads,
 		counting::Matcher& fmGenome);
 

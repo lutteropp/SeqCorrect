@@ -84,8 +84,7 @@ inline bool isSelfReverseComplement(const std::string& kmer) {
 
 inline std::unordered_map<size_t, size_t> countReadLengths(const std::string& readFilepath) {
 	std::unordered_map<size_t, size_t> res;
-	io::ReadInput reader;
-	reader.openFile(readFilepath);
+	io::ReadInput reader(readFilepath);
 	while (reader.hasNext()) {
 		io::Read read = reader.readNext(true, false, false);
 		if (res.find(read.seq.size()) == res.end()) {

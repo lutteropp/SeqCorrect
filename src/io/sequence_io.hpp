@@ -50,11 +50,12 @@ public:
 
 class ReadInput {
 public:
-	void openFile(const std::string& filepath);
+	ReadInput(const std::string& filepath);
 	Read readNext(bool readSequence = true, bool readQuality = false, bool readName = true);
 	bool hasNext();
 	double progress();
 private:
+	void openFile(const std::string& filepath);
 	std::ifstream file;
 	size_t numReadsTotal;
 	size_t readsLeft;

@@ -39,8 +39,7 @@ void createReadsOnly(const std::string& readsPath) {
 		return; // file already exists, do nothing.
 	}
 	std::cout << "Creating " << readsPath + ".readsOnly.txt" << "...\n";
-	io::ReadInput reader;
-	reader.openFile(readsPath);
+	io::ReadInput reader(readsPath);
 	std::ofstream writer(readsPath + ".readsOnly.txt");
 	while (reader.hasNext()) {
 		std::string seq = reader.readNext(true, false, false).seq;
