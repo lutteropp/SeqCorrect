@@ -15,8 +15,8 @@
 #include <cstdlib>
 #include "external/tclap/CmdLine.h"
 
+using namespace seq_correct::util;
 using namespace seq_correct;
-using namespace util;
 
 void printErrorEvaluationData(const eval::ErrorEvaluationData& evalData) {
 	for (ErrorType type : AllErrorTypeIterator()) {

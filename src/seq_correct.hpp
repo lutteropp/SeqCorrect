@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include "coverage/coverage_bias.hpp"
 #include "correction/error_correction.hpp"
 #include "counting/counting.hpp"
@@ -45,3 +47,46 @@
 #include "kmer/classification.hpp"
 #include "kmer/bloom_filter_classifier.hpp"
 #include "util/enums.hpp"
+
+namespace seq_correct {
+
+class WrapperParameters {
+public:
+	WrapperParameters() {};
+	void setCountingApproach(counting::CountingApproach approach) {
+		countingApproach = approach;
+	}
+	void setCorrectionAlgo(correction::CorrectionAlgorithm approach) {
+		algo = approach;
+	}
+	void setMinKmerSize(size_t k) {
+		minKmerSize = k;
+	}
+	counting::CountingApproach countingApproach = counting::CountingApproach::FM_INDEX;
+	correction::CorrectionAlgorithm algo = correction::CorrectionAlgorithm::ADAPTIVE_KMER;
+	size_t minKmerSize = 31;
+};
+
+/*
+ * Class that wraps the entire functionality of the SeqCorrect framework such that the end user does not need to give internal parameters over and over again.
+ */
+class Wrapper {
+public:
+	Wrapper(WrapperParameters params, const std::string& pathToOriginalReads, util::GenomeType genomeType, size_t estimatedGenomeSize);
+	util::KmerType classifyKmer(const std::string& kmer);
+	void correctReads(const std::string& outputPath);
+	void evaluateErrorCorrection(const std::string& pathToCorrectedReads, const std::string& pathToGenome);
+	void evaluateKmerClassification(const std::string& pathToGenome);
+	void computeOverallErrorProfile(const std::string& pathToGenome);
+private:
+	util::GenomeType genomeType;
+	size_t genomeSize;
+	WrapperParameters params;
+	std::string pathToOriginalReads;
+	std::shared_ptr<counting::Matcher> readsIndex;
+	pusm::PerfectUniformSequencingModel pusm;
+	coverage::CoverageBiasUnitMulti biasUnit;
+	classification::BloomFilterClassifier kmerClassifier;
+};
+
+} // end of namespace seq_correct

@@ -40,17 +40,24 @@ using namespace util;
 
 class BloomFilterClassifier {
 public:
-	BloomFilterClassifier();
-	KmerType classifyKmer(const std::string& kmer, counting::Matcher& kmerCounter,
-			pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
-			const std::string& pathToOriginalReads);
+	BloomFilterClassifier(counting::Matcher& kmerCounter, pusm::PerfectUniformSequencingModel& pusm,
+			coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads);
+	KmerType classifyKmer(const std::string& kmer);
 private:
+	counting::Matcher& kmerCounter;
+	pusm::PerfectUniformSequencingModel& pusm;
+	coverage::CoverageBiasUnitMulti& biasUnit;
+	const std::string& pathToOriginalReads;
+
 	bloom_filter filter_untrusted;
 	bloom_filter filter_unique;
 	bloom_filter filter_repeat;
 };
 
-inline BloomFilterClassifier::BloomFilterClassifier() {
+inline BloomFilterClassifier::BloomFilterClassifier(counting::Matcher& kmerCounter,
+		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
+		const std::string& pathToOriginalReads) :
+		kmerCounter(kmerCounter), pusm(pusm), biasUnit(biasUnit), pathToOriginalReads(pathToOriginalReads) {
 	// set up bloom filter for keeping track of already classified k-mers
 	bloom_parameters parameters;
 	parameters.projected_element_count = 100000; // expected number of k-mer to insert into the bloom filter
@@ -62,9 +69,7 @@ inline BloomFilterClassifier::BloomFilterClassifier() {
 	filter_repeat = bloom_filter(parameters);
 }
 
-inline KmerType BloomFilterClassifier::classifyKmer(const std::string& kmer, counting::Matcher& kmerCounter,
-		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
-		const std::string& pathToOriginalReads) {
+inline KmerType BloomFilterClassifier::classifyKmer(const std::string& kmer) {
 	bool inUntrusted = filter_untrusted.contains(kmer);
 	bool inUnique = filter_unique.contains(kmer);
 	bool inRepeat = filter_repeat.contains(kmer);

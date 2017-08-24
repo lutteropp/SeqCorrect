@@ -26,3 +26,13 @@
 #include "fm_count.hpp"
 #include "matcher.hpp"
 #include "naive_count.hpp"
+
+namespace seq_correct {
+namespace counting {
+
+enum class CountingApproach {
+	FM_INDEX, NAIVE_BUFFERED
+};
+
+} // end of namespace seq_correct::counting
+} // end of namespace seq_correct
