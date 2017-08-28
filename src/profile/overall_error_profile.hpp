@@ -79,5 +79,4 @@ private:
 };
 
 } // end of namespace seq_correct::profile
-}
- // end of namespace seq_correct
+} // end of namespace seq_correct

@@ -322,5 +322,5 @@ void OverallErrorProfile::finalize() {
 	finalized = true;
 }
 
-}
-}
+} // end of namespace seq_correct::profile
+} // end of namespace seq_correct
