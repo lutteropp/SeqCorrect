@@ -167,11 +167,42 @@ bool readIsPerfect(const std::string& read, size_t minK, Matcher& kmerCounter, P
 /*
  * Compute the number of UNTRUSTED k-mers covering a read.
  */
-uint8_t numUntrustedKmers(const std::string& read, size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads) {
+uint8_t numUntrustedKmers(const std::string& read, size_t minK, Matcher& kmerCounter,
+		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
+		const std::string& pathToOriginalReads) {
 	uint8_t num = 0;
 	size_t i = 0;
 	while (i < read.size() - minK) {
+		size_t k = minK;
+		std::string kmer = read.substr(i, k);
+		KmerType type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+
+		while (type == KmerType::REPEAT) {
+			k += 2;
+			if (i + k >= read.size()) {
+				break;
+			}
+			kmer = read.substr(i, k);
+			type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+		}
+
+		if (type == KmerType::UNTRUSTED) {
+			num++;
+		}
+		i++;
+	}
+	return num;
+}
+
+/*
+ * Compute the number of UNTRUSTED k-mers covering a read[start..end] sequence.
+ */
+uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, size_t minK, Matcher& kmerCounter,
+		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
+		const std::string& pathToOriginalReads) {
+	uint8_t num = 0;
+	size_t i = start;
+	while (i <= end - minK) {
 		size_t k = minK;
 		std::string kmer = read.substr(i, k);
 		KmerType type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
