@@ -101,5 +101,27 @@ std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type);
 size_t kmerToNumber(const std::string& kmer);
 std::string numberToKmer(size_t n);
 
+struct pairhash {
+public:
+  template <typename T, typename U>
+  std::size_t operator()(const std::pair<T, U> &x) const
+  {
+    return 13 * std::hash<T>()(x.first) + 37 * std::hash<U>()(x.second);
+  }
+};
+
+template <typename T, typename U>
+inline std::ostream& operator<<(std::ostream& os, const std::pair<T, U> &x)
+{
+	return os << x.first << ' ' << x.second;
+}
+
+template <typename T, typename U>
+inline std::istream& operator>>(std::istream& is, std::pair<T, U> &x)
+{
+	return is >> x.first >> x.second;
+}
+
+
 } // end of namespace seq_correct::util
 } // end of namespace seq_correct

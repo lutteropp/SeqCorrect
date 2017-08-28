@@ -234,9 +234,10 @@ Read correctRead_simple_kmer(const io::Read& read, Matcher& kmerCounter, Perfect
 		}
 		KmerType type = classifyKmer(correctedRead.seq.substr(pos, k), kmerCounter, pusm, biasUnit,
 				pathToOriginalReads);
-		if (type == KmerType::UNIQUE)
+		if (type == KmerType::UNIQUE) {
 
-			pos++;
+		}
+		pos++;
 	}
 
 	throw std::runtime_error("not implemented yet");

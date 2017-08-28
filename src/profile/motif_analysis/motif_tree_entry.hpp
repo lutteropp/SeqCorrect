@@ -21,13 +21,29 @@
  Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
  */
 
-#include <stdexcept>
-#include "error_profile.hpp"
+#pragma once
+
+#include <stddef.h>
+#include <unordered_map>
+#include "../../external/cereal/types/unordered_map.hpp"
+#include "../../seq_correct.hpp"
 
 namespace seq_correct {
 namespace profile {
 
+class MotifTreeEntry {
+public:
+	MotifTreeEntry();
+	void reset();
 
+	std::unordered_map<ErrorType, size_t> numErrors;
+	std::unordered_map<ErrorType, double> zScore;
+
+	template<class Archive>
+	void serialize(Archive & archive) {
+		archive(numErrors, zScore); // serialize things by passing them to the archive
+	}
+};
 
 } // end of namespace seq_correct::profile
 } // end of namespace seq_correct

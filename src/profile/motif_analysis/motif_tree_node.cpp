@@ -21,13 +21,21 @@
  Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
  */
 
-#include <stdexcept>
-#include "error_profile.hpp"
+#include "motif_tree_node.hpp"
+
 
 namespace seq_correct {
 namespace profile {
 
+MotifTreeNode::MotifTreeNode() {
+	base = '_';
+}
 
+void MotifTreeNode::reset() {
+	for (size_t i = 0; i < entries.size(); ++i) {
+		entries[i].reset();
+	}
+}
 
 } // end of namespace seq_correct::profile
 } // end of namespace seq_correct

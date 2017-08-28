@@ -21,13 +21,30 @@
  Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
  */
 
-#include <stdexcept>
-#include "error_profile.hpp"
+#pragma once
+
+#include <stddef.h>
+#include <vector>
+#include "../../external/cereal/types/vector.hpp"
+
+#include "motif_tree_entry.hpp"
 
 namespace seq_correct {
 namespace profile {
 
+class MotifTreeNode {
+public:
+	MotifTreeNode();
+	void reset();
 
+	char base;
+	std::vector<MotifTreeEntry> entries; // size of the vector = level in the tree = length of the motif
+
+	template<class Archive>
+	void serialize(Archive & archive) {
+		archive(base, entries); // serialize things by passing them to the archive
+	}
+};
 
 } // end of namespace seq_correct::profile
 } // end of namespace seq_correct
