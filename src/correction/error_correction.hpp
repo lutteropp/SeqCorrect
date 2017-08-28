@@ -56,5 +56,7 @@ bool readIsPerfect(const std::string& read, size_t minK, Matcher& kmerCounter, P
 void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm algo, Matcher& kmerCounter,
 		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit, const std::string& outputPath);
 
+std::pair<size_t, size_t> affectedReadArea(size_t posInRead, size_t readLength, size_t kmerSize);
+
 } // end of namespace seq_correct::correction
 } // end of namespace seq_correct

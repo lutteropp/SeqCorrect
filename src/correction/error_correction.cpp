@@ -42,12 +42,15 @@ Read correctRead_simple_kmer(const Read& read, Matcher& kmerCounter, PerfectUnif
 Read correctRead_adaptive_kmer(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads, bool correctSingleIndels =
 				true, bool correctMultidels = false);
-Read correctRead_suffix_tree(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, bool correctSingleIndels = true, bool correctMultidels = false);
-Read correctRead_full_msa(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, bool correctSingleIndels = true, bool correctMultidels = false);
-Read correctRead_partial_msa(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, bool correctSingleIndels = true, bool correctMultidels = false);
+
+std::pair<size_t, size_t> affectedReadArea(size_t posInRead, size_t readLength, size_t kmerSize) {
+	size_t first = 0;
+	if (posInRead + 1 > kmerSize) {
+		first = posInRead - kmerSize + 1;
+	}
+	size_t last = std::min(readLength - 1, posInRead + kmerSize - 1);
+	return std::make_pair(first, last);
+}
 
 std::string findReplacement(const std::string& kmer, ErrorType errorType, size_t posInKmer) {
 	std::string replacement;
