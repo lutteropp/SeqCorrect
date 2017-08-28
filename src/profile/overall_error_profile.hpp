@@ -39,7 +39,7 @@ namespace profile {
 using namespace util;
 using namespace io;
 
-class OverallErrorProfile : public ErrorProfileUnit {
+class OverallErrorProfile : public ErrorProfile {
 public:
 	OverallErrorProfile();
 	virtual std::unordered_map<ErrorType, double> getErrorProbabilities(const Read &read, size_t positionInRead);

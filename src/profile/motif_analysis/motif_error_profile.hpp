@@ -41,7 +41,7 @@ namespace profile {
 static const int MAX_MOTIF_SIZE = 6;
 
 
-class MotifErrorProfile : public ErrorProfileUnit {
+class MotifErrorProfile : public ErrorProfile {
 public:
 	MotifErrorProfile(Matcher &kmerCounter);
 	virtual std::unordered_map<ErrorType, double> getErrorProbabilities(const Read &read, size_t positionInRead);

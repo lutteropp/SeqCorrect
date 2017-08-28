@@ -42,9 +42,9 @@ using namespace io;
 using namespace eval;
 using namespace counting;
 
-class ErrorProfileUnit {
+class ErrorProfile {
 public:
-	virtual ~ErrorProfileUnit() {};
+	virtual ~ErrorProfile() {};
 
 	virtual std::vector<std::unordered_map<ErrorType, double> > getReadErrorProbabilities(const Read &read) {
 		std::vector<std::unordered_map<ErrorType, double> > res;
