@@ -52,7 +52,7 @@ void cmd_correct(size_t k, const std::string& pathToOriginalReads, GenomeType ge
 	std::unordered_map<size_t, size_t> readLengths = countReadLengths(pathToOriginalReads);
 	pusm::PerfectUniformSequencingModel pusm(genomeType, genomeSize, readLengths);
 	coverage::CoverageBiasUnitMulti biasUnit;
-	correction::correctReads(pathToOriginalReads, algo, fm, pusm, biasUnit, outputPath);
+	correction::correctReads(pathToOriginalReads, algo, fm, pusm, biasUnit, outputPath, k);
 }
 
 void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,

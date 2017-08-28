@@ -27,6 +27,7 @@
 #include <vector>
 #include "error_correction.hpp"
 #include "../kmer/classification.hpp"
+#include "../kmer/hash_classifier.hpp"
 
 namespace seq_correct {
 namespace correction {
@@ -34,14 +35,18 @@ namespace correction {
 using namespace classification;
 using namespace std::placeholders;
 
-Read correctRead_none(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		bool correctSingleIndels = true, bool correctMultidels = false);
-Read correctRead_simple_kmer(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads, bool correctSingleIndels =
-				true, bool correctMultidels = false);
-Read correctRead_adaptive_kmer(const Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads, bool correctSingleIndels =
-				true, bool correctMultidels = false);
+Read correctRead_none(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
+		bool correctMultidels = false);
+Read correctRead_simple_kmer(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
+		bool correctMultidels = false);
+Read correctRead_adaptive_kmer(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
+		bool correctMultidels = false);
+Read correctRead_full_msa(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
+		bool correctMultidels = false);
+Read correctRead_partial_msa(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
+		bool correctMultidels = false);
+Read correctRead_suffix_tree(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
+		bool correctMultidels = false);
 
 std::pair<size_t, size_t> affectedReadArea(size_t posInRead, size_t readLength, size_t kmerSize) {
 	size_t first = 0;
@@ -224,12 +229,10 @@ uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, siz
 	return num;
 }
 
-size_t findSmallestNonrepetitive(const std::string& str, size_t pos, Matcher& readsIndex,
-		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
-		const std::string& pathToOriginalReads) {
+size_t findSmallestNonrepetitive(const std::string& str, size_t pos, HashClassifier& classifier) {
 	KmerType type = KmerType::REPEAT;
 	for (size_t i = 1; i < str.size() - pos; i += 2) {
-		type = classifyKmer(str.substr(pos, i), readsIndex, pusm, biasUnit, pathToOriginalReads);
+		type = classifier.classifyKmer(str.substr(pos, i));
 		if (type != KmerType::REPEAT) {
 			return i;
 		}
@@ -237,17 +240,27 @@ size_t findSmallestNonrepetitive(const std::string& str, size_t pos, Matcher& re
 	return std::numeric_limits<size_t>::max();
 }
 
-Read correctRead_none(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		bool correctSingleIndels, bool correctMultidels) {
-	(void) kmerCounter;
-	(void) pusm;
+Read correctRead_none(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
+		bool correctMultidels) {
+	(void) classifier;
 	(void) correctSingleIndels;
 	(void) correctMultidels;
 	return read;
 }
 
-Read correctRead_simple_kmer(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads, bool correctSingleIndels,
+void performSimpleCorrections(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
+		bool correctMultidels, size_t kmerSize) {
+	io::Read correctedRead(read);
+	for (size_t i = 0; i < correctedRead.seq.size() - kmerSize; ++i) {
+		size_t k = findSmallestNonrepetitive(correctedRead.seq, i, classifier);
+		if (k == std::numeric_limits<size_t>::max()) {
+			break;
+		}
+		KmerType type = classifier.classifyKmer(correctedRead.seq.substr(i, k));
+	}
+}
+
+Read correctRead_simple_kmer(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
 		bool correctMultidels) {
 	/*
 	 * TODO:
@@ -262,12 +275,11 @@ Read correctRead_simple_kmer(const io::Read& read, Matcher& kmerCounter, Perfect
 	size_t pos = 0;
 	while (pos < correctedRead.seq.size()) { // loop over starting position
 		//find smallest nonrepetitive k-mer size
-		size_t k = findSmallestNonrepetitive(correctedRead.seq, pos, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+		size_t k = findSmallestNonrepetitive(correctedRead.seq, pos, classifier);
 		if (k == std::numeric_limits<size_t>::max()) {
 			break;
 		}
-		KmerType type = classifyKmer(correctedRead.seq.substr(pos, k), kmerCounter, pusm, biasUnit,
-				pathToOriginalReads);
+		KmerType type = classifier.classifyKmer(correctedRead.seq.substr(pos, k));
 		if (type == KmerType::UNIQUE) {
 
 		}
@@ -277,56 +289,46 @@ Read correctRead_simple_kmer(const io::Read& read, Matcher& kmerCounter, Perfect
 	throw std::runtime_error("not implemented yet");
 }
 
-Read correctRead_adaptive_kmer(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads, bool correctSingleIndels,
+Read correctRead_adaptive_kmer(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
 		bool correctMultidels) {
 	throw std::runtime_error("not implemented yet");
 }
 
-Read correctRead_suffix_tree(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads, bool correctSingleIndels,
+Read correctRead_suffix_tree(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
 		bool correctMultidels) {
 	throw std::runtime_error("not implemented yet");
 }
 
-Read correctRead_full_msa(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads, bool correctSingleIndels,
+Read correctRead_full_msa(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
 		bool correctMultidels) {
 	throw std::runtime_error("not implemented yet");
 }
 
-Read correctRead_partial_msa(const io::Read& read, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads, bool correctSingleIndels,
+Read correctRead_partial_msa(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
 		bool correctMultidels) {
 	throw std::runtime_error("not implemented yet");
 }
 
-Read correctRead(CorrectionAlgorithm algo, bool correctSingleIndels, bool correctMultidels,
-		const std::string& pathToOriginalReads, const Read& read, Matcher& kmerCounter,
-		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit) {
+Read correctRead(const Read& read, CorrectionAlgorithm algo, bool correctSingleIndels, bool correctMultidels,
+		HashClassifier& classifier, size_t kmerSize) {
 	switch (algo) {
 	case CorrectionAlgorithm::NONE:
-		return correctRead_none(read, kmerCounter, pusm, correctSingleIndels, correctMultidels);
+		return correctRead_none(read, classifier, correctSingleIndels, correctMultidels);
 		break;
 	case CorrectionAlgorithm::SIMPLE_KMER:
-		return correctRead_simple_kmer(read, kmerCounter, pusm, biasUnit, pathToOriginalReads, correctSingleIndels,
-				correctMultidels);
+		return correctRead_simple_kmer(read, classifier, correctSingleIndels, correctMultidels);
 		break;
 	case CorrectionAlgorithm::ADAPTIVE_KMER:
-		return correctRead_adaptive_kmer(read, kmerCounter, pusm, biasUnit, pathToOriginalReads, correctSingleIndels,
-				correctMultidels);
+		return correctRead_adaptive_kmer(read, classifier, correctSingleIndels, correctMultidels);
 		break;
 	case CorrectionAlgorithm::FULL_MSA:
-		return correctRead_full_msa(read, kmerCounter, pusm, biasUnit, pathToOriginalReads, correctSingleIndels,
-				correctMultidels);
+		return correctRead_full_msa(read, classifier, correctSingleIndels, correctMultidels);
 		break;
 	case CorrectionAlgorithm::PARTIAL_MSA:
-		return correctRead_partial_msa(read, kmerCounter, pusm, biasUnit, pathToOriginalReads, correctSingleIndels,
-				correctMultidels);
+		return correctRead_partial_msa(read, classifier, correctSingleIndels, correctMultidels);
 		break;
 	case CorrectionAlgorithm::SUFFIX_TREE:
-		return correctRead_suffix_tree(read, kmerCounter, pusm, biasUnit, pathToOriginalReads, correctSingleIndels,
-				correctMultidels);
+		return correctRead_suffix_tree(read, classifier, correctSingleIndels, correctMultidels);
 		break;
 	default:
 		throw std::runtime_error("Unknown correction algorithm");
@@ -334,7 +336,8 @@ Read correctRead(CorrectionAlgorithm algo, bool correctSingleIndels, bool correc
 }
 
 void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm algo, Matcher& kmerCounter,
-		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit, const std::string& outputPath) {
+		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit, const std::string& outputPath,
+		size_t kmerSize) {
 
 	bool correctSingleIndels = true;
 	bool correctMultidels = false;
@@ -343,6 +346,7 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 	printer.createFile(outputPath);
 
 	io::ReadInput reader(pathToOriginalReads);
+	HashClassifier classifier(kmerCounter, pusm, biasUnit, pathToOriginalReads);
 
 #pragma omp parallel
 	{
@@ -350,10 +354,10 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 		{
 			while (reader.hasNext()) {
 				io::Read uncorrected = reader.readNext(true, true, true);
-#pragma omp task shared(printer, kmerCounter, pusm, correctSingleIndels, correctMultidels) firstprivate(uncorrected)
+#pragma omp task shared(classifier, printer, correctSingleIndels, correctMultidels) firstprivate(uncorrected)
 				{
-					io::Read corrected = correctRead(algo, correctSingleIndels, correctMultidels, pathToOriginalReads,
-							uncorrected, kmerCounter, pusm, biasUnit);
+					io::Read corrected = correctRead(uncorrected, algo, correctSingleIndels, correctMultidels,
+							classifier, kmerSize);
 #pragma omp critical
 					printer.write(corrected);
 				}
