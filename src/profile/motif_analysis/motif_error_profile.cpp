@@ -53,21 +53,11 @@ void MotifErrorProfile::updateMotifData(int positionInSequence, const std::strin
 	}
 }
 
-void MotifErrorProfile::check(const Read &corrRead, double acceptProb) {
+void MotifErrorProfile::check(const std::vector<Correction>& corrections, const Read &originalRead) {
 	finalized = false;
-
-	for (Correction corr : corrRead.corrections) {
-		updateMotifData(corr.originalReadPos, corrRead.originalRead.sequence, corr.type);
+	for (Correction corr : corrections) {
+		updateMotifData(corr.positionInRead, originalRead.seq, corr.errorType);
 		assert(corr.type != ErrorType::CORRECT && corr.type != ErrorType::NODEL);
-	}
-}
-
-void MotifErrorProfile::checkAligned(const ReadWithAlignments &corrRead, double acceptProb) {
-	finalized = false;
-
-	for (CorrectionAligned corr : corrRead.alignedCorrections) {
-		updateMotifData(corr.correction.originalReadPos, corrRead.originalRead.sequence, corr.correction.type);
-		assert(corr.correction.type != ErrorType::CORRECT && corr.correction.type != ErrorType::NODEL);
 	}
 }
 
@@ -154,7 +144,7 @@ void MotifErrorProfile::plotErrorProfile() {
 			for (size_t j = 0; j < motifTree[i].entries.size(); ++j) {
 				if ((motifTree[i].entries[j].zScore[type] >= 1) || (motifTree[i].entries[j].zScore[type] <= -1)) {
 					std::cout << motifTree[i].entries[j].zScore[type] << "; " << "Motif " << motifString
-							<< " with position: " << j << " for type " << type << "\n";
+							<< " with position: " << j << " for type " << errorTypeToString(type) << "\n";
 				}
 			}
 		}

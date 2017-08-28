@@ -51,8 +51,7 @@ public:
 	virtual void plotErrorProfile();
 
 	virtual void reset();
-	virtual void check(const Read &corrRead, double acceptProb = 1.0);
-	virtual void checkAligned(const ReadWithAlignments &corrRead, double acceptProb = 1.0);
+	virtual void check(const std::vector<Correction>& corrections, const Read &originalRead);
 
 	virtual void finalize();
 

@@ -70,42 +70,30 @@ double OverallErrorProfile::getOverallErrorRateNextGap() {
 	}
 }
 
-void OverallErrorProfile::check(const Read &corrRead, double acceptProb) {
+void OverallErrorProfile::check(const std::vector<Correction>& corrections, const Read &originalRead) {
 	finalized = false;
 
-	totalCount += corrRead.originalRead.sequence.size();
-	for (Correction corr : corrRead.corrections) {
-		if (corr.type == ErrorType::INSERTION) {
+	totalCount += originalRead.seq.size();
+	for (Correction corr : corrections) {
+		if (corr.errorType == ErrorType::INSERTION) {
 			counts[ErrorType::INSERTION]++;
 			noncorrectBases++;
-		} else if (corr.type == ErrorType::SUB_OF_A || corr.type == ErrorType::SUB_OF_C
-				|| corr.type == ErrorType::SUB_OF_G || corr.type == ErrorType::SUB_OF_T) {
-			substitutionMatrix[std::make_pair(corr.correctedBases[0], corr.originalBases[0])]++;
+		} else if (corr.errorType == ErrorType::SUB_OF_A || corr.errorType == ErrorType::SUB_OF_C
+				|| corr.errorType == ErrorType::SUB_OF_G || corr.errorType == ErrorType::SUB_OF_T) {
+
+			char correctBase = 'A';
+			if (corr.errorType == ErrorType::SUB_OF_C) {
+				correctBase = 'C';
+			} else if (corr.errorType == ErrorType::SUB_OF_G) {
+				correctBase = 'G';
+			} else if (corr.errorType == ErrorType::SUB_OF_T) {
+				correctBase = 'T';
+			}
+
+			substitutionMatrix[std::make_pair(correctBase, corr.baseInRead)]++;
 			noncorrectBases++;
 		} else { // corr.type is a deletion, a chimeric break or a multidel
-			counts[corr.type]++;
-			deletedBases++;
-		}
-	}
-}
-
-// TODO: Fix this code duplication issue.
-void OverallErrorProfile::checkAligned(const ReadWithAlignments &corrRead, double acceptProb) {
-	finalized = false;
-
-	totalCount += corrRead.originalRead.sequence.size();
-	for (CorrectionAligned ca : corrRead.alignedCorrections) {
-		Correction corr = ca.correction;
-		if (corr.type == ErrorType::INSERTION) {
-			counts[ErrorType::INSERTION]++;
-			noncorrectBases++;
-		} else if (corr.type == ErrorType::SUB_FROM_A || corr.type == ErrorType::SUB_FROM_C
-				|| corr.type == ErrorType::SUB_FROM_G || corr.type == ErrorType::SUB_FROM_T) {
-			assert(corr.correctedBases[0] != corr.originalBases[0]);
-			substitutionMatrix[std::make_pair(corr.correctedBases[0], corr.originalBases[0])]++;
-			noncorrectBases++;
-		} else { // corr.type is a deletion, a chimeric break or a multidel
-			counts[corr.type]++;
+			counts[corr.errorType]++;
 			deletedBases++;
 		}
 	}
@@ -225,7 +213,7 @@ void OverallErrorProfile::plotErrorProfile() {
 	for (auto kv : counts) {
 		if (kv.first != ErrorType::SUB_OF_A && kv.first != ErrorType::SUB_OF_C && kv.first != ErrorType::SUB_OF_G
 				&& kv.first != ErrorType::SUB_OF_T)
-			std::cout << "P[" << kv.first << "] = " << log((double) kv.second / totalCount) << "\n";
+			std::cout << "P[" << errorTypeToString(kv.first) << "] = " << log((double) kv.second / totalCount) << "\n";
 	}
 
 	for (char invalidBase : bases) {
@@ -278,7 +266,7 @@ void OverallErrorProfile::finalize() {
 	for (auto kv : counts) {
 		if (kv.first != ErrorType::SUB_OF_A && kv.first != ErrorType::SUB_OF_C && kv.first != ErrorType::SUB_OF_G
 				&& kv.first != ErrorType::SUB_OF_T)
-			std::cout << "count[" << kv.first << "] = " << kv.second << "\n";
+			std::cout << "count[" << errorTypeToString(kv.first) << "] = " << kv.second << "\n";
 	}
 	std::vector<char> bases = { 'A', 'C', 'G', 'T', 'N' };
 	for (char invalidBase : bases) {

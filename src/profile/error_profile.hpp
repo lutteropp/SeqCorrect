@@ -74,51 +74,13 @@ public:
 
 	virtual void learnErrorProfileFromFiles(const std::string &correctionsFile, double acceptProb = 1.0) {
 		reset();
-		std::ifstream infile;
-		infile.open(correctionsFile, std::ios::binary);
-		if (!infile.good()) {
-			throw std::runtime_error("The file " + correctionsFile + " does not exist!");
-		}
-		size_t minProgress = 1;
-		size_t n;
-		Read cr;
-		cereal::BinaryInputArchive iarchive(infile);
-		iarchive(n);
-		for (size_t i = 0; i < n; ++i) {
-			iarchive(cr);
-			check(cr, acceptProb);
-			double progress = (double) i * 100 / n;
-			if (progress >= minProgress) {
-				std::cout << progress << "%\n";
-				minProgress++;
-			}
-		}
-		infile.close();
+		throw std::runtime_error("Not implemented yet. Maybe deprecated.");
 		finalize();
 	}
 
 	virtual void learnErrorProfileFromFilesAligned(const std::string &correctionsFile, double acceptProb = 1.0) {
 		reset();
-		std::ifstream infile;
-		infile.open(correctionsFile, std::ios::binary);
-		if (!infile.good()) {
-			throw std::runtime_error("The file " + correctionsFile + " does not exist!");
-		}
-		size_t minProgress = 0;
-		unsigned long long n;
-		ReadWithAlignments cra;
-		cereal::BinaryInputArchive iarchive(infile);
-		iarchive(n);
-		for (unsigned long long i = 0; i < n; ++i) {
-			iarchive(cra);
-			checkAligned(cra, acceptProb);
-			double progress = (double) i * 100 / n;
-			if (progress >= minProgress) {
-				std::cout << progress << "%\n";
-				minProgress++;
-			}
-		}
-		infile.close();
+		throw std::runtime_error("Not implemented yet. Maybe deprecated.");
 		finalize();
 	}
 
@@ -129,8 +91,7 @@ public:
 	virtual void plotErrorProfile() = 0;
 
 	virtual void reset() = 0;
-	virtual void check(const Read &corrRead, double acceptProb = 1.0) = 0;
-	virtual void checkAligned(const ReadWithAlignments &corrRead, double acceptProb = 1.0) = 0;
+	virtual void check(const std::vector<Correction>& corrections, const Read &originalRead) = 0;
 	virtual void finalize() = 0;
 protected:
 	virtual std::unordered_map<ErrorType, double> getErrorProbabilitiesFinalized(const Read &read, size_t positionInRead) = 0;

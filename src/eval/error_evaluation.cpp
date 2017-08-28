@@ -41,14 +41,6 @@ using namespace classification;
 
 void printErrorEvaluationData(const eval::ErrorEvaluationData& evalData);
 
-std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string &referenceGenome);
-std::vector<Correction> extractErrors(const std::string& correctedRead, const std::string& referenceGenome);
-std::vector<Correction> extractErrors(const std::string& correctedRead, const std::string& referenceGenome,
-		size_t beginPos);
-
-void updateEvaluationData(ErrorEvaluationData& data, const std::vector<Correction>& errorsTruth,
-		const std::vector<Correction>& errorsPredicted, size_t readLength);
-
 // Compare the corrected reads with the aligned original reads
 /*EvaluationData evaluateCorrections(const std::string& originalReadsFilepath, const std::string& correctedReadsFilepath,
  const std::string& genomeFilepath);*/
