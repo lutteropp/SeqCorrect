@@ -117,9 +117,11 @@ std::vector<std::pair<size_t, util::ErrorType> > align(const std::string& origin
 	M[coord(0, 0)] = 0;
 	for (size_t i = 1; i < n + 1; ++i) {
 		M[coord(i, 0)] = std::numeric_limits<size_t>::infinity();
+		info[coord(i,0)][2] = 1;
 	}
 	for (size_t j = 1; j < m + 1; ++j) {
 		M[coord(0, j)] = std::numeric_limits<size_t>::infinity();
+		info[coord(0,j)][1] = 1;
 	}
 
 	// matrix fillup
