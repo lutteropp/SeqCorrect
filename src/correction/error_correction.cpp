@@ -26,8 +26,7 @@
 #include <algorithm>
 #include <vector>
 #include "error_correction.hpp"
-#include "../kmer/classification.hpp"
-#include "../kmer/hash_classifier.hpp"
+
 
 namespace seq_correct {
 namespace correction {
@@ -35,18 +34,12 @@ namespace correction {
 using namespace classification;
 using namespace std::placeholders;
 
-Read correctRead_none(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
-		bool correctMultidels = false);
-Read correctRead_simple_kmer(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
-		bool correctMultidels = false);
-Read correctRead_adaptive_kmer(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
-		bool correctMultidels = false);
-Read correctRead_full_msa(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
-		bool correctMultidels = false);
-Read correctRead_partial_msa(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
-		bool correctMultidels = false);
-Read correctRead_suffix_tree(const Read& read, HashClassifier& classifier, bool correctSingleIndels = true,
-		bool correctMultidels = false);
+Read correctRead_none(const Read& read, CorrectionParameters& params);
+Read correctRead_simple_kmer(const Read& read, CorrectionParameters& params);
+Read correctRead_adaptive_kmer(const Read& read, CorrectionParameters& params);
+Read correctRead_full_msa(const Read& read, CorrectionParameters& params);
+Read correctRead_partial_msa(const Read& read, CorrectionParameters& params);
+Read correctRead_suffix_tree(const Read& read, CorrectionParameters& params);
 
 std::pair<size_t, size_t> affectedReadArea(size_t posInRead, size_t readLength, size_t kmerSize) {
 	size_t first = 0;
@@ -111,16 +104,14 @@ std::vector<std::pair<size_t, uint8_t> > rankPotentialErrorPositions(const std::
 /**
  * For each position, count the number of UNTRUSTED k-mers covered by the position.
  */
-std::vector<uint8_t> badKmerCoverage(const std::string& read, size_t minK, Matcher& kmerCounter,
-		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
-		const std::string& pathToOriginalReads) {
+std::vector<uint8_t> badKmerCoverage(const std::string& read, CorrectionParameters& params) {
 	std::vector<uint8_t> res(read.size());
 
 	size_t i = 0;
-	while (i < read.size() - minK) {
-		size_t k = minK;
+	while (i < read.size() - params.minK) {
+		size_t k = params.minK;
 		std::string kmer = read.substr(i, k);
-		KmerType type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+		KmerType type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit, params.pathToOriginalReads);
 
 		while (type == KmerType::REPEAT) {
 			k += 2;
@@ -128,7 +119,7 @@ std::vector<uint8_t> badKmerCoverage(const std::string& read, size_t minK, Match
 				break;
 			}
 			kmer = read.substr(i, k);
-			type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+			type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit, params.pathToOriginalReads);
 		}
 
 		if (type == KmerType::UNTRUSTED) {
@@ -240,28 +231,23 @@ size_t findSmallestNonrepetitive(const std::string& str, size_t pos, HashClassif
 	return std::numeric_limits<size_t>::max();
 }
 
-Read correctRead_none(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
-		bool correctMultidels) {
-	(void) classifier;
-	(void) correctSingleIndels;
-	(void) correctMultidels;
+Read correctRead_none(const io::Read& read, CorrectionParameters& params) {
+	(void) params;
 	return read;
 }
 
-void performSimpleCorrections(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
-		bool correctMultidels, size_t kmerSize) {
+void performSimpleCorrections(const io::Read& read, CorrectionParameters& params) {
 	io::Read correctedRead(read);
-	for (size_t i = 0; i < correctedRead.seq.size() - kmerSize; ++i) {
-		size_t k = findSmallestNonrepetitive(correctedRead.seq, i, classifier);
+	for (size_t i = 0; i < correctedRead.seq.size() - params.minK; ++i) {
+		size_t k = findSmallestNonrepetitive(correctedRead.seq, i, params.classifier);
 		if (k == std::numeric_limits<size_t>::max()) {
 			break;
 		}
-		KmerType type = classifier.classifyKmer(correctedRead.seq.substr(i, k));
+		KmerType type = params.classifier.classifyKmer(correctedRead.seq.substr(i, k));
 	}
 }
 
-Read correctRead_simple_kmer(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
-		bool correctMultidels) {
+Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params) {
 	/*
 	 * TODO:
 	 * - use sliding window of fixed size? Or just... increase k-mer size as long as k-mer is repetitive?
@@ -275,11 +261,11 @@ Read correctRead_simple_kmer(const io::Read& read, HashClassifier& classifier, b
 	size_t pos = 0;
 	while (pos < correctedRead.seq.size()) { // loop over starting position
 		//find smallest nonrepetitive k-mer size
-		size_t k = findSmallestNonrepetitive(correctedRead.seq, pos, classifier);
+		size_t k = findSmallestNonrepetitive(correctedRead.seq, pos, params.classifier);
 		if (k == std::numeric_limits<size_t>::max()) {
 			break;
 		}
-		KmerType type = classifier.classifyKmer(correctedRead.seq.substr(pos, k));
+		KmerType type = params.classifier.classifyKmer(correctedRead.seq.substr(pos, k));
 		if (type == KmerType::UNIQUE) {
 
 		}
@@ -289,46 +275,44 @@ Read correctRead_simple_kmer(const io::Read& read, HashClassifier& classifier, b
 	throw std::runtime_error("not implemented yet");
 }
 
-Read correctRead_adaptive_kmer(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
-		bool correctMultidels) {
+Read correctRead_adaptive_kmer(const io::Read& read, CorrectionParameters& params) {
+	io::Read correctedRead(read);
+	std::vector<uint8_t> cov = badKmerCoverage(read.seq, params);
+
 	throw std::runtime_error("not implemented yet");
 }
 
-Read correctRead_suffix_tree(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
-		bool correctMultidels) {
+Read correctRead_suffix_tree(const io::Read& read, CorrectionParameters& params) {
 	throw std::runtime_error("not implemented yet");
 }
 
-Read correctRead_full_msa(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
-		bool correctMultidels) {
+Read correctRead_full_msa(const io::Read& read, CorrectionParameters& params) {
 	throw std::runtime_error("not implemented yet");
 }
 
-Read correctRead_partial_msa(const io::Read& read, HashClassifier& classifier, bool correctSingleIndels,
-		bool correctMultidels) {
+Read correctRead_partial_msa(const io::Read& read, CorrectionParameters& params) {
 	throw std::runtime_error("not implemented yet");
 }
 
-Read correctRead(const Read& read, CorrectionAlgorithm algo, bool correctSingleIndels, bool correctMultidels,
-		HashClassifier& classifier, size_t kmerSize) {
+Read correctRead(const Read& read, CorrectionAlgorithm algo, CorrectionParameters& params) {
 	switch (algo) {
 	case CorrectionAlgorithm::NONE:
-		return correctRead_none(read, classifier, correctSingleIndels, correctMultidels);
+		return correctRead_none(read, params);
 		break;
 	case CorrectionAlgorithm::SIMPLE_KMER:
-		return correctRead_simple_kmer(read, classifier, correctSingleIndels, correctMultidels);
+		return correctRead_simple_kmer(read, params);
 		break;
 	case CorrectionAlgorithm::ADAPTIVE_KMER:
-		return correctRead_adaptive_kmer(read, classifier, correctSingleIndels, correctMultidels);
+		return correctRead_adaptive_kmer(read, params);
 		break;
 	case CorrectionAlgorithm::FULL_MSA:
-		return correctRead_full_msa(read, classifier, correctSingleIndels, correctMultidels);
+		return correctRead_full_msa(read, params);
 		break;
 	case CorrectionAlgorithm::PARTIAL_MSA:
-		return correctRead_partial_msa(read, classifier, correctSingleIndels, correctMultidels);
+		return correctRead_partial_msa(read, params);
 		break;
 	case CorrectionAlgorithm::SUFFIX_TREE:
-		return correctRead_suffix_tree(read, classifier, correctSingleIndels, correctMultidels);
+		return correctRead_suffix_tree(read, params);
 		break;
 	default:
 		throw std::runtime_error("Unknown correction algorithm");
@@ -347,6 +331,7 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 
 	io::ReadInput reader(pathToOriginalReads);
 	HashClassifier classifier(kmerCounter, pusm, biasUnit, pathToOriginalReads);
+	CorrectionParameters params(kmerSize, kmerCounter, pusm, biasUnit, pathToOriginalReads, classifier, correctSingleIndels, correctMultidels);
 
 #pragma omp parallel
 	{
@@ -356,8 +341,7 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 				io::Read uncorrected = reader.readNext(true, true, true);
 #pragma omp task shared(classifier, printer, correctSingleIndels, correctMultidels) firstprivate(uncorrected)
 				{
-					io::Read corrected = correctRead(uncorrected, algo, correctSingleIndels, correctMultidels,
-							classifier, kmerSize);
+					io::Read corrected = correctRead(uncorrected, algo, params);
 #pragma omp critical
 					printer.write(corrected);
 				}

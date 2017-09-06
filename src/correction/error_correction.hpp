@@ -31,6 +31,8 @@
 #include "../pusm/pusm.hpp"
 #include "../util/enums.hpp"
 #include "../coverage/coverage_bias.hpp"
+#include "../kmer/classification.hpp"
+#include "../kmer/hash_classifier.hpp"
 
 namespace seq_correct {
 namespace correction {
@@ -39,19 +41,42 @@ using namespace io;
 using namespace counting;
 using namespace pusm;
 using namespace util;
+using namespace classification;
+
+struct CorrectionParameters {
+public:
+	CorrectionParameters(size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
+			coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads,
+			HashClassifier& classifier, bool correctSingleIndels, bool correctMultidels) :
+			minK(minK), kmerCounter(kmerCounter), pusm(pusm), biasUnit(biasUnit), pathToOriginalReads(
+					pathToOriginalReads), classifier(classifier), correctSingleIndels(correctSingleIndels), correctMultidels(
+					correctMultidels) {
+	}
+	size_t minK;
+	Matcher& kmerCounter;
+	PerfectUniformSequencingModel& pusm;
+	coverage::CoverageBiasUnitMulti& biasUnit;
+	const std::string& pathToOriginalReads;
+	HashClassifier& classifier;
+	bool correctSingleIndels;
+	bool correctMultidels;
+};
 
 std::string findReplacement(const std::string& kmer, ErrorType errorType, size_t posInKmer);
 
 std::string kmerAfterError(const std::string& kmer, ErrorType error, int posOfError);
 
-uint8_t numUntrustedKmers(const std::string& read, size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads);
+uint8_t numUntrustedKmers(const std::string& read, size_t minK, Matcher& kmerCounter,
+		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
+		const std::string& pathToOriginalReads);
 
-uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads);
+uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, size_t minK, Matcher& kmerCounter,
+		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
+		const std::string& pathToOriginalReads);
 
-std::vector<uint8_t> badKmerCoverage(const std::string& read, size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads);
+std::vector<uint8_t> badKmerCoverage(const std::string& read, size_t minK, Matcher& kmerCounter,
+		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
+		const std::string& pathToOriginalReads);
 
 bool readIsPerfect(const std::string& read, size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
 		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads);
