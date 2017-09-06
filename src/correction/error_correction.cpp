@@ -27,7 +27,6 @@
 #include <vector>
 #include "error_correction.hpp"
 
-
 namespace seq_correct {
 namespace correction {
 
@@ -108,10 +107,11 @@ std::vector<uint8_t> badKmerCoverage(const std::string& read, CorrectionParamete
 	std::vector<uint8_t> res(read.size());
 
 	size_t i = 0;
-	while (i < read.size() - params.minK) {
+	while (i + params.minK < read.size()) {
 		size_t k = params.minK;
 		std::string kmer = read.substr(i, k);
-		KmerType type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit, params.pathToOriginalReads);
+		KmerType type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit,
+				params.pathToOriginalReads);
 
 		while (type == KmerType::REPEAT) {
 			k += 2;
@@ -123,7 +123,7 @@ std::vector<uint8_t> badKmerCoverage(const std::string& read, CorrectionParamete
 		}
 
 		if (type == KmerType::UNTRUSTED) {
-			for (size_t j = i; j < j + k; ++j) {
+			for (size_t j = i; j < i + k; ++j) {
 				res[j]++;
 			}
 		}
@@ -137,7 +137,7 @@ bool readIsPerfect(const std::string& read, size_t minK, Matcher& kmerCounter, P
 		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads) {
 	bool perfect = true;
 	size_t i = 0;
-	while (i < read.size() - minK) {
+	while (i + minK < read.size()) {
 		size_t k = minK;
 		std::string kmer = read.substr(i, k);
 		KmerType type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
@@ -168,7 +168,7 @@ uint8_t numUntrustedKmers(const std::string& read, size_t minK, Matcher& kmerCou
 		const std::string& pathToOriginalReads) {
 	uint8_t num = 0;
 	size_t i = 0;
-	while (i < read.size() - minK) {
+	while (i + minK < read.size()) {
 		size_t k = minK;
 		std::string kmer = read.substr(i, k);
 		KmerType type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
@@ -193,15 +193,14 @@ uint8_t numUntrustedKmers(const std::string& read, size_t minK, Matcher& kmerCou
 /*
  * Compute the number of UNTRUSTED k-mers covering a read[start..end] sequence.
  */
-uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, size_t minK, Matcher& kmerCounter,
-		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
-		const std::string& pathToOriginalReads) {
+uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, CorrectionParameters& params) {
 	uint8_t num = 0;
 	size_t i = start;
-	while (i <= end - minK) {
-		size_t k = minK;
+	while (i + params.minK <= end) {
+		size_t k = params.minK;
 		std::string kmer = read.substr(i, k);
-		KmerType type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+		KmerType type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit,
+				params.pathToOriginalReads);
 
 		while (type == KmerType::REPEAT) {
 			k += 2;
@@ -209,7 +208,7 @@ uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, siz
 				break;
 			}
 			kmer = read.substr(i, k);
-			type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+			type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit, params.pathToOriginalReads);
 		}
 
 		if (type == KmerType::UNTRUSTED) {
@@ -222,7 +221,7 @@ uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, siz
 
 size_t findSmallestNonrepetitive(const std::string& str, size_t pos, HashClassifier& classifier) {
 	KmerType type = KmerType::REPEAT;
-	for (size_t i = 1; i < str.size() - pos; i += 2) {
+	for (size_t i = 1; i + pos < str.size(); i += 2) {
 		type = classifier.classifyKmer(str.substr(pos, i));
 		if (type != KmerType::REPEAT) {
 			return i;
@@ -247,7 +246,7 @@ void performSimpleCorrections(const io::Read& read, CorrectionParameters& params
 	}
 }
 
-Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params) {
+Read correctRead_adaptive_kmer(const io::Read& read, CorrectionParameters& params) {
 	/*
 	 * TODO:
 	 * - use sliding window of fixed size? Or just... increase k-mer size as long as k-mer is repetitive?
@@ -275,11 +274,55 @@ Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params)
 	throw std::runtime_error("not implemented yet");
 }
 
-Read correctRead_adaptive_kmer(const io::Read& read, CorrectionParameters& params) {
-	io::Read correctedRead(read);
-	std::vector<uint8_t> cov = badKmerCoverage(read.seq, params);
+/*
+ * For all error types (including no error), check how many k-mers would still be untrusted... then take the one with the lowest number of untrusted k-mers remaining
+ */
+bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params) {
+	std::pair<size_t, size_t> affectedArea = affectedReadArea(pos, read.seq.size(), params.minK);
 
-	throw std::runtime_error("not implemented yet");
+	uint8_t untrustedNormal = numUntrustedKmers(read.seq, affectedArea.first, affectedArea.second, params);
+	uint8_t lowestCount = untrustedNormal;
+	ErrorType bestType = ErrorType::CORRECT;
+
+	for (ErrorType type : ErrorOnlyTypeIterator()) {
+		if (params.correctSingleIndels == false && isGapErrorType(type)) {
+			continue;
+		}
+		if (params.correctMultidels == false && type == ErrorType::MULTIDEL) {
+			continue;
+		}
+		std::string readAfterError = kmerAfterError(read.seq, type, pos);
+		uint8_t untrustedCount = numUntrustedKmers(readAfterError, affectedArea.first, affectedArea.second, params);
+		if (untrustedCount < lowestCount) {
+			lowestCount = untrustedCount;
+			bestType = type;
+		}
+	}
+
+	if (bestType != ErrorType::CORRECT) {
+		read.seq = kmerAfterError(read.seq, bestType, pos);
+	}
+
+	return (bestType != ErrorType::CORRECT);
+}
+
+Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params) {
+	io::Read correctedRead(read);
+	bool changed = true;
+	while (changed) {
+		std::vector<uint8_t> cov = badKmerCoverage(correctedRead.seq, params);
+		std::vector<std::pair<size_t, uint8_t> > ranking = rankPotentialErrorPositions(cov);
+		changed = false;
+		for (size_t i = 0; i < ranking.size(); ++i) {
+			if (ranking[i].second > 0) {
+				changed = tryFixingPosition(correctedRead, ranking[i].first, params);
+				if (changed) {
+					break;
+				}
+			}
+		}
+	}
+	return correctedRead;
 }
 
 Read correctRead_suffix_tree(const io::Read& read, CorrectionParameters& params) {
@@ -331,7 +374,9 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 
 	io::ReadInput reader(pathToOriginalReads);
 	HashClassifier classifier(kmerCounter, pusm, biasUnit, pathToOriginalReads);
-	CorrectionParameters params(kmerSize, kmerCounter, pusm, biasUnit, pathToOriginalReads, classifier, correctSingleIndels, correctMultidels);
+	biasUnit.preprocess(kmerSize, pathToOriginalReads, kmerCounter, pusm);
+	CorrectionParameters params(kmerSize, kmerCounter, pusm, biasUnit, pathToOriginalReads, classifier,
+			correctSingleIndels, correctMultidels);
 
 #pragma omp parallel
 	{
@@ -339,7 +384,7 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 		{
 			while (reader.hasNext()) {
 				io::Read uncorrected = reader.readNext(true, true, true);
-#pragma omp task shared(classifier, printer, correctSingleIndels, correctMultidels) firstprivate(uncorrected)
+#pragma omp task shared(printer, params) firstprivate(uncorrected)
 				{
 					io::Read corrected = correctRead(uncorrected, algo, params);
 #pragma omp critical

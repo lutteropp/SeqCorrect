@@ -40,6 +40,8 @@ using namespace util;
  * @param bias The G/C bias
  */
 inline KmerType classifyKmer(size_t observedCount, double expectedCount, double bias) {
+	expectedCount *= 2; // because of the reverse complement handlings
+
 	double correctedCount = (double) 1.0 / bias * observedCount;
 	if ((correctedCount < 2) || (correctedCount < 0.5 * expectedCount)) {
 		return KmerType::UNTRUSTED;
@@ -53,6 +55,13 @@ inline KmerType classifyKmer(size_t observedCount, double expectedCount, double 
 inline KmerType classifyKmer(const std::string& kmer, counting::Matcher& readsIndex,
 		pusm::PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit,
 		const std::string& pathToOriginalReads) {
+
+	if (classifyKmer(readsIndex.countKmer(kmer), pusm.expectedCount(kmer.size()).expectation,
+			biasUnit.computeCoverageBias(kmer, pathToOriginalReads, readsIndex, pusm)) == KmerType::REPEAT && kmer.size() > 50) {
+		std::cout << readsIndex.countKmer(kmer) << "\n" << pusm.expectedCount(kmer.size()).expectation << "\n" << biasUnit.computeCoverageBias(kmer, pathToOriginalReads, readsIndex, pusm) << "\n";
+		throw std::runtime_error("BGF");
+	}
+
 	return classifyKmer(readsIndex.countKmer(kmer), pusm.expectedCount(kmer.size()).expectation,
 			biasUnit.computeCoverageBias(kmer, pathToOriginalReads, readsIndex, pusm));
 }

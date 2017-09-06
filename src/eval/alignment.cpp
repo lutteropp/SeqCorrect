@@ -57,10 +57,6 @@ void backtrack(size_t i, size_t j, const std::string& originalRead, const std::s
 	size_t n = originalRead.size();
 	size_t m = correctedRead.size();
 
-	if (n != m) {
-		throw std::runtime_error("n!=m");
-	}
-
 	std::function<size_t(size_t, size_t)> coord = std::bind(coordinate, m, std::placeholders::_1,
 			std::placeholders::_2);
 	size_t actCoord = coord(i, j);

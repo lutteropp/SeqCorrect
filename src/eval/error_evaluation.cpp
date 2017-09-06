@@ -381,10 +381,6 @@ void updateEvaluationData(ErrorEvaluationData& data, const std::vector<Correctio
 	size_t truthIdx = 0;
 	size_t predictedIdx = 0;
 
-	if (readLength != mappedSequence.size()) {
-		throw std::runtime_error("This should currently not happen as CorrectionALgorithm = NONE");
-	}
-
 	std::vector<bool> fineBases(readLength, true);
 	std::vector<bool> fineGaps(readLength, true);
 
@@ -607,11 +603,6 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 #pragma omp task shared(genome, data), firstprivate(rwa, correctedRead)
 				{
 					std::vector<Correction> errorsTruth = extractErrors(rwa, genome, genomeType);
-
-					if (rwa.seq.size() != correctedRead.seq.size()) {
-						throw std::runtime_error("WHAT ThE FUCK");
-					}
-
 					std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
 							rwa.seq);
 					updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
