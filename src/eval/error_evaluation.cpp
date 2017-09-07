@@ -70,12 +70,17 @@ void handleChimericBreak(ReadWithAlignments& rwa, size_t cigarCount, HandlingInf
 		realPositionInRead += cigarCount;
 	}
 
+	size_t correctionPosition = realPositionInRead;
+	if (info.revComp) {
+		correctionPosition = rwa.seq.size() - realPositionInRead - 1;
+	}
+
 	// What if multiple chimeric breaks happen in a read? ... It should be fine, too.
 	//  As long as there aren't multiple hard clipped regions in a single record.
 	info.hardClippedBases += cigarCount;
 
 	// because we treat chimeric breaks as deletion of multiple bases
-	info.corrections.push_back(Correction(realPositionInRead, ErrorType::MULTIDEL, rwa.seq[realPositionInRead]));
+	info.corrections.push_back(Correction(correctionPosition, ErrorType::MULTIDEL, rwa.seq[realPositionInRead]));
 }
 
 void handleSoftClipping(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& info) {
@@ -105,6 +110,10 @@ void handleInsertion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& i
 
 		size_t correctionPosition = realPositionInRead;
 
+		if (info.revComp) {
+			correctionPosition = rwa.seq.size() - realPositionInRead - 1;
+		}
+
 		info.corrections.push_back(Correction(correctionPosition, ErrorType::INSERTION, fromBase));
 
 		rwa.seq[correctionPosition] = tolower(rwa.seq[correctionPosition]); // mark the insertion
@@ -123,6 +132,10 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 
 	std::string toBases = "";
 	size_t correctionPosition = realPositionInRead;
+
+	if (info.revComp) {
+		correctionPosition = rwa.seq.size() - realPositionInRead - 1;
+	}
 
 	unsigned nucleotidePositionInReference = (info.positionInRead + info.hardClippedBases) + info.beginPos
 			- info.softClippedBases;
@@ -169,7 +182,8 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 }
 
 // Assumes that indels have already been detected
-void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const std::string& genome, GenomeType genomeType) {
+void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const std::string& genome,
+		GenomeType genomeType) {
 	int genomeIdx = info.beginPos - 1;
 
 	for (size_t i = 0; i < rwa.seq.size(); ++i) {
@@ -195,6 +209,9 @@ void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const
 		char baseInGenome = genome[genomeIdx];
 
 		size_t correctionPos = i;
+		if (info.revComp) {
+			correctionPos = rwa.seq.size() - i - 1;
+		}
 
 		if (baseInRead != baseInGenome) {
 			std::string debugString = "";
@@ -605,6 +622,22 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 					std::vector<Correction> errorsTruth = extractErrors(rwa, genome, genomeType);
 					std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
 							rwa.seq);
+
+					if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
+						std::cout << "Original : " << rwa.seq << "\n";
+						std::cout << "Corrected: " << correctedRead.seq << "\n";
+						std::cout << "errorsTruth:\n";
+						for (size_t i = 0; i < errorsTruth.size(); ++i) {
+							std::cout << "  " << errorTypeToString(errorsTruth[i].errorType) << " at "
+									<< errorsTruth[i].positionInRead << "\n";
+						}
+						std::cout << "errorsPredicted:\n";
+						for (size_t i = 0; i < errorsPredicted.size(); ++i) {
+							std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
+									<< errorsPredicted[i].positionInRead << "\n";
+						}
+					}
+
 					updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
 				}
 			}

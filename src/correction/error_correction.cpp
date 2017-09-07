@@ -133,14 +133,13 @@ std::vector<uint8_t> badKmerCoverage(const std::string& read, CorrectionParamete
 	return res;
 }
 
-bool readIsPerfect(const std::string& read, size_t minK, Matcher& kmerCounter, PerfectUniformSequencingModel& pusm,
-		coverage::CoverageBiasUnitMulti& biasUnit, const std::string& pathToOriginalReads) {
+bool readIsPerfect(const std::string& read, CorrectionParameters& params) {
 	bool perfect = true;
 	size_t i = 0;
-	while (i + minK < read.size()) {
-		size_t k = minK;
+	while (i + params.minK < read.size()) {
+		size_t k = params.minK;
 		std::string kmer = read.substr(i, k);
-		KmerType type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+		KmerType type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit, params.pathToOriginalReads);
 
 		while (type == KmerType::REPEAT) {
 			k += 2;
@@ -148,7 +147,7 @@ bool readIsPerfect(const std::string& read, size_t minK, Matcher& kmerCounter, P
 				break;
 			}
 			kmer = read.substr(i, k);
-			type = classifyKmer(kmer, kmerCounter, pusm, biasUnit, pathToOriginalReads);
+			type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit, params.pathToOriginalReads);
 		}
 
 		if (type == KmerType::UNTRUSTED) {
@@ -278,28 +277,34 @@ Read correctRead_adaptive_kmer(const io::Read& read, CorrectionParameters& param
  * For all error types (including no error), check how many k-mers would still be untrusted... then take the one with the lowest number of untrusted k-mers remaining
  */
 bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params) {
-	std::pair<size_t, size_t> affectedArea = affectedReadArea(pos, read.seq.size(), params.minK);
+	//std::pair<size_t, size_t> affectedArea = affectedReadArea(pos, read.seq.size(), params.minK);
 
-	uint8_t untrustedNormal = numUntrustedKmers(read.seq, affectedArea.first, affectedArea.second, params);
-	uint8_t lowestCount = untrustedNormal;
+	//uint8_t untrustedNormal = numUntrustedKmers(read.seq, affectedArea.first, affectedArea.second, params);
+	//uint8_t lowestCount = untrustedNormal;
 	ErrorType bestType = ErrorType::CORRECT;
 
 	for (ErrorType type : ErrorOnlyTypeIterator()) {
-		if (params.correctSingleIndels == false && isGapErrorType(type)) {
+		if (params.correctSingleIndels == false && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
 			continue;
 		}
 		if (params.correctMultidels == false && type == ErrorType::MULTIDEL) {
 			continue;
 		}
+
 		std::string readAfterError = kmerAfterError(read.seq, type, pos);
-		uint8_t untrustedCount = numUntrustedKmers(readAfterError, affectedArea.first, affectedArea.second, params);
+		if (readIsPerfect(readAfterError, params)) {
+			//lowestCount = 0;
+			bestType = type;
+		}
+
+		/*uint8_t untrustedCount = numUntrustedKmers(readAfterError, affectedArea.first, affectedArea.second, params);
 		if (untrustedCount < lowestCount) {
 			lowestCount = untrustedCount;
 			bestType = type;
-		}
+		}*/
 	}
 
-	if (bestType != ErrorType::CORRECT) {
+	if (bestType != ErrorType::CORRECT /*&& lowestCount == 0*/) {
 		read.seq = kmerAfterError(read.seq, bestType, pos);
 	}
 
