@@ -116,7 +116,7 @@ void handleInsertion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& i
 
 		info.corrections.push_back(Correction(correctionPosition, ErrorType::INSERTION, fromBase));
 
-		rwa.seq[correctionPosition] = tolower(rwa.seq[correctionPosition]); // mark the insertion
+		rwa.seq[realPositionInRead] = tolower(rwa.seq[realPositionInRead]); // mark the insertion
 		//rwa.seq = rwa.seq.substr(0, correctionPosition) + rwa.seq.substr(correctionPosition + 1, std::string::npos);
 	}
 	info.insertedBases += cigarCount;
@@ -152,6 +152,11 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 	for (size_t j = 0; j < cigarCount; ++j) {
 		info.deletedBases++;
 		nucleotideInReference = genome[nucleotidePositionInReference + j];
+
+		if (info.revComp) {
+			nucleotideInReference = util::reverseComplementChar(nucleotideInReference);
+		}
+
 		toBases += nucleotideInReference;
 	}
 	assert(toBases.size() == cigarCount);
@@ -175,8 +180,8 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 	for (size_t i = 0; i < cigarCount; ++i) {
 		deletedBases += "D";
 	}
-	rwa.seq = rwa.seq.substr(0, correctionPosition + 1) + deletedBases
-			+ rwa.seq.substr(correctionPosition + 1, std::string::npos);
+	rwa.seq = rwa.seq.substr(0, realPositionInRead + 1) + deletedBases
+			+ rwa.seq.substr(realPositionInRead + 1, std::string::npos);
 
 	info.positionInRead += cigarCount;
 }
@@ -290,6 +295,11 @@ std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string
 	}
 
 	for (seqan::BamAlignmentRecord record : rwa.records) {
+
+
+		// TODO: Just for debugging, remove again
+		std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos + 1);
+
 		// Extract CIGAR string
 		std::string cigarString = extractCigarString(record.cigar);
 		info.positionInRead = 0;
@@ -620,21 +630,44 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 #pragma omp task shared(genome, data), firstprivate(rwa, correctedRead)
 				{
 					std::vector<Correction> errorsTruth = extractErrors(rwa, genome, genomeType);
-					std::vector<Correction> errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
-							rwa.seq);
+					std::vector<Correction> errorsPredicted;
+					if (hasFlagRC(rwa.records[0])) {
+						errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
+								util::reverseComplementString(rwa.seq));
+					} else {
+						errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
+					}
 
 					if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
-						std::cout << "Original : " << rwa.seq << "\n";
-						std::cout << "Corrected: " << correctedRead.seq << "\n";
-						std::cout << "errorsTruth:\n";
-						for (size_t i = 0; i < errorsTruth.size(); ++i) {
-							std::cout << "  " << errorTypeToString(errorsTruth[i].errorType) << " at "
-									<< errorsTruth[i].positionInRead << "\n";
-						}
-						std::cout << "errorsPredicted:\n";
-						for (size_t i = 0; i < errorsPredicted.size(); ++i) {
-							std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
-									<< errorsPredicted[i].positionInRead << "\n";
+						if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
+
+							std::cout << "Original  : " << rwa.seq << "\n";
+							std::cout << "Corrected : " << correctedRead.seq << "\n";
+							std::string genomeArea = genome.substr(rwa.beginPos-10, rwa.endPos - rwa.beginPos - 1+10);
+							if (hasFlagRC(rwa.records[0])) {
+								genomeArea = reverseComplementString(genomeArea);
+							}
+							std::cout << "genomeArea: " << genomeArea << "\n";
+
+							std::cout << "errorsTruth:\n";
+							for (size_t i = 0; i < errorsTruth.size(); ++i) {
+								std::cout << "  " << errorTypeToString(errorsTruth[i].errorType) << " at "
+										<< errorsTruth[i].positionInRead << "\n";
+							}
+							std::cout << "errorsPredicted:\n";
+							for (size_t i = 0; i < errorsPredicted.size(); ++i) {
+								std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
+										<< errorsPredicted[i].positionInRead << "\n";
+							}
+
+							errorsTruth = extractErrors(rwa, genome, genomeType);
+							if (hasFlagRC(rwa.records[0])) {
+								errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
+										util::reverseComplementString(rwa.seq));
+							} else {
+								errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
+							}
+
 						}
 					}
 

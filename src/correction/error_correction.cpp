@@ -139,7 +139,8 @@ bool readIsPerfect(const std::string& read, CorrectionParameters& params) {
 	while (i + params.minK < read.size()) {
 		size_t k = params.minK;
 		std::string kmer = read.substr(i, k);
-		KmerType type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit, params.pathToOriginalReads);
+		KmerType type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit,
+				params.pathToOriginalReads);
 
 		while (type == KmerType::REPEAT) {
 			k += 2;
@@ -287,6 +288,9 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params)
 		if (params.correctSingleIndels == false && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
 			continue;
 		}
+		if (pos == 0 && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
+			continue;
+		}
 		if (params.correctMultidels == false && type == ErrorType::MULTIDEL) {
 			continue;
 		}
@@ -298,10 +302,10 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params)
 		}
 
 		/*uint8_t untrustedCount = numUntrustedKmers(readAfterError, affectedArea.first, affectedArea.second, params);
-		if (untrustedCount < lowestCount) {
-			lowestCount = untrustedCount;
-			bestType = type;
-		}*/
+		 if (untrustedCount < lowestCount) {
+		 lowestCount = untrustedCount;
+		 bestType = type;
+		 }*/
 	}
 
 	if (bestType != ErrorType::CORRECT /*&& lowestCount == 0*/) {

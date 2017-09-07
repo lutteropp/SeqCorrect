@@ -60,10 +60,10 @@ void backtrack(size_t i, size_t j, const std::string& originalRead, const std::s
 	std::function<size_t(size_t, size_t)> coord = std::bind(coordinate, m, std::placeholders::_1,
 			std::placeholders::_2);
 	size_t actCoord = coord(i, j);
-	if (info[actCoord].count() > 1) {
+	/*if (info[actCoord].count() > 1) {
 		std::cout << "WARNING: These sequences have multiple optimal alignments... \n" << "\tOriginal Read: "
 				<< originalRead << "\n\tCorrectedRead: " << correctedRead << "\n";
-	}
+	}*/
 	if (info[actCoord][0] == 1) { // match or mismatch
 		if ((originalRead[i] != correctedRead[j]) && (correctedRead[j] != 'N') && (correctedRead[j] != 'S')) { // ignore 'N' or 'S' substitutions/ bases
 			res.push_back(std::make_pair(i, util::inferSubstitutionFrom(correctedRead[j])));
