@@ -59,12 +59,12 @@ std::string extractCigarString(const seqan::String< seqan::CigarElement<char> >&
 	return cigarString;
 }
 
-void handleChimericBreak(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& info) {
+void handleChimericBreak(std::string& seq, size_t cigarCount, HandlingInfo& info) {
 	/*unsigned nucleotidePositionInReference = info.beginPos + info.positionInRead - info.insertedBases
 	 - info.softClippedBases + info.deletedBases;*/
 	unsigned realPositionInRead = info.positionInRead + info.hardClippedBases; // the position of the first base of the chimeric break
 
-	assert(realPositionInRead < rwa.seq.size());
+	assert(realPositionInRead < seq.size());
 
 	if (realPositionInRead == 0) { // in this case, take the position of the last base of the chimeric break
 		realPositionInRead += cigarCount;
@@ -72,7 +72,7 @@ void handleChimericBreak(ReadWithAlignments& rwa, size_t cigarCount, HandlingInf
 
 	size_t correctionPosition = realPositionInRead;
 	if (info.revComp) {
-		correctionPosition = rwa.seq.size() - realPositionInRead - 1;
+		correctionPosition = seq.size() - realPositionInRead - 1;
 	}
 
 	// What if multiple chimeric breaks happen in a read? ... It should be fine, too.
@@ -80,95 +80,105 @@ void handleChimericBreak(ReadWithAlignments& rwa, size_t cigarCount, HandlingInf
 	info.hardClippedBases += cigarCount;
 
 	// because we treat chimeric breaks as deletion of multiple bases
-	info.corrections.push_back(Correction(correctionPosition, ErrorType::MULTIDEL, rwa.seq[realPositionInRead]));
+	info.corrections.push_back(Correction(correctionPosition, ErrorType::MULTIDEL, seq[realPositionInRead]));
 }
 
-void handleSoftClipping(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& info) {
+void handleSoftClipping(std::string& seq, size_t cigarCount, HandlingInfo& info) {
 	for (size_t j = 0; j < cigarCount; ++j) {
-		rwa.seq[info.positionInRead + info.hardClippedBases + j] = 'S';
+		seq[info.positionInRead + info.hardClippedBases + j] = 'S';
 	}
 	info.positionInRead += cigarCount;
 	info.softClippedBases += cigarCount;
 }
 
-void handleInsertion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& info) {
+void handleInsertion(std::string& seq, size_t cigarCount, HandlingInfo& info) {
+	if (info.revComp) {
+		seq = reverseComplementString(seq);
+	}
+
 	for (size_t j = 0; j < cigarCount; ++j) {
 		unsigned nucleotidePositionRead = info.positionInRead;
-		char nucleotideInRead = rwa.seq[nucleotidePositionRead];
+		char nucleotideInRead = seq[nucleotidePositionRead];
 
 		if (nucleotideInRead == 'S') {
 			throw std::runtime_error("this should not happen");
 		}
 
-		/*unsigned nucleotidePositionInReference = info.beginPos + nucleotidePositionRead - info.insertedBases
-		 - info.softClippedBases + info.deletedBases;*/
 		size_t realPositionInRead = info.positionInRead + info.hardClippedBases;
-
-		assert(realPositionInRead < rwa.seq.size());
-
-		char fromBase = nucleotideInRead;
+		assert(realPositionInRead < seq.size());
 
 		size_t correctionPosition = realPositionInRead;
-
+		char fromBase = nucleotideInRead;
 		if (info.revComp) {
-			correctionPosition = rwa.seq.size() - realPositionInRead - 1;
+			correctionPosition = seq.size() - realPositionInRead - 1;
+			fromBase = reverseComplementChar(fromBase);
 		}
-
 		info.corrections.push_back(Correction(correctionPosition, ErrorType::INSERTION, fromBase));
 
-		rwa.seq[realPositionInRead] = tolower(rwa.seq[realPositionInRead]); // mark the insertion
+		seq[realPositionInRead] = tolower(seq[realPositionInRead]); // mark the insertion
 		//rwa.seq = rwa.seq.substr(0, correctionPosition) + rwa.seq.substr(correctionPosition + 1, std::string::npos);
 	}
 	info.insertedBases += cigarCount;
-}
-
-void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& info, const std::string& genome) {
-	size_t realPositionInRead = info.positionInRead + info.hardClippedBases - 1;
-	assert(realPositionInRead < rwa.seq.size());
-	char fromBase = rwa.seq[realPositionInRead];
-	if (fromBase == 'S') {
-		throw std::runtime_error("this should not happen");
-	}
-
-	std::string toBases = "";
-	size_t correctionPosition = realPositionInRead;
 
 	if (info.revComp) {
-		correctionPosition = rwa.seq.size() - realPositionInRead - 1;
+		seq = reverseComplementString(seq);
+	}
+}
+
+void handleDeletion(std::string& seq, size_t cigarCount, HandlingInfo& info, const std::string& genome) {
+	if (info.revComp) {
+		seq = reverseComplementString(seq);
+	}
+
+	size_t realPositionInRead = info.positionInRead + info.hardClippedBases - 1;
+	assert(realPositionInRead < seq.size());
+	char fromBase = seq[realPositionInRead];
+	if (fromBase == 'S') {
+		throw std::runtime_error("this should not happen");
 	}
 
 	unsigned nucleotidePositionInReference = (info.positionInRead + info.hardClippedBases) + info.beginPos
 			- info.softClippedBases;
 
-	if (nucleotidePositionInReference >= genome.size()) {
-		std::cout << "genome size: " << genome.size() << "\n";
-		std::cout << "nucleotidePositionInReference: " << nucleotidePositionInReference << "\n";
-		std::cout << genome.substr(12614, 12713 - 12614 + 1) << "\n";
-		std::cout << rwa.seq << "\n";
-		throw std::runtime_error("nucleotidePositionInReference >= genome.size()");
-	}
-
 	char nucleotideInReference;
 	for (size_t j = 0; j < cigarCount; ++j) {
 		info.deletedBases++;
 		nucleotideInReference = genome[nucleotidePositionInReference + j];
-
-		if (info.revComp) {
-			nucleotideInReference = util::reverseComplementChar(nucleotideInReference);
-		}
-
-		toBases += nucleotideInReference;
 	}
-	assert(toBases.size() == cigarCount);
+
+	size_t correctionPosition = realPositionInRead;
+	if (info.revComp) {
+		correctionPosition = seq.size() - realPositionInRead - 1;
+	}
+	if (info.revComp) {
+		fromBase = reverseComplementChar(fromBase);
+	}
+
 	if (cigarCount == 1) {
 		if (nucleotideInReference == 'A') {
-			info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_A, fromBase));
+			if (!info.revComp) {
+				info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_A, fromBase));
+			} else {
+				info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_T, fromBase));
+			}
 		} else if (nucleotideInReference == 'C') {
-			info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_C, fromBase));
+			if (!info.revComp) {
+				info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_C, fromBase));
+			} else {
+				info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_G, fromBase));
+			}
 		} else if (nucleotideInReference == 'G') {
-			info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_G, fromBase));
+			if (!info.revComp) {
+				info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_G, fromBase));
+			} else {
+				info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_C, fromBase));
+			}
 		} else if (nucleotideInReference == 'T') {
-			info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_T, fromBase));
+			if (!info.revComp) {
+				info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_T, fromBase));
+			} else {
+				info.corrections.push_back(Correction(correctionPosition, ErrorType::DEL_OF_A, fromBase));
+			}
 		} else if (nucleotideInReference != 'N') {
 			throw std::runtime_error("weird base in reference genome");
 		}
@@ -180,50 +190,48 @@ void handleDeletion(ReadWithAlignments& rwa, size_t cigarCount, HandlingInfo& in
 	for (size_t i = 0; i < cigarCount; ++i) {
 		deletedBases += "D";
 	}
-	rwa.seq = rwa.seq.substr(0, realPositionInRead + 1) + deletedBases
-			+ rwa.seq.substr(realPositionInRead + 1, std::string::npos);
+	seq = seq.substr(0, realPositionInRead + 1) + deletedBases + seq.substr(realPositionInRead + 1, std::string::npos);
 
 	info.positionInRead += cigarCount;
+
+	if (info.revComp) {
+		seq = reverseComplementString(seq);
+	}
 }
 
 // Assumes that indels have already been detected
-void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const std::string& genome,
-		GenomeType genomeType) {
-	int genomeIdx = info.beginPos - 1;
+void handleSubstitutionErrors(std::string& seq, HandlingInfo& info, const std::string& genome, GenomeType genomeType) {
+	if (info.revComp) {
+		seq = reverseComplementString(seq);
+	}
+	int genomeIdx = -1;
 
-	for (size_t i = 0; i < rwa.seq.size(); ++i) {
-		if (rwa.seq[i] == 'S' || islower(rwa.seq[i])) {
+	for (size_t i = 0; i < seq.size(); ++i) {
+		if (seq[i] == 'S' || islower(seq[i])) {
 			continue;
 		} else {
 			genomeIdx++;
 		}
 
-		char baseInRead = rwa.seq[i];
+		char baseInRead = seq[i];
 		if (baseInRead == 'D') { // marked position of a deletion error
 			continue;
 		}
 
-		if (genomeIdx >= (int) genome.size()) {
-			if (genomeType == GenomeType::CIRCULAR) {
-				genomeIdx -= genome.size();
-			} else {
-				throw std::runtime_error("genomeIdx >= genome.size() in a linear genome!");
-			}
+		char baseInGenome;
+		if (genomeType == GenomeType::LINEAR) {
+			baseInGenome = genome[info.beginPos + genomeIdx];
+		} else {
+			baseInGenome = genome[(info.beginPos + genomeIdx) % genome.size()];
 		}
-
-		char baseInGenome = genome[genomeIdx];
 
 		size_t correctionPos = i;
 		if (info.revComp) {
-			correctionPos = rwa.seq.size() - i - 1;
+			correctionPos = seq.size() - i - 1;
+			baseInRead = reverseComplementChar(baseInRead);
 		}
 
 		if (baseInRead != baseInGenome) {
-			std::string debugString = "";
-			for (size_t t = 0; t < rwa.seq.size(); ++t) {
-				debugString += genome[info.beginPos + t];
-			}
-
 			// TODO: Check me.
 			if (baseInGenome == 'A') {
 				if (!info.revComp) {
@@ -257,7 +265,10 @@ void handleSubstitutionErrors(ReadWithAlignments& rwa, HandlingInfo& info, const
 			}
 		}
 	}
-	rwa.endPos = genomeIdx - 1;
+
+	if (info.revComp) {
+		seq = reverseComplementString(seq);
+	}
 }
 
 void fixReadBackToNormal(ReadWithAlignments& rwa) {
@@ -270,7 +281,7 @@ void fixReadBackToNormal(ReadWithAlignments& rwa) {
 	rwa.seq = seq;
 }
 
-std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string &genome, GenomeType genomeType) {
+std::vector<Correction> extractErrors(const ReadWithAlignments& rwa, const std::string &genome, GenomeType genomeType) {
 	if (hasFlagUnmapped(rwa.records[0])) {
 		throw std::runtime_error("The read is unmapped");
 	}
@@ -288,18 +299,13 @@ std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string
 	}
 
 	HandlingInfo info;
+	std::string seq = rwa.seq;
 
 	if (hasFlagRC(rwa.records[0])) {
 		info.revComp = true;
-		rwa.seq = util::reverseComplementString(rwa.seq);
 	}
 
 	for (seqan::BamAlignmentRecord record : rwa.records) {
-
-
-		// TODO: Just for debugging, remove again
-		std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos + 1);
-
 		// Extract CIGAR string
 		std::string cigarString = extractCigarString(record.cigar);
 		info.positionInRead = 0;
@@ -311,27 +317,22 @@ std::vector<Correction> extractErrors(ReadWithAlignments& rwa, const std::string
 		info.beginPos = record.beginPos;
 		for (unsigned i = 0; i < length(record.cigar); ++i) {
 			if (record.cigar[i].operation == 'H') { // hard clipping
-				handleChimericBreak(rwa, record.cigar[i].count, info);
+				handleChimericBreak(seq, record.cigar[i].count, info);
 			} else if (record.cigar[i].operation == 'S') { // soft clipping
-				handleSoftClipping(rwa, record.cigar[i].count, info);
+				handleSoftClipping(seq, record.cigar[i].count, info);
 			} else if (record.cigar[i].operation == 'M') { // match ... check for substitutions later
 				info.positionInRead += record.cigar[i].count;
 			} else if (record.cigar[i].operation == 'I') { // insertion
-				handleInsertion(rwa, record.cigar[i].count, info);
+				handleInsertion(seq, record.cigar[i].count, info);
 			} else if (record.cigar[i].operation == 'D') { // deletion
-				handleDeletion(rwa, record.cigar[i].count, info, genome);
+				handleDeletion(seq, record.cigar[i].count, info, genome);
 			} else if (record.cigar[i].operation == 'P' || record.cigar[i].operation == 'N') {
 				std::cout << "ERROR! There are letters I don't understand yet!" << record.cigar[i].operation
 						<< std::endl;
 			}
 		}
 		// now that indels have been fixed, fix the substitution errors.
-		handleSubstitutionErrors(rwa, info, genome, genomeType);
-		fixReadBackToNormal(rwa);
-	}
-
-	if (hasFlagRC(rwa.records[0])) {
-		rwa.seq = util::reverseComplementString(rwa.seq);
+		handleSubstitutionErrors(seq, info, genome, genomeType);
 	}
 
 	std::sort(info.corrections.begin(), info.corrections.end());
@@ -631,19 +632,14 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 				{
 					std::vector<Correction> errorsTruth = extractErrors(rwa, genome, genomeType);
 					std::vector<Correction> errorsPredicted;
-					if (hasFlagRC(rwa.records[0])) {
-						errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
-								util::reverseComplementString(rwa.seq));
-					} else {
-						errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
-					}
+					errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
 
 					if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
 						if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
 
-							std::cout << "Original  : " << rwa.seq << "\n";
+							std::cout << "Original (after fixing) : " << rwa.seq << "\n";
 							std::cout << "Corrected : " << correctedRead.seq << "\n";
-							std::string genomeArea = genome.substr(rwa.beginPos-10, rwa.endPos - rwa.beginPos - 1+10);
+							std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos - 1);
 							if (hasFlagRC(rwa.records[0])) {
 								genomeArea = reverseComplementString(genomeArea);
 							}
