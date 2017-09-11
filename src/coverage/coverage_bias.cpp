@@ -380,17 +380,27 @@ CoverageBiasUnitMulti::CoverageBiasUnitMulti() {
 void CoverageBiasUnitMulti::preprocess(size_t k, const std::string& filepath, counting::Matcher& readsIndex,
 		pusm::PerfectUniformSequencingModel& pusm) {
 	if (biasUnits.find(k) == biasUnits.end()) {
-		CoverageBiasUnitSingle cbsSingle;
-		cbsSingle.preprocess(k, filepath, readsIndex, pusm);
-		biasUnits[k] = cbsSingle;
+#pragma omp critical
+		{
+			if (biasUnits.find(k) == biasUnits.end()) {
+				CoverageBiasUnitSingle cbsSingle;
+				cbsSingle.preprocess(k, filepath, readsIndex, pusm);
+				biasUnits[k] = cbsSingle;
+			}
+		}
 	}
 }
 void CoverageBiasUnitMulti::preprocess(size_t k, const std::string& genome, counting::Matcher& readsIndex,
 		counting::Matcher& genomeIndex) {
 	if (biasUnits.find(k) == biasUnits.end()) {
-		CoverageBiasUnitSingle cbsSingle;
-		cbsSingle.preprocess(k, genome, readsIndex, genomeIndex);
-		biasUnits[k] = cbsSingle;
+#pragma omp critical
+		{
+			if (biasUnits.find(k) == biasUnits.end()) {
+				CoverageBiasUnitSingle cbsSingle;
+				cbsSingle.preprocess(k, genome, readsIndex, genomeIndex);
+				biasUnits[k] = cbsSingle;
+			}
+		}
 	}
 }
 
@@ -401,14 +411,17 @@ void CoverageBiasUnitMulti::preprocess(size_t k, const std::string& genome, coun
 double CoverageBiasUnitMulti::computeCoverageBias(const std::string& kmer, const std::string& filepath,
 		counting::Matcher& matcher, pusm::PerfectUniformSequencingModel& pusm) {
 	size_t k = kmer.size();
-	if (biasUnits.find(k) != biasUnits.end()) {
-		return biasUnits[k].computeCoverageBias(kmer);
-	} else {
-		CoverageBiasUnitSingle cbsSingle;
-		cbsSingle.preprocess(k, filepath, matcher, pusm);
-		biasUnits[k] = cbsSingle;
-		return cbsSingle.computeCoverageBias(kmer);
+	if (biasUnits.find(k) == biasUnits.end()) {
+#pragma omp critical
+		{
+			if (biasUnits.find(k) == biasUnits.end()) {
+				CoverageBiasUnitSingle cbsSingle;
+				cbsSingle.preprocess(k, filepath, matcher, pusm);
+				biasUnits[k] = cbsSingle;
+			}
+		}
 	}
+	return biasUnits[k].computeCoverageBias(kmer);
 }
 
 /**
