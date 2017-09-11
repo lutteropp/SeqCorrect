@@ -418,14 +418,17 @@ double CoverageBiasUnitMulti::computeCoverageBias(const std::string& kmer, const
 double CoverageBiasUnitMulti::computeCoverageBias(const std::string &kmer, const std::string& genome,
 		counting::Matcher& readsIndex, counting::Matcher& genomeIndex) {
 	size_t k = kmer.size();
-	if (biasUnits.find(k) != biasUnits.end()) {
-		return biasUnits[k].computeCoverageBias(kmer);
-	} else {
-		CoverageBiasUnitSingle cbsSingle;
-		cbsSingle.preprocess(k, genome, readsIndex, genomeIndex);
-		biasUnits[k] = cbsSingle;
-		return cbsSingle.computeCoverageBias(kmer);
+	if (biasUnits.find(k) == biasUnits.end()) {
+#pragma omp critical
+		{
+			if (biasUnits.find(k) == biasUnits.end()) {
+				CoverageBiasUnitSingle cbsSingle;
+				cbsSingle.preprocess(k, genome, readsIndex, genomeIndex);
+				biasUnits[k] = cbsSingle;
+			}
+		}
 	}
+	return biasUnits[k].computeCoverageBias(kmer);
 }
 
 /**
@@ -434,14 +437,17 @@ double CoverageBiasUnitMulti::computeCoverageBias(const std::string &kmer, const
  */
 double CoverageBiasUnitMulti::computeCoverageBias(size_t k, double gc, const std::string& filepath,
 		counting::Matcher& matcher, pusm::PerfectUniformSequencingModel& pusm) {
-	if (biasUnits.find(k) != biasUnits.end()) {
-		return biasUnits[k].computeCoverageBias(gc);
-	} else {
-		CoverageBiasUnitSingle cbsSingle;
-		cbsSingle.preprocess(k, filepath, matcher, pusm);
-		biasUnits[k] = cbsSingle;
-		return cbsSingle.computeCoverageBias(gc);
+	if (biasUnits.find(k) == biasUnits.end()) {
+#pragma omp critical
+		{
+			if (biasUnits.find(k) == biasUnits.end()) {
+				CoverageBiasUnitSingle cbsSingle;
+				cbsSingle.preprocess(k, filepath, matcher, pusm);
+				biasUnits[k] = cbsSingle;
+			}
+		}
 	}
+	return biasUnits[k].computeCoverageBias(gc);
 }
 
 void CoverageBiasUnitMulti::printMedianCoverageBiases() {

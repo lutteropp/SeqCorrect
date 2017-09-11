@@ -244,32 +244,6 @@ void performSimpleCorrections(const io::Read& read, CorrectionParameters& params
 		}
 		KmerType type = params.classifier.classifyKmer(correctedRead.seq.substr(i, k));
 	}
-}
-
-Read correctRead_adaptive_kmer(const io::Read& read, CorrectionParameters& params) {
-	/*
-	 * TODO:
-	 * - use sliding window of fixed size? Or just... increase k-mer size as long as k-mer is repetitive?
-	 * - check whether highly similar k-mers are also trusted/ other errors are also highly supported
-	 * --> if so, further increase k-mer size
-	 * - find a good way to deal with conflicting correction candidates from different iterations (this was missing in thesis)
-	 * - find a better minimum size for k than 1
-	 */
-
-	io::Read correctedRead(read);
-	size_t pos = 0;
-	while (pos < correctedRead.seq.size()) { // loop over starting position
-		//find smallest nonrepetitive k-mer size
-		size_t k = findSmallestNonrepetitive(correctedRead.seq, pos, params.classifier);
-		if (k == std::numeric_limits<size_t>::max()) {
-			break;
-		}
-		KmerType type = params.classifier.classifyKmer(correctedRead.seq.substr(pos, k));
-		if (type == KmerType::UNIQUE) {
-
-		}
-		pos++;
-	}
 
 	throw std::runtime_error("not implemented yet");
 }
@@ -333,6 +307,36 @@ Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params)
 	}
 	return correctedRead;
 }
+
+
+Read correctRead_adaptive_kmer(const io::Read& read, CorrectionParameters& params) {
+	/*
+	 * TODO:
+	 * - use sliding window of fixed size? Or just... increase k-mer size as long as k-mer is repetitive?
+	 * - check whether highly similar k-mers are also trusted/ other errors are also highly supported
+	 * --> if so, further increase k-mer size
+	 * - find a good way to deal with conflicting correction candidates from different iterations (this was missing in thesis)
+	 * - find a better minimum size for k than 1
+	 */
+
+	io::Read correctedRead(read);
+	size_t pos = 0;
+	while (pos < correctedRead.seq.size()) { // loop over starting position
+		//find smallest nonrepetitive k-mer size
+		size_t k = findSmallestNonrepetitive(correctedRead.seq, pos, params.classifier);
+		if (k == std::numeric_limits<size_t>::max()) {
+			break;
+		}
+		KmerType type = params.classifier.classifyKmer(correctedRead.seq.substr(pos, k));
+		if (type == KmerType::UNIQUE) {
+
+		}
+		pos++;
+	}
+
+	throw std::runtime_error("not implemented yet");
+}
+
 
 Read correctRead_suffix_tree(const io::Read& read, CorrectionParameters& params) {
 	throw std::runtime_error("not implemented yet");
