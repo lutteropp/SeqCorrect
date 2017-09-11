@@ -206,6 +206,8 @@ void handleSubstitutionErrors(std::string& seq, HandlingInfo& info, const std::s
 	}
 	int genomeIdx = -1;
 
+	std::string genomeDebugString = genome.substr(info.beginPos, seq.size());
+
 	for (size_t i = 0; i < seq.size(); ++i) {
 		if (seq[i] == 'S' || islower(seq[i])) {
 			continue;
@@ -226,12 +228,13 @@ void handleSubstitutionErrors(std::string& seq, HandlingInfo& info, const std::s
 		}
 
 		size_t correctionPos = i;
-		if (info.revComp) {
-			correctionPos = seq.size() - i - 1;
-			baseInRead = reverseComplementChar(baseInRead);
-		}
 
 		if (baseInRead != baseInGenome) {
+			if (info.revComp) {
+				correctionPos = seq.size() - i - 1;
+				baseInRead = reverseComplementChar(baseInRead);
+			}
+
 			// TODO: Check me.
 			if (baseInGenome == 'A') {
 				if (!info.revComp) {
@@ -637,9 +640,9 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 					if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
 						if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
 
-							std::cout << "Original (after fixing) : " << rwa.seq << "\n";
+							std::cout << "Original: " << rwa.seq << "\n";
 							std::cout << "Corrected : " << correctedRead.seq << "\n";
-							std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos - 1);
+							std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos + 1);
 							if (hasFlagRC(rwa.records[0])) {
 								genomeArea = reverseComplementString(genomeArea);
 							}
@@ -654,6 +657,9 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 							for (size_t i = 0; i < errorsPredicted.size(); ++i) {
 								std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
 										<< errorsPredicted[i].positionInRead << "\n";
+							}
+							if (hasFlagRC(rwa.records[0])) {
+								std::cout << "The read is reverse-complemented.\n";
 							}
 
 							errorsTruth = extractErrors(rwa, genome, genomeType);
