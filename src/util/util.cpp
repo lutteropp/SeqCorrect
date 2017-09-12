@@ -134,8 +134,31 @@ size_t kmerToNumber(const std::string& kmer) {
 	return res;
 }
 
-std::string numberToKmer(size_t n) {
-	throw std::runtime_error("Not implemented yet");
+std::string numberToKmer(size_t n, size_t k) {
+	std::string buffer;
+
+	while (n > 0) {
+		size_t rem = n % 4;
+		switch (rem) {
+		case 0:
+			buffer += 'A';
+			break;
+		case 1:
+			buffer += 'C';
+			break;
+		case 2:
+			buffer += 'G';
+			break;
+		case 3:
+			buffer += 'T';
+			break;
+		default:
+			throw std::runtime_error("rem > 4");
+		}
+		n /= 4;
+	}
+	std::reverse(buffer.begin(), buffer.end());
+	return buffer;
 }
 
 } // end of namespace seq_correct::util

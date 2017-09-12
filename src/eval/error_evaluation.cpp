@@ -107,10 +107,17 @@ void handleInsertion(std::string& seq, size_t cigarCount, HandlingInfo& info) {
 		size_t realPositionInRead = info.positionInRead + info.hardClippedBases;
 		assert(realPositionInRead < seq.size());
 
+		if (realPositionInRead > seq.size()) {
+			throw std::runtime_error("realPositionInRead = " + std::to_string(realPositionInRead) + ", but seq.size() = " + std::to_string(seq.size()));
+		}
+
 		size_t correctionPosition = realPositionInRead;
 		char fromBase = nucleotideInRead;
 		if (info.revComp) {
 			correctionPosition = seq.size() - realPositionInRead - 1;
+			if (correctionPosition > seq.size()) {
+				throw std::runtime_error("correctionPosition = " + std::to_string(correctionPosition) + ", but seq.size() = " + std::to_string(seq.size()));
+			}
 			fromBase = reverseComplementChar(fromBase);
 		}
 		info.corrections.push_back(Correction(correctionPosition, ErrorType::INSERTION, fromBase));
@@ -193,6 +200,7 @@ void handleDeletion(std::string& seq, size_t cigarCount, HandlingInfo& info, con
 	seq = seq.substr(0, realPositionInRead + 1) + deletedBases + seq.substr(realPositionInRead + 1, std::string::npos);
 
 	info.positionInRead += cigarCount;
+	info.deletedBases += cigarCount;
 
 	if (info.revComp) {
 		seq = reverseComplementString(seq);

@@ -256,9 +256,47 @@ std::vector<CoverageBiasData> preprocessWithoutGenomeHash(size_t k, const std::s
 
 	auto end = std::chrono::system_clock::now();
 	auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start);
-	std::vector<CoverageBiasData> medianBiases = computeMedianBiases(k, biases);
+	std::cout << "Preprocessing coverage biases 1 took " << elapsed.count() << " seconds.\n";
 
-	std::cout << "Preprocessing coverage biases took " << elapsed.count() << " seconds.\n";
+	start = std::chrono::system_clock::now();
+	std::vector<CoverageBiasData> medianBiases = computeMedianBiases(k, biases);
+	end = std::chrono::system_clock::now();
+	elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+	std::cout << "Preprocessing coverage biases 2 took " << elapsed.count() << " seconds.\n";
+
+	return medianBiases;
+}
+
+std::vector<CoverageBiasData> preprocessWithoutGenomeNaive(size_t k, const std::string &filepath,
+		counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel &pusm) {
+
+	auto start = std::chrono::system_clock::now();
+
+	std::vector<std::vector<double> > biases;
+	biases.resize(k + 1);
+
+	io::ReadInput reader(filepath);
+	double countExpected = pusm.expectedCount(k).expectation;
+
+	#pragma omp parallel for
+	for (size_t kInt = 0; kInt < (2 << k); ++kInt) {
+		std::string kmer = util::numberToKmer(kInt, k);
+		double bias = inferBias(k, kmer, readsIndex, countExpected);
+		if (bias > 0) {
+			biases[util::countGC(kmer)].push_back(bias);
+		}
+	}
+
+	auto end = std::chrono::system_clock::now();
+	auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+	std::cout << "Preprocessing coverage biases 1 took " << elapsed.count() << " seconds.\n";
+
+	start = std::chrono::system_clock::now();
+	std::vector<CoverageBiasData> medianBiases = computeMedianBiases(k, biases);
+	end = std::chrono::system_clock::now();
+	elapsed = std::chrono::duration_cast<std::chrono::seconds>(end - start);
+	std::cout << "Preprocessing coverage biases 2 took " << elapsed.count() << " seconds.\n";
+
 	return medianBiases;
 }
 
@@ -273,11 +311,14 @@ std::vector<CoverageBiasData> preprocessWithoutGenomeHash(size_t k, const std::s
  */
 std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::string &filepath,
 		counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel &pusm) {
-	if (USE_BLOOM_FILTER) {
+	return preprocessWithoutGenomeNaive(k, filepath, readsIndex, pusm);
+
+
+	/*if (USE_BLOOM_FILTER) {
 		return preprocessWithoutGenomeBloom(k, filepath, readsIndex, pusm);
 	} else {
 		return preprocessWithoutGenomeHash(k, filepath, readsIndex, pusm);
-	}
+	}*/
 }
 
 /**

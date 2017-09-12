@@ -99,7 +99,7 @@ inline std::unordered_map<size_t, size_t> countReadLengths(const std::string& re
 std::string kmerAfterError(const std::string& kmer, size_t pos, ErrorType type);
 
 size_t kmerToNumber(const std::string& kmer);
-std::string numberToKmer(size_t n);
+std::string numberToKmer(size_t n, size_t k);
 
 struct pairhash {
 public:
