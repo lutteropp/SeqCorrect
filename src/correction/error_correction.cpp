@@ -262,7 +262,7 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params)
 		if (params.correctSingleIndels == false && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
 			continue;
 		}
-		if (pos == 0 && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
+		if ((pos == 0 || pos == read.seq.size() - 1) && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
 			continue;
 		}
 		if (params.correctMultidels == false && type == ErrorType::MULTIDEL) {
@@ -308,7 +308,6 @@ Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params)
 	return correctedRead;
 }
 
-
 Read correctRead_adaptive_kmer(const io::Read& read, CorrectionParameters& params) {
 	/*
 	 * TODO:
@@ -336,7 +335,6 @@ Read correctRead_adaptive_kmer(const io::Read& read, CorrectionParameters& param
 
 	throw std::runtime_error("not implemented yet");
 }
-
 
 Read correctRead_suffix_tree(const io::Read& read, CorrectionParameters& params) {
 	throw std::runtime_error("not implemented yet");

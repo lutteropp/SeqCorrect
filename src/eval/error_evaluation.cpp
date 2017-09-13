@@ -84,11 +84,19 @@ void handleChimericBreak(std::string& seq, size_t cigarCount, HandlingInfo& info
 }
 
 void handleSoftClipping(std::string& seq, size_t cigarCount, HandlingInfo& info) {
+	if (info.revComp) {
+		seq = reverseComplementString(seq);
+	}
+
 	for (size_t j = 0; j < cigarCount; ++j) {
 		seq[info.positionInRead + info.hardClippedBases + j] = 'S';
 	}
 	info.positionInRead += cigarCount;
 	info.softClippedBases += cigarCount;
+
+	if (info.revComp) {
+		seq = reverseComplementString(seq);
+	}
 }
 
 void handleInsertion(std::string& seq, size_t cigarCount, HandlingInfo& info) {
@@ -101,6 +109,9 @@ void handleInsertion(std::string& seq, size_t cigarCount, HandlingInfo& info) {
 		char nucleotideInRead = seq[nucleotidePositionRead];
 
 		if (nucleotideInRead == 'S') {
+			std::cout << "positionInRead: " << info.positionInRead << "\n";
+			std::cout << "seq: " << seq << "\n";
+			std::cout << "insertion error detected, but the base is an S\n";
 			throw std::runtime_error("this should not happen");
 		}
 
@@ -140,9 +151,10 @@ void handleDeletion(std::string& seq, size_t cigarCount, HandlingInfo& info, con
 	size_t realPositionInRead = info.positionInRead + info.hardClippedBases - 1;
 	assert(realPositionInRead < seq.size());
 	char fromBase = seq[realPositionInRead];
-	if (fromBase == 'S') {
+	/*if (fromBase == 'S') {
+		std::cout << "deletion error detected, but the base is an S\n";
 		throw std::runtime_error("this should not happen");
-	}
+	}*/
 
 	unsigned nucleotidePositionInReference = (info.positionInRead + info.hardClippedBases) + info.beginPos
 			- info.softClippedBases;
@@ -331,9 +343,25 @@ std::vector<Correction> extractErrors(const ReadWithAlignments& rwa, const std::
 				handleChimericBreak(seq, record.cigar[i].count, info);
 			} else if (record.cigar[i].operation == 'S') { // soft clipping
 				handleSoftClipping(seq, record.cigar[i].count, info);
+
+				if (seq[info.positionInRead] == 'S') {
+					std::cout << "cigar: " << cigarString << "\n";
+					std::cout << "original: " << rwa.seq << "\n";
+					std::cout << "current seq: " << seq << "\n";
+					std::cout << "current posInRead: " << info.positionInRead << "\n";
+				}
+
 			} else if (record.cigar[i].operation == 'M') { // match ... check for substitutions later
 				info.positionInRead += record.cigar[i].count;
 			} else if (record.cigar[i].operation == 'I') { // insertion
+
+				if (seq == "CCAGATCAGAGTTTTGTTTAGGAGCTGGGTCCTCCCTGATGSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS") {
+					std::cout << "I'm here for debugging.\n";
+					std::cout << "cigar: " << cigarString << "\n";
+					std::cout << "orig: " << rwa.seq << "\n";
+				}
+
+
 				handleInsertion(seq, record.cigar[i].count, info);
 			} else if (record.cigar[i].operation == 'D') { // deletion
 				handleDeletion(seq, record.cigar[i].count, info, genome);
