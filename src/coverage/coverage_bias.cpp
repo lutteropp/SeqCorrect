@@ -228,17 +228,8 @@ std::vector<CoverageBiasData> preprocessWithoutGenomeHash(size_t k, const std::s
 	double minProgress = 0.0;
 	while (reader.hasNext()) {
 		io::Read seqRead = reader.readNext(true, false, false);
-		std::string kmer = seqRead.seq.substr(0, k);
-		if (!visited.contains(kmer)) {
-			double bias = inferBias(k, kmer, readsIndex, countExpected);
-			if (bias > 0) {
-				biases[util::countGC(kmer)].push_back(bias);
-			}
-			visited.insert(kmer);
-		}
-
-		for (size_t i = 1; i + k < seqRead.seq.size(); ++i) {
-			kmer = seqRead.seq.substr(i, k);
+		for (size_t i = 0; i < seqRead.seq.size() - k; ++i) {
+			std::string kmer = seqRead.seq.substr(i, k);
 
 			if (visited.find(kmer) == visited.end()) {
 				double bias = inferBias(k, kmer, readsIndex, countExpected);
