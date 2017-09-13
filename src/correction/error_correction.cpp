@@ -133,10 +133,16 @@ std::vector<uint8_t> badKmerCoverage(const std::string& read, CorrectionParamete
 	return res;
 }
 
-bool readIsPerfect(const std::string& read, CorrectionParameters& params) {
+bool readIsPerfect(const std::string& read, CorrectionParameters& params, size_t from, size_t to) {
 	bool perfect = true;
-	size_t i = 0;
-	while (i + params.minK < read.size()) {
+	size_t i = from;
+
+	if (from > read.size() || to > read.size()) {
+		throw std::runtime_error(
+				"from: " + std::to_string(from) + ", to: " + std::to_string(to) + ", read size: "
+						+ std::to_string(read.size()));
+	}
+	while (i + params.minK <= to) {
 		size_t k = params.minK;
 		std::string kmer = read.substr(i, k);
 		KmerType type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit,
@@ -252,8 +258,7 @@ void performSimpleCorrections(const io::Read& read, CorrectionParameters& params
  * For all error types (including no error), check how many k-mers would still be untrusted... then take the one with the lowest number of untrusted k-mers remaining
  */
 bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params) {
-	//std::pair<size_t, size_t> affectedArea = affectedReadArea(pos, read.seq.size(), params.minK);
-
+	std::pair<size_t, size_t> affectedArea = affectedReadArea(pos, read.seq.size(), params.minK);
 	//uint8_t untrustedNormal = numUntrustedKmers(read.seq, affectedArea.first, affectedArea.second, params);
 	//uint8_t lowestCount = untrustedNormal;
 	ErrorType bestType = ErrorType::CORRECT;
@@ -269,10 +274,24 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params)
 			continue;
 		}
 
+		if (type == ErrorType::SUB_OF_A && read.seq[pos] == 'A') {
+			continue;
+		}
+		if (type == ErrorType::SUB_OF_C && read.seq[pos] == 'C') {
+			continue;
+		}
+		if (type == ErrorType::SUB_OF_G && read.seq[pos] == 'G') {
+			continue;
+		}
+		if (type == ErrorType::SUB_OF_T && read.seq[pos] == 'T') {
+			continue;
+		}
+
 		std::string readAfterError = kmerAfterError(read.seq, type, pos);
-		if (readIsPerfect(readAfterError, params)) {
+		if (readIsPerfect(readAfterError, params, affectedArea.first, affectedArea.second)) {
 			//lowestCount = 0;
 			bestType = type;
+			break;
 		}
 
 		/*uint8_t untrustedCount = numUntrustedKmers(readAfterError, affectedArea.first, affectedArea.second, params);
@@ -284,6 +303,8 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params)
 
 	if (bestType != ErrorType::CORRECT /*&& lowestCount == 0*/) {
 		read.seq = kmerAfterError(read.seq, bestType, pos);
+
+		//std::cout << errorTypeToString(bestType) << " at " << pos << "\n";
 	}
 
 	return (bestType != ErrorType::CORRECT);
@@ -327,7 +348,7 @@ Read correctRead_adaptive_kmer(const io::Read& read, CorrectionParameters& param
 			break;
 		}
 		KmerType type = params.classifier.classifyKmer(correctedRead.seq.substr(pos, k));
-		if (type == KmerType::UNIQUE) {
+		if (type == KmerType::UNTRUSTED) {
 
 		}
 		pos++;

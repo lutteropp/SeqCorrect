@@ -39,7 +39,7 @@ namespace counting {
 using namespace sdsl;
 typedef csa_wt<wt_huff<bit_vector, rank_support_v5<>, select_support_scan<>, select_support_scan<0>>, 1 << 20, 1 << 20> FMIndex;
 
-class FMIndexMatcher : public Matcher {
+class FMIndexMatcher: public Matcher {
 public:
 	FMIndexMatcher(const std::string& filename);
 	uint16_t countKmer(const std::string& kmer);
