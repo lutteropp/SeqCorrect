@@ -267,6 +267,7 @@ std::vector<CoverageBiasData> preprocessWithoutGenomeHash(size_t k, const std::s
 	return medianBiases;
 }
 
+// TODO: This leads to weird errors...
 std::vector<CoverageBiasData> preprocessWithoutGenomeNaive(size_t k, const std::string &filepath,
 		counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel &pusm) {
 
@@ -278,11 +279,13 @@ std::vector<CoverageBiasData> preprocessWithoutGenomeNaive(size_t k, const std::
 	io::ReadInput reader(filepath);
 	double countExpected = pusm.expectedCount(k).expectation;
 
-	#pragma omp parallel for
-	for (size_t kInt = 0; kInt < (2 << k); ++kInt) {
+#pragma omp parallel for shared(biases)
+	for (size_t kInt = 0; kInt < (size_t) (2 << k); ++kInt) {
 		std::string kmer = util::numberToKmer(kInt, k);
 		double bias = inferBias(k, kmer, readsIndex, countExpected);
 		if (bias > 0) {
+			std::cout << "Adding a bias\n";
+#pragma omp critical
 			biases[util::countGC(kmer)].push_back(bias);
 		}
 	}
@@ -311,14 +314,13 @@ std::vector<CoverageBiasData> preprocessWithoutGenomeNaive(size_t k, const std::
  */
 std::vector<CoverageBiasData> preprocessWithoutGenome(size_t k, const std::string &filepath,
 		counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel &pusm) {
-	return preprocessWithoutGenomeNaive(k, filepath, readsIndex, pusm);
+	//return preprocessWithoutGenomeNaive(k, filepath, readsIndex, pusm);
 
-
-	/*if (USE_BLOOM_FILTER) {
+	if (USE_BLOOM_FILTER) {
 		return preprocessWithoutGenomeBloom(k, filepath, readsIndex, pusm);
 	} else {
 		return preprocessWithoutGenomeHash(k, filepath, readsIndex, pusm);
-	}*/
+	}
 }
 
 /**

@@ -158,6 +158,13 @@ std::string numberToKmer(size_t n, size_t k) {
 		n /= 4;
 	}
 	std::reverse(buffer.begin(), buffer.end());
+
+	if (n == 0) {
+		for (size_t i = 0; i < k; ++i) {
+			buffer += 'A';
+		}
+	}
+
 	return buffer;
 }
 
