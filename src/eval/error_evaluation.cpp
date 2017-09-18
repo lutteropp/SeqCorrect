@@ -119,7 +119,9 @@ void handleInsertion(std::string& seq, size_t cigarCount, HandlingInfo& info) {
 		assert(realPositionInRead < seq.size());
 
 		if (realPositionInRead > seq.size()) {
-			throw std::runtime_error("realPositionInRead = " + std::to_string(realPositionInRead) + ", but seq.size() = " + std::to_string(seq.size()));
+			throw std::runtime_error(
+					"realPositionInRead = " + std::to_string(realPositionInRead) + ", but seq.size() = "
+							+ std::to_string(seq.size()));
 		}
 
 		size_t correctionPosition = realPositionInRead;
@@ -127,7 +129,9 @@ void handleInsertion(std::string& seq, size_t cigarCount, HandlingInfo& info) {
 		if (info.revComp) {
 			correctionPosition = seq.size() - realPositionInRead - 1;
 			if (correctionPosition > seq.size()) {
-				throw std::runtime_error("correctionPosition = " + std::to_string(correctionPosition) + ", but seq.size() = " + std::to_string(seq.size()));
+				throw std::runtime_error(
+						"correctionPosition = " + std::to_string(correctionPosition) + ", but seq.size() = "
+								+ std::to_string(seq.size()));
 			}
 			fromBase = reverseComplementChar(fromBase);
 		}
@@ -152,9 +156,9 @@ void handleDeletion(std::string& seq, size_t cigarCount, HandlingInfo& info, con
 	assert(realPositionInRead < seq.size());
 	char fromBase = seq[realPositionInRead];
 	/*if (fromBase == 'S') {
-		std::cout << "deletion error detected, but the base is an S\n";
-		throw std::runtime_error("this should not happen");
-	}*/
+	 std::cout << "deletion error detected, but the base is an S\n";
+	 throw std::runtime_error("this should not happen");
+	 }*/
 
 	unsigned nucleotidePositionInReference = (info.positionInRead + info.hardClippedBases) + info.beginPos
 			- info.softClippedBases;
@@ -360,7 +364,6 @@ std::vector<Correction> extractErrors(const ReadWithAlignments& rwa, const std::
 					std::cout << "cigar: " << cigarString << "\n";
 					std::cout << "orig: " << rwa.seq << "\n";
 				}
-
 
 				handleInsertion(seq, record.cigar[i].count, info);
 			} else if (record.cigar[i].operation == 'D') { // deletion
@@ -602,7 +605,7 @@ void sortCorrectedReads(const std::string& correctedReadsFilepath, const std::st
 	std::vector<io::Read> allReads;
 	io::ReadInput input(correctedReadsFilepath);
 	while (input.hasNext()) {
-		allReads.push_back(input.readNext(true, true, true));
+		allReads.push_back(input.readNext(true, false, true));
 	}
 	std::cout << allReads.size() << "\n";
 	std::sort(allReads.begin(), allReads.end(),
@@ -635,36 +638,42 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 #pragma omp single
 		{
 			while (it.hasReadsLeft() && input.hasNext()) {
-				io::Read correctedRead = input.readNext(true, true, true);
+				io::Read correctedRead = input.readNext(true, false, true);
 				//std::cout << "correctedRead = " << correctedRead.name << "\n";
 
 				ReadWithAlignments rwa = it.next();
 				//std::cout << "rwa = " << rwa.name << "\n";
-				while (hasFlagUnmapped(rwa.records[0])) {
+				while (hasFlagUnmapped(rwa.records[0]) && input.hasNext() && it.hasReadsLeft()) {
 					std::cout << "skipping " << rwa.name << " because it's unmapped\n";
 					rwa = it.next();
 					//std::cout << "rwa = " << rwa.name << "\n";
 					std::cout << "skipping " << correctedRead.name << "\n";
-					correctedRead = input.readNext(true, true, true);
+					correctedRead = input.readNext(true, false, true);
 					//std::cout << "correctedRead = " << correctedRead.name << "\n";
 				}
 
-				while (rwa.records.size() > 1) {
+				while (rwa.records.size() > 1 && input.hasNext() && it.hasReadsLeft()) {
 					std::cout << "skipping " << rwa.name << " because it's chimeric\n";
 					rwa = it.next();
 					//std::cout << "rwa = " << rwa.name << "\n";
 					std::cout << "skipping " << correctedRead.name << "\n";
-					correctedRead = input.readNext(true, true, true);
+					correctedRead = input.readNext(true, false, true);
 					//std::cout << "correctedRead = " << correctedRead.name << "\n";
 				}
 
 				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
-						correctedRead.name.find('/')) != rwa.name) {
-					correctedRead = input.readNext(true, true, true);
+						correctedRead.name.find('/')) != rwa.name && input.hasNext()) {
+					correctedRead = input.readNext(true, false, true);
 					//std::cout << "correctedRead = " << correctedRead.name << "\n";
 					/*throw std::runtime_error(
 					 "Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: "
 					 + correctedRead.name + "\nOriginal read name: " + rwa.name);*/
+				}
+
+				if (hasFlagUnmapped(rwa.records[0]) || rwa.records.size() > 1
+						|| correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
+								correctedRead.name.find('/')) != rwa.name) {
+					break;
 				}
 
 #pragma omp task shared(genome, data), firstprivate(rwa, correctedRead)
@@ -698,13 +707,13 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 								std::cout << "The read is reverse-complemented.\n";
 							}
 
-							errorsTruth = extractErrors(rwa, genome, genomeType);
-							if (hasFlagRC(rwa.records[0])) {
-								errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
-										util::reverseComplementString(rwa.seq));
-							} else {
-								errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
-							}
+							/*errorsTruth = extractErrors(rwa, genome, genomeType);
+							 if (hasFlagRC(rwa.records[0])) {
+							 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
+							 util::reverseComplementString(rwa.seq));
+							 } else {
+							 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
+							 }*/
 
 						}
 					}

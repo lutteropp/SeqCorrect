@@ -65,12 +65,12 @@ void backtrack(size_t i, size_t j, const std::string& originalRead, const std::s
 				<< originalRead << "\n\tCorrectedRead: " << correctedRead << "\n";
 	}*/
 	if (info[actCoord][0] == 1) { // match or mismatch
-		if ((originalRead[i] != correctedRead[j]) && (correctedRead[j] != 'N') && (correctedRead[j] != 'S')) { // ignore 'N' or 'S' substitutions/ bases
-			res.push_back(std::make_pair(i, util::inferSubstitutionFrom(correctedRead[j])));
+		if ((originalRead[i-1] != correctedRead[j-1]) && (correctedRead[j-1] != 'N') && (correctedRead[j-1] != 'S')) { // ignore 'N' or 'S' substitutions/ bases
+			res.push_back(std::make_pair(i-1, util::inferSubstitutionFrom(correctedRead[j-1])));
 		}
 		backtrack(i-1, j-1, originalRead, correctedRead, M, info, res);
 	} else if (info[actCoord][1] == 1) { // insertion into original read, i.e. we had a deletion within the original
-		res.push_back(std::make_pair(i, util::inferDeletionOf(correctedRead[j])));
+		res.push_back(std::make_pair(i, util::inferDeletionOf(correctedRead[j-1])));
 		backtrack(i, j-1, originalRead, correctedRead, M, info, res);
 	} else if (info[actCoord][2] == 1) { // deletion into original read, i.e. we had an insertion within the original
 		res.push_back(std::make_pair(i, util::ErrorType::INSERTION));

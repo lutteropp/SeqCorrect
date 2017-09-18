@@ -225,10 +225,10 @@ uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, Cor
 	return num;
 }
 
-size_t findSmallestNonrepetitive(const std::string& str, size_t pos, HashClassifier& classifier) {
+size_t findSmallestNonrepetitive(const std::string& str, size_t pos, CorrectionParameters& params) {
 	KmerType type = KmerType::REPEAT;
-	for (size_t i = 1; i + pos < str.size(); i += 2) {
-		type = classifier.classifyKmer(str.substr(pos, i));
+	for (size_t i = params.minK; i + pos < str.size(); i += 2) {
+		type = params.classifier.classifyKmer(str.substr(pos, i));
 		if (type != KmerType::REPEAT) {
 			return i;
 		}
@@ -244,7 +244,7 @@ Read correctRead_none(const io::Read& read, CorrectionParameters& params) {
 void performSimpleCorrections(const io::Read& read, CorrectionParameters& params) {
 	io::Read correctedRead(read);
 	for (size_t i = 0; i < correctedRead.seq.size() - params.minK; ++i) {
-		size_t k = findSmallestNonrepetitive(correctedRead.seq, i, params.classifier);
+		size_t k = findSmallestNonrepetitive(correctedRead.seq, i, params);
 		if (k == std::numeric_limits<size_t>::max()) {
 			break;
 		}
@@ -310,6 +310,63 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params)
 	return (bestType != ErrorType::CORRECT);
 }
 
+
+/*
+ * For all error types (including no error), check how many k-mers would still be untrusted... then take the one with the lowest number of untrusted k-mers remaining
+ */
+bool tryFixingKmer(io::Read& read, size_t pos, size_t k, CorrectionParameters& params) {
+	ErrorType bestType = ErrorType::CORRECT;
+
+	std::string kmer = read.seq.substr(pos, k);
+	size_t errorPos = 0;
+
+	for (size_t i = 0; i < k; ++i) {
+		if (bestType != ErrorType::CORRECT) {
+			break;
+		}
+
+		for (ErrorType type : ErrorOnlyTypeIterator()) {
+			if (params.correctSingleIndels == false && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
+				continue;
+			}
+			if ((i == 0 || i == kmer.size() - 1) && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
+				continue;
+			}
+			if (params.correctMultidels == false && type == ErrorType::MULTIDEL) {
+				continue;
+			}
+
+			if (type == ErrorType::SUB_OF_A && kmer[i] == 'A') {
+				continue;
+			}
+			if (type == ErrorType::SUB_OF_C && kmer[i] == 'C') {
+				continue;
+			}
+			if (type == ErrorType::SUB_OF_G && kmer[i] == 'G') {
+				continue;
+			}
+			if (type == ErrorType::SUB_OF_T && kmer[i] == 'T') {
+				continue;
+			}
+
+			std::string kmerNew = kmerAfterError(kmer, type, i);
+			if (params.classifier.classifyKmer(kmerNew) != KmerType::UNTRUSTED) {
+				bestType = type;
+				errorPos = i;
+				break;
+			}
+		}
+	}
+
+	if (bestType != ErrorType::CORRECT) {
+		read.seq = kmerAfterError(read.seq, bestType, pos + errorPos);
+		//std::cout << errorTypeToString(bestType) << " at " << pos << "\n";
+	}
+
+	return (bestType != ErrorType::CORRECT);
+}
+
+
 Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params) {
 	io::Read correctedRead(read);
 	bool changed = true;
@@ -340,23 +397,22 @@ Read correctRead_adaptive_kmer(const io::Read& read, CorrectionParameters& param
 	 * - find a good way to deal with conflicting correction candidates from different iterations (this was missing in thesis)
 	 * - find a better minimum size for k than 1
 	 */
-
 	io::Read correctedRead(read);
 	size_t pos = 0;
-	while (pos < correctedRead.seq.size()) { // loop over starting position
+	while (pos + params.minK < correctedRead.seq.size()) { // loop over starting position
 		//find smallest nonrepetitive k-mer size
-		size_t k = findSmallestNonrepetitive(correctedRead.seq, pos, params.classifier);
+		size_t k = findSmallestNonrepetitive(correctedRead.seq, pos, params);
 		if (k == std::numeric_limits<size_t>::max()) {
 			break;
 		}
 		KmerType type = params.classifier.classifyKmer(correctedRead.seq.substr(pos, k));
 		if (type == KmerType::UNTRUSTED) {
-
+			tryFixingKmer(correctedRead, pos, k, params);
 		}
-		pos++;
+		pos+=2;
 	}
 
-	throw std::runtime_error("not implemented yet");
+	return correctedRead;
 }
 
 Read correctRead_suffix_tree(const io::Read& read, CorrectionParameters& params) {
