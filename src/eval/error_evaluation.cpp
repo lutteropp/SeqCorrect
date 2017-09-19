@@ -647,24 +647,36 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 					std::cout << "skipping " << rwa.name << " because it's unmapped\n";
 					rwa = it.next();
 					//std::cout << "rwa = " << rwa.name << "\n";
-					std::cout << "skipping " << correctedRead.name << "\n";
-					correctedRead = input.readNext(true, false, true);
-					//std::cout << "correctedRead = " << correctedRead.name << "\n";
+
+					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
+							correctedRead.name.find('/')) == rwa.name) {
+						std::cout << "skipping " << correctedRead.name << "\n";
+						correctedRead = input.readNext(true, false, true);
+						//std::cout << "correctedRead = " << correctedRead.name << "\n";
+					}
 				}
 
 				while (rwa.records.size() > 1 && input.hasNext() && it.hasReadsLeft()) {
 					std::cout << "skipping " << rwa.name << " because it's chimeric\n";
 					rwa = it.next();
 					//std::cout << "rwa = " << rwa.name << "\n";
-					std::cout << "skipping " << correctedRead.name << "\n";
-					correctedRead = input.readNext(true, false, true);
-					//std::cout << "correctedRead = " << correctedRead.name << "\n";
+
+					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
+							correctedRead.name.find('/')) == rwa.name) {
+						std::cout << "skipping " << correctedRead.name << "\n";
+						correctedRead = input.readNext(true, false, true);
+						//std::cout << "correctedRead = " << correctedRead.name << "\n";
+					}
 				}
 
 				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
-						correctedRead.name.find('/')) != rwa.name && input.hasNext()) {
+						correctedRead.name.find('/')) != rwa.name && it.hasReadsLeft()) {
+					rwa = it.next();
+
+					/*
 					correctedRead = input.readNext(true, false, true);
-					//std::cout << "correctedRead = " << correctedRead.name << "\n";
+					std::cout << "correctedRead = " << correctedRead.name << "\n";
+					std::cout << "originalRead = " << rwa.name << "\n";*/
 					/*throw std::runtime_error(
 					 "Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: "
 					 + correctedRead.name + "\nOriginal read name: " + rwa.name);*/
@@ -683,40 +695,40 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 					errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
 
 					/*if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
-						if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
+					 if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
 
-							std::cout << "Original: " << rwa.seq << "\n";
-							std::cout << "Corrected : " << correctedRead.seq << "\n";
-							std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos + 1);
-							if (hasFlagRC(rwa.records[0])) {
-								genomeArea = reverseComplementString(genomeArea);
-							}
-							std::cout << "genomeArea: " << genomeArea << "\n";
+					 std::cout << "Original: " << rwa.seq << "\n";
+					 std::cout << "Corrected : " << correctedRead.seq << "\n";
+					 std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos + 1);
+					 if (hasFlagRC(rwa.records[0])) {
+					 genomeArea = reverseComplementString(genomeArea);
+					 }
+					 std::cout << "genomeArea: " << genomeArea << "\n";
 
-							std::cout << "errorsTruth:\n";
-							for (size_t i = 0; i < errorsTruth.size(); ++i) {
-								std::cout << "  " << errorTypeToString(errorsTruth[i].errorType) << " at "
-										<< errorsTruth[i].positionInRead << "\n";
-							}
-							std::cout << "errorsPredicted:\n";
-							for (size_t i = 0; i < errorsPredicted.size(); ++i) {
-								std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
-										<< errorsPredicted[i].positionInRead << "\n";
-							}
-							if (hasFlagRC(rwa.records[0])) {
-								std::cout << "The read is reverse-complemented.\n";
-							}
+					 std::cout << "errorsTruth:\n";
+					 for (size_t i = 0; i < errorsTruth.size(); ++i) {
+					 std::cout << "  " << errorTypeToString(errorsTruth[i].errorType) << " at "
+					 << errorsTruth[i].positionInRead << "\n";
+					 }
+					 std::cout << "errorsPredicted:\n";
+					 for (size_t i = 0; i < errorsPredicted.size(); ++i) {
+					 std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
+					 << errorsPredicted[i].positionInRead << "\n";
+					 }
+					 if (hasFlagRC(rwa.records[0])) {
+					 std::cout << "The read is reverse-complemented.\n";
+					 }
 
-							errorsTruth = extractErrors(rwa, genome, genomeType);
-							 if (hasFlagRC(rwa.records[0])) {
-							 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
-							 util::reverseComplementString(rwa.seq));
-							 } else {
-							 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
-							 }
+					 errorsTruth = extractErrors(rwa, genome, genomeType);
+					 if (hasFlagRC(rwa.records[0])) {
+					 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
+					 util::reverseComplementString(rwa.seq));
+					 } else {
+					 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
+					 }
 
-						}
-					}*/
+					 }
+					 }*/
 
 					updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
 				}
