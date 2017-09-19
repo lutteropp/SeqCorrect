@@ -682,7 +682,7 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 					std::vector<Correction> errorsPredicted;
 					errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
 
-					if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
+					/*if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
 						if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
 
 							std::cout << "Original: " << rwa.seq << "\n";
@@ -707,16 +707,16 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 								std::cout << "The read is reverse-complemented.\n";
 							}
 
-							/*errorsTruth = extractErrors(rwa, genome, genomeType);
+							errorsTruth = extractErrors(rwa, genome, genomeType);
 							 if (hasFlagRC(rwa.records[0])) {
 							 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
 							 util::reverseComplementString(rwa.seq));
 							 } else {
 							 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
-							 }*/
+							 }
 
 						}
-					}
+					}*/
 
 					updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
 				}

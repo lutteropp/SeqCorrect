@@ -144,9 +144,9 @@ Read ReadInput::readNext(bool readSequence, bool readQuality, bool readName) {
  * @param filepath The path to the newly created file
  */
 bool ReadOutput::createFile(const std::string& filepath) {
-	if (std::experimental::filesystem::exists(filepath)) {
+	/*if (std::experimental::filesystem::exists(filepath)) {
 		throw std::runtime_error("the file " + filepath + " does already exist");
-	}
+	}*/
 	file.open(filepath);
 	return file.good();
 }

@@ -473,7 +473,7 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 #pragma omp single
 		{
 			while (reader.hasNext()) {
-				io::Read uncorrected = reader.readNext(true, true, true);
+				io::Read uncorrected = reader.readNext(true, false, true);
 #pragma omp task shared(printer, params) firstprivate(uncorrected)
 				{
 					io::Read corrected = correctRead(uncorrected, algo, params);
