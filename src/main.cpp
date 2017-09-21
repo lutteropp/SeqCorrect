@@ -53,12 +53,14 @@ void cmd_correct(size_t k, const std::string& pathToOriginalReads, GenomeType ge
 	pusm::PerfectUniformSequencingModel pusm(genomeType, genomeSize, readLengths);
 	coverage::CoverageBiasUnitMulti biasUnit;
 	correction::correctReads(pathToOriginalReads, algo, fm, pusm, biasUnit, outputPath, k);
+	biasUnit.printMedianCoverageBiases();
+	biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
 }
 
 void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
 		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath) {
 	std::cout << pathToCorrectedReads << "\n\n";
-	eval::eval_corrections(k, genomeType, pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);
+	eval::eval_corrections_2(k, genomeType, pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);
 	//eval::eval_kmers(k, genomeType, pathToOriginalReads, pathToGenome);
 }
 
@@ -92,7 +94,7 @@ int main(int argc, char* argv[]) {
 		cmd.add(genomeArg);
 		TCLAP::ValueArg<size_t> genomeSizeArg("s", "size", "Estimated genome size", false, 0, "unsigned int");
 		cmd.add(genomeSizeArg);
-		TCLAP::ValueArg<size_t> kmerSizeArg("k", "kmer", "K-mer size to use", false, 17, "unsigned int");
+		TCLAP::ValueArg<size_t> kmerSizeArg("k", "kmer", "K-mer size to use", false, 11, "unsigned int");
 		cmd.add(kmerSizeArg);
 		TCLAP::ValueArg<std::string> outputArg("o", "output", "Path to the output file", true, "", "string");
 		cmd.add(outputArg);

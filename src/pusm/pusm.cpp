@@ -44,6 +44,7 @@ PusmData expectedCountLinear(size_t genomeSize, const std::unordered_map<size_t,
 			throw std::runtime_error("l = " + std::to_string(l) + " > " + std::to_string(genomeSize));
 		}
 		double n = pair.second;
+
 		if (l < k)
 			continue;
 		// had to be fixed, because in my Master thesis I forgot that the interval [a,b] contains
@@ -59,8 +60,10 @@ PusmData expectedCountLinear(size_t genomeSize, const std::unordered_map<size_t,
 	PusmData res;
 	res.expectation = expected;
 	res.stdev = sqrt(variance);
+
 	return res;
 }
+
 
 /**
  * Compute the expected count of a unique k-mer under the Perfect Uniform Sequencing Model with a circular genome.

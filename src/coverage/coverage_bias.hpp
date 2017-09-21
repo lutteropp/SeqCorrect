@@ -29,6 +29,7 @@
 #include "../pusm/pusm.hpp"
 #include "../io/sequence_io.hpp"
 #include "../counting/fm_count.hpp"
+#include "../util/plotter.hpp"
 
 namespace seq_correct {
 namespace coverage {
@@ -55,6 +56,7 @@ public:
 	double computeCoverageBias(const std::string &kmer);
 	double computeCoverageBias(double gc);
 	void printMedianCoverageBiases();
+	void plotMedianCoverageBiases(const std::string &filename);
 private:
 	std::vector<CoverageBiasData> medianCoverageBiases;
 	double gcStep;
@@ -74,6 +76,7 @@ public:
 	double computeCoverageBias(const std::string &kmer, const std::string& filepath, counting::Matcher& readsIndex, pusm::PerfectUniformSequencingModel& pusm);
 	double computeCoverageBias(const std::string &kmer, const std::string& genome, counting::Matcher& readsIndex, counting::Matcher& genomeIndex);
 	void printMedianCoverageBiases();
+	void plotMedianCoverageBiases(const std::string &filename);
 private:
 	std::unordered_map<uint16_t, CoverageBiasUnitSingle> biasUnits; //TODO: maybe change into an std::vector
 };

@@ -104,6 +104,7 @@ std::vector<CoverageBiasData> computeMedianBiases(size_t k, std::vector<std::vec
 			}
 		}
 	}
+
 	fixMissingBiases(data);
 	return data;
 }
@@ -118,7 +119,7 @@ std::vector<CoverageBiasData> computeMedianBiases(size_t k, std::vector<std::vec
 double inferBias(const std::string& kmer, counting::Matcher& readsIndex, counting::Matcher& genomeIndex) {
 	size_t countObserved = readsIndex.countKmer(kmer);
 	size_t countGenome = genomeIndex.countKmer(kmer);
-	return countObserved / (double) countGenome;
+	return (double) countObserved / countGenome;
 }
 
 /**
@@ -134,7 +135,13 @@ double inferBias(size_t k, const std::string& kmer, counting::Matcher& readsInde
 	size_t countObserved = readsIndex.countKmer(kmer);
 	if (countObserved >= countExpected * 0.2) {
 		// if this condition is left out, the coverage biases will be very low due to erroneous k-mers
-		return countObserved / countExpected;
+
+		/*std::cout << kmer << "\n";
+		std::cout << "  countExpected: " << countExpected << "\n";
+		std::cout << "  countObserved: " << countObserved << "\n";*/
+
+
+		return (double) countObserved / countExpected;
 	} else {
 		return 0.0;
 	}
@@ -408,6 +415,14 @@ void CoverageBiasUnitSingle::printMedianCoverageBiases() {
 	}
 }
 
+void CoverageBiasUnitSingle::plotMedianCoverageBiases(const std::string &filename) {
+	std::unordered_map<double, double> data;
+	for (size_t i = 0; i < medianCoverageBiases.size(); ++i) {
+		data[gcStep * i] = medianCoverageBiases[i].bias;
+	}
+	plot(data, "G/C content", "coverage bias", filename);
+}
+
 CoverageBiasUnitMulti::CoverageBiasUnitMulti() {
 }
 
@@ -502,6 +517,13 @@ void CoverageBiasUnitMulti::printMedianCoverageBiases() {
 		std::cout << kv.first << ":\n";
 		kv.second.printMedianCoverageBiases();
 		std::cout << "\n";
+	}
+}
+
+void CoverageBiasUnitMulti::plotMedianCoverageBiases(const std::string &filename) {
+	for (auto& kv : biasUnits) {
+		std::string name = filename + "_" + std::to_string(kv.first);
+		kv.second.plotMedianCoverageBiases(name);
 	}
 }
 

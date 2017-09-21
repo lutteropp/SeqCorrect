@@ -455,6 +455,7 @@ Read correctRead(const Read& read, CorrectionAlgorithm algo, CorrectionParameter
 void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm algo, Matcher& kmerCounter,
 		PerfectUniformSequencingModel& pusm, coverage::CoverageBiasUnitMulti& biasUnit, const std::string& outputPath,
 		size_t kmerSize) {
+	//std::cout << "count of " << "ACTCACTGTTT:" << kmerCounter.countKmer("ACTCACTGTTT");
 
 	bool correctSingleIndels = true;
 	bool correctMultidels = false;

@@ -739,6 +739,120 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 	return data;
 }
 
+
+ErrorEvaluationData evaluateCorrectionsByAlignment2(const std::string& alignedReadsFilepath,
+		const std::string& alignedCorrectedReadsFilepath, const std::string& genomeFilepath, util::GenomeType genomeType) {
+	ErrorEvaluationData data;
+	std::string genome = io::readReferenceGenome(genomeFilepath);
+	BAMIterator it(alignedReadsFilepath);
+	BAMIterator it2(alignedCorrectedReadsFilepath);
+
+#pragma omp parallel
+	{
+#pragma omp single
+		{
+			while (it.hasReadsLeft() && it2.hasReadsLeft()) {
+				ReadWithAlignments correctedRead = it2.next();
+				//std::cout << "correctedRead = " << correctedRead.name << "\n";
+
+				ReadWithAlignments rwa = it.next();
+				//std::cout << "rwa = " << rwa.name << "\n";
+				while (hasFlagUnmapped(rwa.records[0]) && it2.hasReadsLeft() && it.hasReadsLeft()) {
+					std::cout << "skipping " << rwa.name << " because it's unmapped\n";
+					rwa = it.next();
+					//std::cout << "rwa = " << rwa.name << "\n";
+
+					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
+							correctedRead.name.find('/')) == rwa.name) {
+						std::cout << "skipping " << correctedRead.name << "\n";
+						correctedRead = it2.next();
+						//std::cout << "correctedRead = " << correctedRead.name << "\n";
+					}
+				}
+
+				while (rwa.records.size() > 1 && it2.hasReadsLeft() && it.hasReadsLeft()) {
+					std::cout << "skipping " << rwa.name << " because it's chimeric\n";
+					rwa = it.next();
+					//std::cout << "rwa = " << rwa.name << "\n";
+
+					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
+							correctedRead.name.find('/')) == rwa.name) {
+						std::cout << "skipping " << correctedRead.name << "\n";
+						correctedRead = it2.next();
+						//std::cout << "correctedRead = " << correctedRead.name << "\n";
+					}
+				}
+
+				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
+						correctedRead.name.find('/')) != rwa.name && it.hasReadsLeft()) {
+					rwa = it.next();
+
+					/*
+					correctedRead = input.readNext(true, false, true);
+					std::cout << "correctedRead = " << correctedRead.name << "\n";
+					std::cout << "originalRead = " << rwa.name << "\n";*/
+					/*throw std::runtime_error(
+					 "Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: "
+					 + correctedRead.name + "\nOriginal read name: " + rwa.name);*/
+				}
+
+				if (hasFlagUnmapped(rwa.records[0]) || rwa.records.size() > 1
+						|| correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
+								correctedRead.name.find('/')) != rwa.name) {
+					break;
+				}
+
+#pragma omp task shared(genome, data), firstprivate(rwa, correctedRead)
+				{
+					std::vector<Correction> errorsTruth = extractErrors(rwa, genome, genomeType);
+					std::vector<Correction> errorsPredicted = extractErrors(correctedRead, genome, genomeType);
+
+					/*if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
+					 if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
+
+					 std::cout << "Original: " << rwa.seq << "\n";
+					 std::cout << "Corrected : " << correctedRead.seq << "\n";
+					 std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos + 1);
+					 if (hasFlagRC(rwa.records[0])) {
+					 genomeArea = reverseComplementString(genomeArea);
+					 }
+					 std::cout << "genomeArea: " << genomeArea << "\n";
+
+					 std::cout << "errorsTruth:\n";
+					 for (size_t i = 0; i < errorsTruth.size(); ++i) {
+					 std::cout << "  " << errorTypeToString(errorsTruth[i].errorType) << " at "
+					 << errorsTruth[i].positionInRead << "\n";
+					 }
+					 std::cout << "errorsPredicted:\n";
+					 for (size_t i = 0; i < errorsPredicted.size(); ++i) {
+					 std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
+					 << errorsPredicted[i].positionInRead << "\n";
+					 }
+					 if (hasFlagRC(rwa.records[0])) {
+					 std::cout << "The read is reverse-complemented.\n";
+					 }
+
+					 errorsTruth = extractErrors(rwa, genome, genomeType);
+					 if (hasFlagRC(rwa.records[0])) {
+					 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
+					 util::reverseComplementString(rwa.seq));
+					 } else {
+					 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
+					 }
+
+					 }
+					 }*/
+
+					updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
+				}
+			}
+		}
+#pragma omp taskwait
+	}
+	return data;
+}
+
+
 void printErrorEvaluationData(const eval::ErrorEvaluationData& evalData) {
 	for (ErrorType type : AllErrorTypeIterator()) {
 		std::cout << errorTypeToString(type) << ":\n";
@@ -825,6 +939,98 @@ void eval_corrections(size_t k, GenomeType genomeType, const std::string& pathTo
 	alignmentFile.close();
 
 	eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment(alignmentPath, pathToCorrectedReads,
+			pathToGenome, genomeType);
+	printErrorEvaluationData(res);
+}
+
+// TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?
+void eval_corrections_2(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
+		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath) {
+	std::string alignmentPath = pathToOriginalReads.substr(0, pathToOriginalReads.find_last_of('.')) + ".bam";
+	std::ifstream alignmentFile(alignmentPath);
+	if (!alignmentFile.good()) {
+		std::cout << "Alignment file " << alignmentPath << " not found. Building alignment now...\n";
+		std::string indexGenomeCall = "bwa index " + pathToGenome;
+		std::cout << "Calling: " << indexGenomeCall << "\n";
+		int status = std::system(indexGenomeCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while indexing genome!");
+		}
+		std::string alignReadsCall = "bwa mem -L 999999999 " + pathToGenome + " " + pathToOriginalReads
+				+ " > myreads_aln.sam";
+		std::cout << "Calling: " << alignReadsCall << "\n";
+		status = std::system(alignReadsCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while aligning reads!");
+		}
+		std::string removeUnmappedAndCompressCall = "samtools view -bS -F 4 myreads_aln.sam > myreads_aln.bam";
+		std::cout << "Calling: " << removeUnmappedAndCompressCall << "\n";
+		status = std::system(removeUnmappedAndCompressCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing unmapped reads and compressing the file!");
+		}
+		std::string sortCall = "samtools sort -n -o " + alignmentPath + " myreads_aln.bam";
+		std::cout << "Calling: " << sortCall << "\n";
+		status = std::system(sortCall.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while sorting the file!");
+		}
+		std::string removeCall1 = "rm myreads_aln.sam";
+		status = std::system(removeCall1.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.sam!");
+		}
+		std::string removeCall2 = "rm myreads_aln.bam";
+		status = std::system(removeCall2.c_str());
+		if (!WIFEXITED(status)) {
+			throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.bam!");
+		}
+	}
+	alignmentFile.close();
+
+	std::string alignmentPath2 = pathToCorrectedReads.substr(0, pathToCorrectedReads.find_last_of('.')) + ".bam";
+		std::ifstream alignmentFile2(alignmentPath2);
+		if (!alignmentFile2.good()) {
+			std::cout << "Alignment file " << alignmentPath2 << " not found. Building alignment now...\n";
+			std::string indexGenomeCall = "bwa index " + pathToGenome;
+			std::cout << "Calling: " << indexGenomeCall << "\n";
+			int status = std::system(indexGenomeCall.c_str());
+			if (!WIFEXITED(status)) {
+				throw std::runtime_error("Something went wrong while indexing genome!");
+			}
+			std::string alignReadsCall = "bwa mem -L 999999999 " + pathToGenome + " " + pathToCorrectedReads
+					+ " > myreads_aln.sam";
+			std::cout << "Calling: " << alignReadsCall << "\n";
+			status = std::system(alignReadsCall.c_str());
+			if (!WIFEXITED(status)) {
+				throw std::runtime_error("Something went wrong while aligning reads!");
+			}
+			std::string removeUnmappedAndCompressCall = "samtools view -bS -F 4 myreads_aln.sam > myreads_aln.bam";
+			std::cout << "Calling: " << removeUnmappedAndCompressCall << "\n";
+			status = std::system(removeUnmappedAndCompressCall.c_str());
+			if (!WIFEXITED(status)) {
+				throw std::runtime_error("Something went wrong while removing unmapped reads and compressing the file!");
+			}
+			std::string sortCall = "samtools sort -n -o " + alignmentPath2 + " myreads_aln.bam";
+			std::cout << "Calling: " << sortCall << "\n";
+			status = std::system(sortCall.c_str());
+			if (!WIFEXITED(status)) {
+				throw std::runtime_error("Something went wrong while sorting the file!");
+			}
+			std::string removeCall1 = "rm myreads_aln.sam";
+			status = std::system(removeCall1.c_str());
+			if (!WIFEXITED(status)) {
+				throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.sam!");
+			}
+			std::string removeCall2 = "rm myreads_aln.bam";
+			status = std::system(removeCall2.c_str());
+			if (!WIFEXITED(status)) {
+				throw std::runtime_error("Something went wrong while removing temporary file myreads_aln.bam!");
+			}
+		}
+		alignmentFile2.close();
+
+	eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment2(alignmentPath, alignmentPath2,
 			pathToGenome, genomeType);
 	printErrorEvaluationData(res);
 }
