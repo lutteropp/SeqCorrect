@@ -59,7 +59,7 @@ size_t falseNegatives(KmerType type, const KmerEvaluationData& data) {
 	return data.falseNegatives(type);
 }
 
-// claimed it is that error, but it's not
+// claimed it is that error, but it's another one
 size_t number_confused_errors(const ErrorEvaluationData& data) {
 	size_t num = 0;
 	for (ErrorType type1 : ErrorOnlyTypeIterator()) {
@@ -71,7 +71,12 @@ size_t number_confused_errors(const ErrorEvaluationData& data) {
 			}
 		}
 	}
+	return num;
+}
 
+// claimed it's an error, but it's not
+size_t number_introduced_errors(const ErrorEvaluationData& data) {
+	size_t num = 0;
 	for (ErrorType type : ErrorOnlyTypeIterator()) {
 		if (isGapErrorType(type)) {
 			num += data.getEntry(ErrorType::NODEL, type);
@@ -79,7 +84,6 @@ size_t number_confused_errors(const ErrorEvaluationData& data) {
 			num += data.getEntry(ErrorType::CORRECT, type);
 		}
 	}
-
 	return num;
 }
 
