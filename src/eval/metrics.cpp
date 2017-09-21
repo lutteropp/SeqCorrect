@@ -59,6 +59,50 @@ size_t falseNegatives(KmerType type, const KmerEvaluationData& data) {
 	return data.falseNegatives(type);
 }
 
+// claimed it is that error, but it's not
+size_t number_confused_errors(const ErrorEvaluationData& data) {
+	size_t num = 0;
+	for (ErrorType type1 : ErrorOnlyTypeIterator()) {
+		for (ErrorType type2 : ErrorOnlyTypeIterator()) {
+			if (type1 != type2) {
+				if ((isGapErrorType(type1) && isGapErrorType(type2))
+						|| (!isGapErrorType(type1) && !isGapErrorType(type2)))
+					num += data.getEntry(type1, type2);
+			}
+		}
+	}
+
+	for (ErrorType type : ErrorOnlyTypeIterator()) {
+		if (isGapErrorType(type)) {
+			num += data.getEntry(ErrorType::NODEL, type);
+		} else {
+			num += data.getEntry(ErrorType::CORRECT, type);
+		}
+	}
+
+	return num;
+}
+
+size_t number_claimed_errors(const ErrorEvaluationData& data) {
+	size_t num = 0;
+	for (ErrorType type1 : ErrorOnlyTypeIterator()) {
+		for (ErrorType type2 : ErrorOnlyTypeIterator()) {
+			if ((isGapErrorType(type1) && isGapErrorType(type2)) || (!isGapErrorType(type1) && !isGapErrorType(type2)))
+				num += data.getEntry(type1, type2);
+		}
+	}
+
+	for (ErrorType type : ErrorOnlyTypeIterator()) {
+		if (isGapErrorType(type)) {
+			num += data.getEntry(ErrorType::NODEL, type);
+		} else {
+			num += data.getEntry(ErrorType::CORRECT, type);
+		}
+	}
+
+	return num;
+}
+
 double computeAccuracy(ErrorType type, const ErrorEvaluationData& data) {
 	return (data.truePositives(type) + data.falsePositives(type))
 			/ (double) (data.truePositives(type) + data.falsePositives(type) + data.falsePositives(type)
@@ -78,7 +122,6 @@ double computePrecision(ErrorType type, const ErrorEvaluationData& data) {
 double computePrecision(KmerType type, const KmerEvaluationData& data) {
 	return data.truePositives(type) / (double) (data.truePositives(type) + data.falsePositives(type));
 }
-
 
 double computeRecall(ErrorType type, const ErrorEvaluationData& data) {
 	return data.truePositives(type) / (double) (data.truePositives(type) + data.falseNegatives(type));
@@ -129,7 +172,6 @@ double computeF1Score(KmerType type, const KmerEvaluationData& data) {
 	double recall = computeRecall(type, data);
 	return 2 * (precision * recall) / (precision + recall);
 }
-
 
 size_t trueTotal(ErrorType type, const ErrorEvaluationData& data) {
 	return data.truePositives(type) + data.falseNegatives(type);
@@ -278,8 +320,7 @@ double computeGapNMIScore(const ErrorEvaluationData& data) {
 
 // Using the NMI_max formula I(U,V) / max(H(U), H(V))
 double computeNMIScore(const KmerEvaluationData& data) {
-	return computeMutualInformation(data)
-			/ std::max(computeEntropyTruth(data), computeEntropyPredicted(data));
+	return computeMutualInformation(data) / std::max(computeEntropyTruth(data), computeEntropyPredicted(data));
 }
 
 double computeUnweightedAverageBaseF1Score(const ErrorEvaluationData& data) {
