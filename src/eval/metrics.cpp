@@ -107,6 +107,18 @@ size_t number_claimed_errors(const ErrorEvaluationData& data) {
 	return num;
 }
 
+size_t number_undiscovered_errors(const ErrorEvaluationData& data) {
+	size_t num = 0;
+	for (ErrorType type : ErrorOnlyTypeIterator()) {
+		if (isGapErrorType(type)) {
+			num += data.getEntry(type, ErrorType::NODEL);
+		} else {
+			num += data.getEntry(type, ErrorType::CORRECT);
+		}
+	}
+	return num;
+}
+
 double computeAccuracy(ErrorType type, const ErrorEvaluationData& data) {
 	return (data.truePositives(type) + data.falsePositives(type))
 			/ (double) (data.truePositives(type) + data.falsePositives(type) + data.falsePositives(type)

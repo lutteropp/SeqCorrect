@@ -991,10 +991,13 @@ void printErrorEvaluationData(const eval::ErrorEvaluationData& evalData) {
 	std::cout << "Total number of newly introduced errors (said it's an error, but it's none): "
 			<< number_introduced_errors(evalData) << "\n";
 	std::cout << "Total number of claimed errors: " << number_claimed_errors(evalData) << "\n";
+	std::cout << "Total number of undiscovered errors: " << number_undiscovered_errors(evalData) << "\n";
 	std::cout << "Confused errors / claimed errors: "
 			<< (double) number_confused_errors(evalData) / number_claimed_errors(evalData) << "\n";
 	std::cout << "Introduced errors / claimed errors: "
 			<< (double) number_introduced_errors(evalData) / number_claimed_errors(evalData) << "\n";
+	std::cout << "Claimed errors / all true errors: "
+				<< (double) number_claimed_errors(evalData) / (number_claimed_errors(evalData) + number_undiscovered_errors(evalData)) << "\n";
 }
 
 // TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?
