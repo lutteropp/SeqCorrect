@@ -141,6 +141,7 @@ void handleInsertion(std::string& seq, size_t cigarCount, HandlingInfo& info) {
 		//rwa.seq = rwa.seq.substr(0, correctionPosition) + rwa.seq.substr(correctionPosition + 1, std::string::npos);
 	}
 	info.insertedBases += cigarCount;
+	info.positionInRead += cigarCount;
 
 	if (info.revComp) {
 		seq = reverseComplementString(seq);
