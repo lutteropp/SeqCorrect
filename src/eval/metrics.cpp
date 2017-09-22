@@ -96,14 +96,21 @@ size_t number_claimed_errors(const ErrorEvaluationData& data) {
 		}
 	}
 
-	for (ErrorType type : ErrorOnlyTypeIterator()) {
-		if (isGapErrorType(type)) {
-			num += data.getEntry(ErrorType::NODEL, type);
-		} else {
-			num += data.getEntry(ErrorType::CORRECT, type);
+	for (ErrorType type1 : ErrorOnlyTypeIterator()) {
+		for (ErrorType type2 : ErrorOnlyTypeIterator()) {
+			if ((isGapErrorType(type1) && isGapErrorType(type2)) || (!isGapErrorType(type1) && !isGapErrorType(type2)))
+				num += data.getEntry(type1, type2);
 		}
 	}
 
+	return num;
+}
+
+size_t number_discovered_errors(const ErrorEvaluationData& data) {
+	size_t num = 0;
+	for (ErrorType type : ErrorOnlyTypeIterator()) {
+		num += data.getEntry(type, type);
+	}
 	return num;
 }
 

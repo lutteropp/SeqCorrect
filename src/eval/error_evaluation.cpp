@@ -680,60 +680,34 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 		{
 			while (it.hasReadsLeft() && input.hasNext()) {
 				io::Read correctedRead = input.readNext(true, false, true);
-				//std::cout << "correctedRead = " << correctedRead.name << "\n";
 
 				ReadWithAlignments rwa = it.next();
 				//std::cout << "rwa = " << rwa.name << "\n";
 				while (hasFlagUnmapped(rwa.records[0]) && input.hasNext() && it.hasReadsLeft()) {
 					std::cout << "skipping " << rwa.name << " because it's unmapped\n";
 					rwa = it.next();
-					//std::cout << "rwa = " << rwa.name << "\n";
 
 					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 							correctedRead.name.find('/')) == rwa.name) {
 						std::cout << "skipping " << correctedRead.name << "\n";
 						correctedRead = input.readNext(true, false, true);
-						//std::cout << "correctedRead = " << correctedRead.name << "\n";
 					}
 				}
 
 				while (rwa.records.size() > 1 && input.hasNext() && it.hasReadsLeft()) {
 					std::cout << "skipping " << rwa.name << " because it's chimeric\n";
 					rwa = it.next();
-					//std::cout << "rwa = " << rwa.name << "\n";
 
 					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 							correctedRead.name.find('/')) == rwa.name) {
 						std::cout << "skipping " << correctedRead.name << "\n";
 						correctedRead = input.readNext(true, false, true);
-						//std::cout << "correctedRead = " << correctedRead.name << "\n";
 					}
 				}
-
-				/*while (hasSoftClipping(rwa.records[0]) && input.hasNext() && it.hasReadsLeft()) {
-				 std::cout << "skipping " << rwa.name << " because it has soft-clipping\n";
-				 rwa = it.next();
-				 //std::cout << "rwa = " << rwa.name << "\n";
-
-				 if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
-				 correctedRead.name.find('/')) == rwa.name) {
-				 std::cout << "skipping " << correctedRead.name << "\n";
-				 correctedRead = input.readNext(true, false, true);
-				 //std::cout << "correctedRead = " << correctedRead.name << "\n";
-				 }
-				 }*/
 
 				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 						correctedRead.name.find('/')) != rwa.name && it.hasReadsLeft()) {
 					rwa = it.next();
-
-					/*
-					 correctedRead = input.readNext(true, false, true);
-					 std::cout << "correctedRead = " << correctedRead.name << "\n";
-					 std::cout << "originalRead = " << rwa.name << "\n";*/
-					/*throw std::runtime_error(
-					 "Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: "
-					 + correctedRead.name + "\nOriginal read name: " + rwa.name);*/
 				}
 
 				if (hasFlagUnmapped(rwa.records[0]) || rwa.records.size() > 1 /*|| hasSoftClipping(rwa.records[0])*/
@@ -756,38 +730,6 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 							[] (const Correction& lhs, const Correction& rhs) {
 								return lhs.positionInRead < rhs.positionInRead;
 							});
-
-					if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
-						/*if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
-
-							std::cout << "Original: " << rwa.seq << "\n";
-							std::cout << "Corrected : " << correctedRead.seq << "\n";
-							std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos + 1);
-							if (hasFlagRC(rwa.records[0])) {
-								genomeArea = reverseComplementString(genomeArea);
-							}
-							std::cout << "genomeArea: " << genomeArea << "\n";
-
-							std::cout << "errorsTruth:\n";
-							for (size_t i = 0; i < errorsTruth.size(); ++i) {
-								std::cout << "  " << errorTypeToString(errorsTruth[i].errorType) << " at "
-										<< errorsTruth[i].positionInRead << "\n";
-							}
-							std::cout << "errorsPredicted:\n";*/
-							for (size_t i = 0; i < errorsPredicted.size(); ++i) {
-								if (errorsPredicted[i].errorType == ErrorType::DEL_OF_A) {
-									std::cout << "meow.\n";
-								}
-
-
-								/*std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
-										<< errorsPredicted[i].positionInRead << "\n";*/
-							}
-							/*if (hasFlagRC(rwa.records[0])) {
-								std::cout << "The read is reverse-complemented.\n";
-							}*/
-						//}
-					}
 
 					updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
 				}
@@ -812,73 +754,56 @@ ErrorEvaluationData evaluateCorrectionsByAlignment2(const std::string& alignedRe
 		{
 			while (it.hasReadsLeft() && it2.hasReadsLeft()) {
 				ReadWithAlignments correctedRead = it2.next();
-				//std::cout << "correctedRead = " << correctedRead.name << "\n";
 
 				ReadWithAlignments rwa = it.next();
 				//std::cout << "rwa = " << rwa.name << "\n";
 				while (hasFlagUnmapped(rwa.records[0]) && it2.hasReadsLeft() && it.hasReadsLeft()) {
 					std::cout << "skipping " << rwa.name << " because it's unmapped\n";
 					rwa = it.next();
-					//std::cout << "rwa = " << rwa.name << "\n";
 
 					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 							correctedRead.name.find('/')) == rwa.name) {
 						std::cout << "skipping " << correctedRead.name << "\n";
 						correctedRead = it2.next();
-						//std::cout << "correctedRead = " << correctedRead.name << "\n";
 					}
 				}
 
 				while (rwa.records.size() > 1 && it2.hasReadsLeft() && it.hasReadsLeft()) {
 					std::cout << "skipping " << rwa.name << " because it's chimeric\n";
 					rwa = it.next();
-					//std::cout << "rwa = " << rwa.name << "\n";
 
 					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 							correctedRead.name.find('/')) == rwa.name) {
 						std::cout << "skipping " << correctedRead.name << "\n";
 						correctedRead = it2.next();
-						//std::cout << "correctedRead = " << correctedRead.name << "\n";
 					}
 				}
 
 				while (hasSoftClipping(rwa.records[0]) && it2.hasReadsLeft() && it.hasReadsLeft()) {
 					std::cout << "skipping " << rwa.name << " because it has soft-clipping\n";
 					rwa = it.next();
-					//std::cout << "rwa = " << rwa.name << "\n";
 
 					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 							correctedRead.name.find('/')) == rwa.name) {
 						std::cout << "skipping " << correctedRead.name << "\n";
 						correctedRead = it2.next();
-						//std::cout << "correctedRead = " << correctedRead.name << "\n";
 					}
 				}
 
 				while (hasSoftClipping(correctedRead.records[0]) && it2.hasReadsLeft() && it.hasReadsLeft()) {
 					std::cout << "skipping " << rwa.name << " because it has soft-clipping\n";
 					rwa = it.next();
-					//std::cout << "rwa = " << rwa.name << "\n";
 
 					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 							correctedRead.name.find('/')) == rwa.name) {
 						std::cout << "skipping " << correctedRead.name << "\n";
 						correctedRead = it2.next();
-						//std::cout << "correctedRead = " << correctedRead.name << "\n";
 					}
 				}
 
 				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 						correctedRead.name.find('/')) != rwa.name && it.hasReadsLeft()) {
 					rwa = it.next();
-
-					/*
-					 correctedRead = input.readNext(true, false, true);
-					 std::cout << "correctedRead = " << correctedRead.name << "\n";
-					 std::cout << "originalRead = " << rwa.name << "\n";*/
-					/*throw std::runtime_error(
-					 "Something went wrong while evaluating the reads. Are they really sorted?\n Corrected read name: "
-					 + correctedRead.name + "\nOriginal read name: " + rwa.name);*/
 				}
 
 				if (hasFlagUnmapped(rwa.records[0]) || rwa.records.size() > 1 || hasSoftClipping(rwa.records[0])
@@ -901,42 +826,6 @@ ErrorEvaluationData evaluateCorrectionsByAlignment2(const std::string& alignedRe
 							[] (const Correction& lhs, const Correction& rhs) {
 								return lhs.positionInRead < rhs.positionInRead;
 							});
-
-					/*if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
-					 if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
-
-					 std::cout << "Original: " << rwa.seq << "\n";
-					 std::cout << "Corrected : " << correctedRead.seq << "\n";
-					 std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos + 1);
-					 if (hasFlagRC(rwa.records[0])) {
-					 genomeArea = reverseComplementString(genomeArea);
-					 }
-					 std::cout << "genomeArea: " << genomeArea << "\n";
-
-					 std::cout << "errorsTruth:\n";
-					 for (size_t i = 0; i < errorsTruth.size(); ++i) {
-					 std::cout << "  " << errorTypeToString(errorsTruth[i].errorType) << " at "
-					 << errorsTruth[i].positionInRead << "\n";
-					 }
-					 std::cout << "errorsPredicted:\n";
-					 for (size_t i = 0; i < errorsPredicted.size(); ++i) {
-					 std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
-					 << errorsPredicted[i].positionInRead << "\n";
-					 }
-					 if (hasFlagRC(rwa.records[0])) {
-					 std::cout << "The read is reverse-complemented.\n";
-					 }
-
-					 errorsTruth = extractErrors(rwa, genome, genomeType);
-					 if (hasFlagRC(rwa.records[0])) {
-					 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
-					 util::reverseComplementString(rwa.seq));
-					 } else {
-					 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
-					 }
-
-					 }
-					 }*/
 
 					updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
 				}
@@ -991,13 +880,14 @@ void printErrorEvaluationData(const eval::ErrorEvaluationData& evalData) {
 	std::cout << "Total number of newly introduced errors (said it's an error, but it's none): "
 			<< number_introduced_errors(evalData) << "\n";
 	std::cout << "Total number of claimed errors: " << number_claimed_errors(evalData) << "\n";
+	std::cout << "Total number of discovered errors: " << number_discovered_errors(evalData) << "\n";
 	std::cout << "Total number of undiscovered errors: " << number_undiscovered_errors(evalData) << "\n";
 	std::cout << "Confused errors / claimed errors: "
 			<< (double) number_confused_errors(evalData) / number_claimed_errors(evalData) << "\n";
 	std::cout << "Introduced errors / claimed errors: "
 			<< (double) number_introduced_errors(evalData) / number_claimed_errors(evalData) << "\n";
-	std::cout << "Claimed errors / all true errors: "
-				<< (double) number_claimed_errors(evalData) / (number_claimed_errors(evalData) + number_undiscovered_errors(evalData)) << "\n";
+	std::cout << "Discovered errors / all true errors: "
+				<< (double) number_discovered_errors(evalData) / (number_discovered_errors(evalData) + number_undiscovered_errors(evalData)) << "\n";
 }
 
 // TODO: Maybe also provide the option to align the reads to the genome on-the-fly in this code, instead of calling another program?

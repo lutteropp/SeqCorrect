@@ -52,6 +52,7 @@ size_t number_confused_errors(const ErrorEvaluationData& data);
 size_t number_introduced_errors(const ErrorEvaluationData& data);
 size_t number_claimed_errors(const ErrorEvaluationData& data);
 size_t number_undiscovered_errors(const ErrorEvaluationData& data);
+size_t number_discovered_errors(const ErrorEvaluationData& data);
 
 size_t truePositives(KmerType type, const KmerEvaluationData& data);
 size_t trueNegatives(KmerType type, const KmerEvaluationData& data);
