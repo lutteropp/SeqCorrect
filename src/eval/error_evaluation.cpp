@@ -756,7 +756,6 @@ ErrorEvaluationData evaluateCorrectionsByAlignment2(const std::string& alignedRe
 				ReadWithAlignments correctedRead = it2.next();
 
 				ReadWithAlignments rwa = it.next();
-				//std::cout << "rwa = " << rwa.name << "\n";
 				while (hasFlagUnmapped(rwa.records[0]) && it2.hasReadsLeft() && it.hasReadsLeft()) {
 					std::cout << "skipping " << rwa.name << " because it's unmapped\n";
 					rwa = it.next();
