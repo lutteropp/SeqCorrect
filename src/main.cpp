@@ -60,7 +60,7 @@ void cmd_correct(size_t k, const std::string& pathToOriginalReads, GenomeType ge
 void cmd_eval(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
 		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath) {
 	std::cout << pathToCorrectedReads << "\n\n";
-	eval::eval_corrections_2(k, genomeType, pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);
+	eval::eval_corrections(k, genomeType, pathToOriginalReads, pathToCorrectedReads, pathToGenome, outputPath);
 	//eval::eval_kmers(k, genomeType, pathToOriginalReads, pathToGenome);
 }
 

@@ -675,30 +675,35 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 				ReadWithAlignments rwa = it.next();
 				//std::cout << "rwa = " << rwa.name << "\n";
 				while (hasFlagUnmapped(rwa.records[0]) && input.hasNext() && it.hasReadsLeft()) {
-					std::cout << "skipping " << rwa.name << " because it's unmapped\n";
-					rwa = it.next();
-
 					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 							correctedRead.name.find('/')) == rwa.name) {
-						std::cout << "skipping " << correctedRead.name << "\n";
+						//std::cout << "skipping " << correctedRead.name << "\n";
 						correctedRead = input.readNext(true, false, true);
 					}
+
+					//std::cout << "skipping " << rwa.name << " because it's unmapped\n";
+					rwa = it.next();
 				}
 
 				while (rwa.records.size() > 1 && input.hasNext() && it.hasReadsLeft()) {
-					std::cout << "skipping " << rwa.name << " because it's chimeric\n";
-					rwa = it.next();
-
 					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 							correctedRead.name.find('/')) == rwa.name) {
-						std::cout << "skipping " << correctedRead.name << "\n";
+						//std::cout << "skipping " << correctedRead.name << "\n";
 						correctedRead = input.readNext(true, false, true);
 					}
+
+					//std::cout << "skipping " << rwa.name << " because it's chimeric\n";
+					rwa = it.next();
 				}
 
 				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
-						correctedRead.name.find('/')) != rwa.name && it.hasReadsLeft()) {
+						correctedRead.name.find('/')) > rwa.name && it.hasReadsLeft()) {
 					rwa = it.next();
+				}
+
+				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
+						correctedRead.name.find('/')) < rwa.name && input.hasNext()) {
+					correctedRead = input.readNext(true, false, true);
 				}
 
 				if (hasFlagUnmapped(rwa.records[0]) || rwa.records.size() > 1 /*|| hasSoftClipping(rwa.records[0])*/
@@ -747,46 +752,49 @@ ErrorEvaluationData evaluateCorrectionsByAlignment2(const std::string& alignedRe
 				ReadWithAlignments correctedRead = it2.next();
 
 				ReadWithAlignments rwa = it.next();
-				while (hasFlagUnmapped(rwa.records[0]) && it2.hasReadsLeft() && it.hasReadsLeft()) {
-					std::cout << "skipping " << rwa.name << " because it's unmapped\n";
-					rwa = it.next();
 
+				while (hasFlagUnmapped(rwa.records[0]) && it2.hasReadsLeft() && it.hasReadsLeft()) {
 					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 							correctedRead.name.find('/')) == rwa.name) {
-						std::cout << "skipping " << correctedRead.name << "\n";
+						//std::cout << "skipping " << correctedRead.name << "\n";
 						correctedRead = it2.next();
 					}
+
+					//std::cout << "skipping " << rwa.name << " because it's unmapped\n";
+					rwa = it.next();
 				}
 
 				while (hasFlagUnmapped(correctedRead.records[0]) && it2.hasReadsLeft() && it.hasReadsLeft()) {
-					std::cout << "skipping " << correctedRead.name << " because it's unmapped\n";
-					correctedRead = it2.next();
 
 					if (rwa.name.substr(0, rwa.name.find(' ')).substr(0, rwa.name.find('/')) == correctedRead.name) {
-						std::cout << "skipping " << rwa.name << "\n";
+						//std::cout << "skipping " << rwa.name << "\n";
 						rwa = it.next();
 					}
+
+					//std::cout << "skipping " << correctedRead.name << " because it's unmapped\n";
+					correctedRead = it2.next();
 				}
 
 				while (rwa.records.size() > 1 && it2.hasReadsLeft() && it.hasReadsLeft()) {
-					std::cout << "skipping " << rwa.name << " because it's chimeric\n";
-					rwa = it.next();
+					//std::cout << "skipping " << rwa.name << " because it's chimeric\n";
 
 					if (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 							correctedRead.name.find('/')) == rwa.name) {
-						std::cout << "skipping " << correctedRead.name << "\n";
+						//std::cout << "skipping " << correctedRead.name << "\n";
 						correctedRead = it2.next();
 					}
+
+					rwa = it.next();
 				}
 
 				while (correctedRead.records.size() > 1 && it2.hasReadsLeft() && it.hasReadsLeft()) {
-					std::cout << "skipping " << correctedRead.name << " because it's chimeric\n";
-					correctedRead = it2.next();
-
 					if (rwa.name.substr(0, rwa.name.find(' ')).substr(0, rwa.name.find('/')) == correctedRead.name) {
-						std::cout << "skipping " << rwa.name << "\n";
+						//std::cout << "skipping " << rwa.name << "\n";
 						rwa = it.next();
 					}
+
+					//std::cout << "skipping " << correctedRead.name << " because it's chimeric\n";
+					correctedRead = it2.next();
 				}
 
 				/*while (hasSoftClipping(rwa.records[0]) && it2.hasReadsLeft() && it.hasReadsLeft()) {
@@ -812,14 +820,28 @@ ErrorEvaluationData evaluateCorrectionsByAlignment2(const std::string& alignedRe
 				 }*/
 
 				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
-						correctedRead.name.find('/')) != rwa.name && it.hasReadsLeft()) {
+						correctedRead.name.find('/')) > rwa.name && it.hasReadsLeft()) {
+					//std::cout << "skipping rwa: " << rwa.name << "\n";
+					//std::cout << "  because rwa.name = " << rwa.name << " and correctedRead.name = " << correctedRead.name << "\n";
 					rwa = it.next();
+					//std::cout << "  now rwa is: " << rwa.name << "\n";
 				}
 
-				if (hasFlagUnmapped(rwa.records[0]) || hasFlagUnmapped(correctedRead.records[0]) || rwa.records.size() > 1 || correctedRead.records.size() > 1 /*|| hasSoftClipping(rwa.records[0])
-				 || hasSoftClipping(correctedRead.records[0])*/
+				while (rwa.name.substr(0, rwa.name.find(' ')).substr(0, rwa.name.find('/')) > correctedRead.name
+						&& it2.hasReadsLeft()) {
+					//std::cout << "skipping correctedRead: " << correctedRead.name << "\n";
+					//std::cout << "  because rwa.name = " << rwa.name << " and correctedRead.name = " << correctedRead.name << "\n";
+					correctedRead = it2.next();
+					//std::cout << "  now correctedRead is: " << correctedRead.name << "\n";
+				}
+
+				if (hasFlagUnmapped(rwa.records[0]) || hasFlagUnmapped(correctedRead.records[0])
+						|| rwa.records.size() > 1 || correctedRead.records.size() > 1 /*|| hasSoftClipping(rwa.records[0])
+						 || hasSoftClipping(correctedRead.records[0])*/
 						|| correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 								correctedRead.name.find('/')) != rwa.name) {
+					//std::cout << "break at rwa.name: " << rwa.name << "; correctedRead.name: " << correctedRead.name
+					//		<< "\n";
 					break;
 				}
 
