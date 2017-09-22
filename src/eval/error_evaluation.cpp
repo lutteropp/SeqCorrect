@@ -543,10 +543,8 @@ void updateEvaluationData(ErrorEvaluationData& data, const std::vector<Correctio
  }*/
 
 std::vector<Correction> convertToCorrections(const std::vector<std::pair<size_t, ErrorType> >& alignment,
-		const ReadWithAlignments& rwa) {
+		const std::string& originalRead) {
 	std::vector<Correction> res;
-
-	const std::string& originalRead = rwa.seq;
 
 	for (size_t i = 0; i < alignment.size(); ++i) {
 		res.push_back(Correction(alignment[i].first, alignment[i].second, originalRead[alignment[i].first]));
@@ -719,8 +717,7 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 #pragma omp task shared(genome, data), firstprivate(rwa, correctedRead)
 				{
 					std::vector<Correction> errorsTruth = extractErrors(rwa, genome, genomeType);
-					std::vector<Correction> errorsPredicted;
-					errorsPredicted = convertToCorrections(align(readWithSoftClipping(rwa), correctedRead.seq), rwa);
+					std::vector<Correction> errorsPredicted = convertToCorrections(align(readWithSoftClipping(rwa), correctedRead.seq), rwa.seq);
 
 					std::sort(errorsTruth.begin(), errorsTruth.end(),
 							[] (const Correction& lhs, const Correction& rhs) {
@@ -778,7 +775,7 @@ ErrorEvaluationData evaluateCorrectionsByAlignment2(const std::string& alignedRe
 					}
 				}
 
-				while (hasSoftClipping(rwa.records[0]) && it2.hasReadsLeft() && it.hasReadsLeft()) {
+				/*while (hasSoftClipping(rwa.records[0]) && it2.hasReadsLeft() && it.hasReadsLeft()) {
 					std::cout << "skipping " << rwa.name << " because it has soft-clipping\n";
 					rwa = it.next();
 
@@ -798,15 +795,15 @@ ErrorEvaluationData evaluateCorrectionsByAlignment2(const std::string& alignedRe
 						std::cout << "skipping " << correctedRead.name << "\n";
 						correctedRead = it2.next();
 					}
-				}
+				}*/
 
 				while (correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 						correctedRead.name.find('/')) != rwa.name && it.hasReadsLeft()) {
 					rwa = it.next();
 				}
 
-				if (hasFlagUnmapped(rwa.records[0]) || rwa.records.size() > 1 || hasSoftClipping(rwa.records[0])
-						|| hasSoftClipping(correctedRead.records[0])
+				if (hasFlagUnmapped(rwa.records[0]) || rwa.records.size() > 1 /*|| hasSoftClipping(rwa.records[0])
+						|| hasSoftClipping(correctedRead.records[0])*/
 						|| correctedRead.name.substr(0, correctedRead.name.find(' ')).substr(0,
 								correctedRead.name.find('/')) != rwa.name) {
 					break;
@@ -1028,6 +1025,10 @@ void eval_corrections_2(size_t k, GenomeType genomeType, const std::string& path
 
 	eval::ErrorEvaluationData res = eval::evaluateCorrectionsByAlignment2(alignmentPath, alignmentPath2, pathToGenome,
 			genomeType);
+
+	// fix error evaluation data, this is only needed here
+	res.switchTypes();
+
 	printErrorEvaluationData(res);
 }
 

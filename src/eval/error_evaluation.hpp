@@ -54,5 +54,8 @@ void eval_corrections(size_t k, GenomeType genomeType, const std::string& pathTo
 void eval_corrections_2(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
 		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath);
 
+void eval_corrections_3(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
+		const std::string& pathToCorrectedReads, const std::string& pathToGenome, const std::string& outputPath);
+
 } // end of namespace seq_correct::eval
 } // end of namespace seq_correct

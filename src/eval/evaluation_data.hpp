@@ -47,6 +47,7 @@ public:
 	size_t sumTruth(ErrorType type) const; // row sum
 	size_t sumPredicted(ErrorType type) const; // column sum
 	void update(ErrorType trueType, ErrorType predictedType);
+	void switchTypes();
 private:
 	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t, EnumClassPairHash> baseConfusionMatrix;
 	std::unordered_map<std::pair<ErrorType, ErrorType>, size_t, EnumClassPairHash> gapConfusionMatrix;

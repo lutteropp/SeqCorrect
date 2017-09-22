@@ -96,13 +96,6 @@ size_t number_claimed_errors(const ErrorEvaluationData& data) {
 		}
 	}
 
-	for (ErrorType type1 : ErrorOnlyTypeIterator()) {
-		for (ErrorType type2 : ErrorOnlyTypeIterator()) {
-			if ((isGapErrorType(type1) && isGapErrorType(type2)) || (!isGapErrorType(type1) && !isGapErrorType(type2)))
-				num += data.getEntry(type1, type2);
-		}
-	}
-
 	return num;
 }
 

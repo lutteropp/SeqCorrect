@@ -31,8 +31,8 @@ namespace eval {
 using namespace util;
 
 KmerEvaluationData::KmerEvaluationData() {
-	for (KmerType k1: KmerTypeIterator()) {
-		for (KmerType k2: KmerTypeIterator()) {
+	for (KmerType k1 : KmerTypeIterator()) {
+		for (KmerType k2 : KmerTypeIterator()) {
 			kmerConfusionMatrix[std::make_pair(k1, k2)] = 0;
 		}
 	}
@@ -205,6 +205,21 @@ size_t ErrorEvaluationData::sumAllGapEntries() const {
 		}
 	}
 	return count;
+}
+
+void ErrorEvaluationData::switchTypes() {
+	for (ErrorType type : ErrorOnlyTypeIterator()) {
+		if (isGapErrorType(type)) {
+			size_t temp = gapConfusionMatrix.at(std::make_pair(type, ErrorType::NODEL));
+			gapConfusionMatrix[std::make_pair(type, ErrorType::NODEL)] = gapConfusionMatrix[std::make_pair(type, type)];
+			gapConfusionMatrix[std::make_pair(type, type)] = temp;
+		} else {
+			size_t temp = baseConfusionMatrix.at(std::make_pair(type, ErrorType::CORRECT));
+			baseConfusionMatrix[std::make_pair(type, ErrorType::CORRECT)] = baseConfusionMatrix[std::make_pair(type,
+					type)];
+			baseConfusionMatrix[std::make_pair(type, type)] = temp;
+		}
+	}
 }
 
 size_t KmerEvaluationData::sumAllEntries() const {
