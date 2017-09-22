@@ -40,6 +40,14 @@ inline char reverseComplementChar(char c) {
 		return 'C';
 	} else if (c == 'T') {
 		return 'A';
+	} else if (c == 'a') {
+		return 't';
+	} else if (c == 'c') {
+		return 'g';
+	} else if (c == 'g') {
+		return 'c';
+	} else if (c == 't') {
+		return 'a';
 	} else {
 		return c;
 	}

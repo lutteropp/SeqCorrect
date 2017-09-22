@@ -309,7 +309,7 @@ void fixReadBackToNormal(ReadWithAlignments& rwa) {
 }
 
 std::vector<Correction> extractErrors(const ReadWithAlignments& rwa, /*const bool revComp,*/ const std::string &genome, GenomeType genomeType) {
-	if (rwa.seq == "GAAGTACAGAACGCTGTCATGGTTAAGTTCGACACATGTGAAAACATCACCGTTGATATGGTTATTCTGTCTCTT") {
+	if (rwa.seq == "TATCAGAGGTACGGGGTGGCGGGGAGAGATTTAGTGCTGTGGAATATTGTGGCTGTCTCTTATACACATCTCTGA") {
 		std::cout << "I'm here for debugging.\n";
 		std::cout << "cigar: " << extractCigarString(rwa.records[0].cigar) << "\n";
 		std::cout << "orig: " << rwa.seq << "\n";
@@ -779,23 +779,6 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 							}
 							if (hasFlagRC(rwa.records[0])) {
 								std::cout << "The read is reverse-complemented.\n";
-							}
-
-							std::vector<Correction> errorsTruth2 = extractErrors(rwa, genome, genomeType);
-							std::sort(errorsTruth2.begin(), errorsTruth2.end(),
-									[] (const Correction& lhs, const Correction& rhs) {
-										return lhs.positionInRead < rhs.positionInRead;
-									});
-
-							std::cout << "errorsTruth now:\n";
-							for (size_t i = 0; i < errorsTruth2.size(); ++i) {
-								std::cout << "  " << errorTypeToString(errorsTruth2[i].errorType) << " at "
-										<< errorsTruth2[i].positionInRead << "\n";
-							}
-
-							if (errorsTruth.size() > errorsTruth2.size()) {
-								errorsTruth = errorsTruth2;
-								std::cout << "WHAT THE FUCK IS GOING ON?!?!?!\n";
 							}
 						}
 					}
