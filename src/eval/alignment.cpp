@@ -65,7 +65,7 @@ void backtrack(size_t i, size_t j, const std::string& originalRead, const std::s
 				<< originalRead << "\n\tCorrectedRead: " << correctedRead << "\n";
 	}*/
 	if (info[actCoord][0] == 1) { // match or mismatch
-		if ((originalRead[i-1] != correctedRead[j-1]) && (correctedRead[j-1] != 'N') && (correctedRead[j-1] != 'S')) { // ignore 'N' or 'S' substitutions/ bases
+		if ((originalRead[i-1] != correctedRead[j-1]) && (originalRead[j-1] != 'N') && (originalRead[j-1] != 'S')) { // ignore 'N' or 'S' substitutions/ bases
 			res.push_back(std::make_pair(i-1, util::inferSubstitutionFrom(correctedRead[j-1])));
 		}
 		backtrack(i-1, j-1, originalRead, correctedRead, M, info, res);
@@ -101,8 +101,8 @@ void smoothenMultidels(std::vector<std::pair<size_t, util::ErrorType> >& res) {
 std::vector<std::pair<size_t, util::ErrorType> > align(const std::string& originalRead,
 		const std::string& correctedRead) {
 	size_t mis = 1; // mismatch penalty
-	size_t ins = 3; // insertion into original read
-	size_t del = 3; // deletion from original read
+	size_t ins = 1; // insertion into original read
+	size_t del = 1; // deletion from original read
 	std::vector<std::pair<size_t, util::ErrorType> > res;
 
 	size_t n = originalRead.size();
@@ -129,7 +129,7 @@ std::vector<std::pair<size_t, util::ErrorType> > align(const std::string& origin
 		for (size_t j = 1; j < m + 1; ++j) {
 			// check matrix M
 			size_t mismatch = (originalRead[i - 1] != correctedRead[j - 1]) ? mis : 0;
-			if (originalRead[i-1] == 'S') { // soft-clipped bases always match
+			if (originalRead[i-1] == 'S' || originalRead[i-1] == 'N') { // soft-clipped or N bases always match
 				mismatch = 0;
 			}
 			size_t min = min3(M[coord(i - 1, j - 1)] + mismatch, M[coord(i, j - 1)] + ins, M[coord(i - 1, j)] + del);
