@@ -460,6 +460,8 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 	bool correctSingleIndels = true;
 	bool correctMultidels = false;
 
+	std::cout << "correctSIngleIndels: " << correctSingleIndels << "\n";
+
 	io::ReadOutput printer;
 	printer.createFile(outputPath);
 

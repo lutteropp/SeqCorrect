@@ -310,14 +310,14 @@ void fixReadBackToNormal(ReadWithAlignments& rwa) {
 }
 
 std::vector<Correction> extractErrors(const ReadWithAlignments& rwa, /*const bool revComp,*/ const std::string &genome, GenomeType genomeType) {
-	if (rwa.seq == "TATCAGAGGTACGGGGTGGCGGGGAGAGATTTAGTGCTGTGGAATATTGTGGCTGTCTCTTATACACATCTCTGA") {
+	/*if (rwa.seq == "TATCAGAGGTACGGGGTGGCGGGGAGAGATTTAGTGCTGTGGAATATTGTGGCTGTCTCTTATACACATCTCTGA") {
 		std::cout << "I'm here for debugging.\n";
 		std::cout << "cigar: " << extractCigarString(rwa.records[0].cigar) << "\n";
 		std::cout << "orig: " << rwa.seq << "\n";
 		if (hasFlagRC(rwa.records[0])) {
 				std::cout << "the read is reverse-complemented.\n";
 			}
-	}
+	}*/
 
 	if (hasFlagUnmapped(rwa.records[0])) {
 		throw std::runtime_error("The read is unmapped");
@@ -758,7 +758,7 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 							});
 
 					if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
-						if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
+						/*if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
 
 							std::cout << "Original: " << rwa.seq << "\n";
 							std::cout << "Corrected : " << correctedRead.seq << "\n";
@@ -773,26 +773,21 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 								std::cout << "  " << errorTypeToString(errorsTruth[i].errorType) << " at "
 										<< errorsTruth[i].positionInRead << "\n";
 							}
-							std::cout << "errorsPredicted:\n";
+							std::cout << "errorsPredicted:\n";*/
 							for (size_t i = 0; i < errorsPredicted.size(); ++i) {
-								std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
-										<< errorsPredicted[i].positionInRead << "\n";
-							}
-							if (hasFlagRC(rwa.records[0])) {
-								std::cout << "The read is reverse-complemented.\n";
-							}
-						}
-					}
-					/*
-					 if (hasFlagRC(rwa.records[0])) {
-					 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
-					 util::reverseComplementString(rwa.seq));
-					 } else {
-					 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq), rwa.seq);
-					 }
+								if (errorsPredicted[i].errorType == ErrorType::DEL_OF_A) {
+									std::cout << "meow.\n";
+								}
 
-					 }
-					 }*/
+
+								/*std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
+										<< errorsPredicted[i].positionInRead << "\n";*/
+							}
+							/*if (hasFlagRC(rwa.records[0])) {
+								std::cout << "The read is reverse-complemented.\n";
+							}*/
+						//}
+					}
 
 					updateEvaluationData(data, errorsTruth, errorsPredicted, correctedRead.seq.size(), rwa.seq);
 				}

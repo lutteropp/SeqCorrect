@@ -101,8 +101,8 @@ void smoothenMultidels(std::vector<std::pair<size_t, util::ErrorType> >& res) {
 std::vector<std::pair<size_t, util::ErrorType> > align(const std::string& originalRead,
 		const std::string& correctedRead) {
 	size_t mis = 1; // mismatch penalty
-	size_t ins = 1; // insertion into original read
-	size_t del = 1; // deletion from original read
+	size_t ins = 3; // insertion into original read
+	size_t del = 3; // deletion from original read
 	std::vector<std::pair<size_t, util::ErrorType> > res;
 
 	size_t n = originalRead.size();
