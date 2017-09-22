@@ -308,7 +308,16 @@ void fixReadBackToNormal(ReadWithAlignments& rwa) {
 	rwa.seq = seq;
 }
 
-std::vector<Correction> extractErrors(const ReadWithAlignments& rwa, const std::string &genome, GenomeType genomeType) {
+std::vector<Correction> extractErrors(const ReadWithAlignments& rwa, /*const bool revComp,*/ const std::string &genome, GenomeType genomeType) {
+	if (rwa.seq == "GAAGTACAGAACGCTGTCATGGTTAAGTTCGACACATGTGAAAACATCACCGTTGATATGGTTATTCTGTCTCTT") {
+		std::cout << "I'm here for debugging.\n";
+		std::cout << "cigar: " << extractCigarString(rwa.records[0].cigar) << "\n";
+		std::cout << "orig: " << rwa.seq << "\n";
+		if (hasFlagRC(rwa.records[0])) {
+				std::cout << "the read is reverse-complemented.\n";
+			}
+	}
+
 	if (hasFlagUnmapped(rwa.records[0])) {
 		throw std::runtime_error("The read is unmapped");
 	}
@@ -330,6 +339,8 @@ std::vector<Correction> extractErrors(const ReadWithAlignments& rwa, const std::
 
 	if (hasFlagRC(rwa.records[0])) {
 		info.revComp = true;
+	} else {
+		info.revComp = false;
 	}
 
 	for (seqan::BamAlignmentRecord record : rwa.records) {
@@ -358,13 +369,6 @@ std::vector<Correction> extractErrors(const ReadWithAlignments& rwa, const std::
 			} else if (record.cigar[i].operation == 'M') { // match ... check for substitutions later
 				info.positionInRead += record.cigar[i].count;
 			} else if (record.cigar[i].operation == 'I') { // insertion
-
-				if (seq == "CCAGATCAGAGTTTTGTTTAGGAGCTGGGTCCTCCCTGATGSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS") {
-					std::cout << "I'm here for debugging.\n";
-					std::cout << "cigar: " << cigarString << "\n";
-					std::cout << "orig: " << rwa.seq << "\n";
-				}
-
 				handleInsertion(seq, record.cigar[i].count, info);
 			} else if (record.cigar[i].operation == 'D') { // deletion
 				handleDeletion(seq, record.cigar[i].count, info, genome);
@@ -752,32 +756,50 @@ ErrorEvaluationData evaluateCorrectionsByAlignment(const std::string& alignedRea
 								return lhs.positionInRead < rhs.positionInRead;
 							});
 
-					/*if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
-					 if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
+					if (errorsTruth.size() > 0 && errorsPredicted.size() > 0) {
+						if (errorsTruth[0].errorType != errorsPredicted[0].errorType) {
 
-					 std::cout << "Original: " << rwa.seq << "\n";
-					 std::cout << "Corrected : " << correctedRead.seq << "\n";
-					 std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos + 1);
-					 if (hasFlagRC(rwa.records[0])) {
-					 genomeArea = reverseComplementString(genomeArea);
-					 }
-					 std::cout << "genomeArea: " << genomeArea << "\n";
+							std::cout << "Original: " << rwa.seq << "\n";
+							std::cout << "Corrected : " << correctedRead.seq << "\n";
+							std::string genomeArea = genome.substr(rwa.beginPos, rwa.endPos - rwa.beginPos + 1);
+							if (hasFlagRC(rwa.records[0])) {
+								genomeArea = reverseComplementString(genomeArea);
+							}
+							std::cout << "genomeArea: " << genomeArea << "\n";
 
-					 std::cout << "errorsTruth:\n";
-					 for (size_t i = 0; i < errorsTruth.size(); ++i) {
-					 std::cout << "  " << errorTypeToString(errorsTruth[i].errorType) << " at "
-					 << errorsTruth[i].positionInRead << "\n";
-					 }
-					 std::cout << "errorsPredicted:\n";
-					 for (size_t i = 0; i < errorsPredicted.size(); ++i) {
-					 std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
-					 << errorsPredicted[i].positionInRead << "\n";
-					 }
-					 if (hasFlagRC(rwa.records[0])) {
-					 std::cout << "The read is reverse-complemented.\n";
-					 }
+							std::cout << "errorsTruth:\n";
+							for (size_t i = 0; i < errorsTruth.size(); ++i) {
+								std::cout << "  " << errorTypeToString(errorsTruth[i].errorType) << " at "
+										<< errorsTruth[i].positionInRead << "\n";
+							}
+							std::cout << "errorsPredicted:\n";
+							for (size_t i = 0; i < errorsPredicted.size(); ++i) {
+								std::cout << "  " << errorTypeToString(errorsPredicted[i].errorType) << " at "
+										<< errorsPredicted[i].positionInRead << "\n";
+							}
+							if (hasFlagRC(rwa.records[0])) {
+								std::cout << "The read is reverse-complemented.\n";
+							}
 
-					 errorsTruth = extractErrors(rwa, genome, genomeType);
+							std::vector<Correction> errorsTruth2 = extractErrors(rwa, genome, genomeType);
+							std::sort(errorsTruth2.begin(), errorsTruth2.end(),
+									[] (const Correction& lhs, const Correction& rhs) {
+										return lhs.positionInRead < rhs.positionInRead;
+									});
+
+							std::cout << "errorsTruth now:\n";
+							for (size_t i = 0; i < errorsTruth2.size(); ++i) {
+								std::cout << "  " << errorTypeToString(errorsTruth2[i].errorType) << " at "
+										<< errorsTruth2[i].positionInRead << "\n";
+							}
+
+							if (errorsTruth.size() > errorsTruth2.size()) {
+								errorsTruth = errorsTruth2;
+								std::cout << "WHAT THE FUCK IS GOING ON?!?!?!\n";
+							}
+						}
+					}
+					/*
 					 if (hasFlagRC(rwa.records[0])) {
 					 errorsPredicted = convertToCorrections(align(rwa.seq, correctedRead.seq),
 					 util::reverseComplementString(rwa.seq));
@@ -1138,5 +1160,6 @@ void eval_corrections_2(size_t k, GenomeType genomeType, const std::string& path
 	printErrorEvaluationData(res);
 }
 
-} // end of namespace seq_correct::eval
-} // end of namespace seq_correct
+}
+// end of namespace seq_correct::eval
+}// end of namespace seq_correct
