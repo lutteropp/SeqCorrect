@@ -115,7 +115,7 @@ void handleInsertion(std::string& seq, size_t cigarCount, HandlingInfo& info) {
 			throw std::runtime_error("this should not happen");
 		}
 
-		size_t realPositionInRead = info.positionInRead + info.hardClippedBases;
+		size_t realPositionInRead = info.positionInRead + j + info.hardClippedBases;
 		assert(realPositionInRead < seq.size());
 
 		if (realPositionInRead > seq.size()) {
