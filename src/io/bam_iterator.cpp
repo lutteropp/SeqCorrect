@@ -75,7 +75,7 @@ void BAMIterator::countNumberOfReads(const std::string &alignmentFilename) {
 		numReadsTotalUniqueMapped++;
 	}
 
-	std::cout << "Finished counting reads. There are " << numReadsTotal << " reads in total.\n";
+	//std::cout << "Finished counting reads. There are " << numReadsTotal << " reads in total.\n";
 }
 
 BAMIterator::BAMIterator() {

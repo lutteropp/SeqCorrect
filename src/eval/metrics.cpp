@@ -96,6 +96,14 @@ size_t number_claimed_errors(const ErrorEvaluationData& data) {
 		}
 	}
 
+	for (ErrorType type : ErrorOnlyTypeIterator()) {
+		if (isGapErrorType(type)) {
+			num += data.getEntry(ErrorType::NODEL, type);
+		} else {
+			num += data.getEntry(ErrorType::CORRECT, type);
+		}
+	}
+
 	return num;
 }
 
