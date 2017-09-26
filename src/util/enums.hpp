@@ -35,7 +35,7 @@ enum class GenomeType {
 };
 
 enum class ErrorType {
-	CORRECT, INSERTION, SUB_OF_A, SUB_OF_C, SUB_OF_G, SUB_OF_T, DEL_OF_A, DEL_OF_C, DEL_OF_G, DEL_OF_T, MULTIDEL, NODEL
+	CORRECT, SUB_OF_A, SUB_OF_C, SUB_OF_G, SUB_OF_T, INSERTION, DEL_OF_A, DEL_OF_C, DEL_OF_G, DEL_OF_T, MULTIDEL, NODEL
 };
 
 enum class CorrectionAlgorithm {
@@ -89,8 +89,8 @@ struct EnumClassPairHash
 };
 
 typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::NODEL> AllErrorTypeIterator;
-typedef Iterator<ErrorType, ErrorType::INSERTION, ErrorType::MULTIDEL> ErrorOnlyTypeIterator;
-typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::SUB_OF_T> BaseTypeIterator;
+typedef Iterator<ErrorType, ErrorType::SUB_OF_A, ErrorType::MULTIDEL> ErrorOnlyTypeIterator;
+typedef Iterator<ErrorType, ErrorType::CORRECT, ErrorType::INSERTION> BaseTypeIterator;
 typedef Iterator<ErrorType, ErrorType::DEL_OF_A, ErrorType::NODEL> GapTypeIterator;
 
 typedef Iterator<KmerType, KmerType::UNTRUSTED, KmerType::REPEAT> KmerTypeIterator;

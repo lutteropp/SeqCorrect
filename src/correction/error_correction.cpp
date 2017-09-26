@@ -310,7 +310,6 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params)
 	return (bestType != ErrorType::CORRECT);
 }
 
-
 /*
  * For all error types (including no error), check how many k-mers would still be untrusted... then take the one with the lowest number of untrusted k-mers remaining
  */
@@ -366,7 +365,6 @@ bool tryFixingKmer(io::Read& read, size_t pos, size_t k, CorrectionParameters& p
 	return (bestType != ErrorType::CORRECT);
 }
 
-
 Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params) {
 	io::Read correctedRead(read);
 	bool changed = true;
@@ -374,9 +372,13 @@ Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params)
 		std::vector<uint8_t> cov = badKmerCoverage(correctedRead.seq, params);
 		std::vector<std::pair<size_t, uint8_t> > ranking = rankPotentialErrorPositions(cov);
 		changed = false;
-		for (size_t i = 0; i < ranking.size(); ++i) {
-			if (ranking[i].second > 0) {
-				changed = tryFixingPosition(correctedRead, ranking[i].first, params);
+
+		while (ranking.size() > 0) {
+			std::pair<size_t, uint8_t> best = ranking.front();
+			ranking.pop_back();
+
+			if (best.second > 0) {
+				changed = tryFixingPosition(correctedRead, best.first, params);
 				if (changed) {
 					cov = badKmerCoverage(correctedRead.seq, params);
 					ranking = rankPotentialErrorPositions(cov);
@@ -384,6 +386,7 @@ Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params)
 				}
 			}
 		}
+
 	}
 	return correctedRead;
 }
@@ -409,7 +412,7 @@ Read correctRead_adaptive_kmer(const io::Read& read, CorrectionParameters& param
 		if (type == KmerType::UNTRUSTED) {
 			tryFixingKmer(correctedRead, pos, k, params);
 		}
-		pos+=2;
+		pos += 2;
 	}
 
 	return correctedRead;
@@ -468,6 +471,13 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 	io::ReadInput reader(pathToOriginalReads);
 	HashClassifier classifier(kmerCounter, pusm, biasUnit, pathToOriginalReads);
 	biasUnit.preprocess(kmerSize, pathToOriginalReads, kmerCounter, pusm);
+	biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
+	biasUnit.preprocess(kmerSize+2, pathToOriginalReads, kmerCounter, pusm);
+		biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
+		biasUnit.preprocess(kmerSize+4, pathToOriginalReads, kmerCounter, pusm);
+			biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
+			biasUnit.preprocess(kmerSize+6, pathToOriginalReads, kmerCounter, pusm);
+						biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
 	CorrectionParameters params(kmerSize, kmerCounter, pusm, biasUnit, pathToOriginalReads, classifier,
 			correctSingleIndels, correctMultidels);
 

@@ -303,10 +303,10 @@ void classifyKmers(size_t k, GenomeType genomeType, const std::string& pathToOri
 
 void eval_kmers(size_t k, GenomeType genomeType, const std::string& pathToOriginalReads,
 		const std::string& pathToGenome) {
-	counting::NaiveBufferedMatcher fmReads(pathToOriginalReads, k, true);
+	//counting::NaiveBufferedMatcher fmReads(pathToOriginalReads, k, true);
 	//counting::NaiveBufferedMatcher fmGenome(pathToGenome, k, true);
 
-	//counting::FMIndexMatcher fmReads(pathToOriginalReads);
+	counting::FMIndexMatcher fmReads(pathToOriginalReads);
 	counting::FMIndexMatcher fmGenome(pathToGenome);
 
 	std::cout << "k-mer size used: " << k << "\n";

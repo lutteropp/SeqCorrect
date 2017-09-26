@@ -596,11 +596,11 @@ static int strnum_cmp(const std::string& s1, const std::string& s2) {
 
 // TODO: Maybe replace this by external Merge sort if the read data set is too large
 void sortCorrectedReads(const std::string& correctedReadsFilepath, const std::string& sortedFilepath) {
-	std::ifstream corrTest(sortedFilepath);
+	/*std::ifstream corrTest(sortedFilepath);
 	if (corrTest.good()) {
 		std::cout << "Sorted reads file already exists. Doing nothing." << "\n";
 		return;
-	}
+	}*/
 
 	io::ReadOutput output;
 	output.createFile(sortedFilepath);
