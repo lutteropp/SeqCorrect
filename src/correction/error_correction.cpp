@@ -199,11 +199,11 @@ uint8_t numUntrustedKmers(const std::string& read, size_t minK, Matcher& kmerCou
 /*
  * Compute the number of UNTRUSTED k-mers covering a read[start..end] sequence.
  */
-uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, CorrectionParameters& params) {
+uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, CorrectionParameters& params, size_t minK) {
 	uint8_t num = 0;
 	size_t i = start;
-	while (i + params.minK <= end) {
-		size_t k = params.minK;
+	while (i + minK <= end) {
+		size_t k = minK;
 		std::string kmer = read.substr(i, k);
 		KmerType type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit,
 				params.pathToOriginalReads);
@@ -248,7 +248,7 @@ void performSimpleCorrections(const io::Read& read, CorrectionParameters& params
 		if (k == std::numeric_limits<size_t>::max()) {
 			break;
 		}
-		KmerType type = params.classifier.classifyKmer(correctedRead.seq.substr(i, k));
+		//KmerType type = params.classifier.classifyKmer(correctedRead.seq.substr(i, k));
 	}
 
 	throw std::runtime_error("not implemented yet");
@@ -262,8 +262,9 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params,
 		return false;
 	}
 
-	std::pair<size_t, size_t> affectedArea = affectedReadArea(pos, read.seq.size(), params.minK);
-	uint8_t untrustedNormal = numUntrustedKmers(read.seq, affectedArea.first, affectedArea.second, params);
+	std::pair<size_t, size_t> affectedArea = affectedReadArea(pos, read.seq.size(), minK);
+
+	uint8_t untrustedNormal = numUntrustedKmers(read.seq, affectedArea.first, affectedArea.second, params, minK);
 	uint8_t lowestCount = untrustedNormal;
 	ErrorType bestType = ErrorType::CORRECT;
 
@@ -277,7 +278,6 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params,
 		if (params.correctMultidels == false && type == ErrorType::MULTIDEL) {
 			continue;
 		}
-
 		if (type == ErrorType::SUB_OF_A && read.seq[pos] == 'A') {
 			continue;
 		}
@@ -294,7 +294,7 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params,
 		std::string readAfterError = kmerAfterError(read.seq, type, pos);
 		if (readIsPerfect(readAfterError, params, affectedArea.first, affectedArea.second, minK)) {
 			if (lowestCount == 0) { // already found another correction candidate
-				return tryFixingPosition(read, pos, params, minK+1);
+				return tryFixingPosition(read, pos, params, minK + 2);
 			}
 
 			lowestCount = 0;
@@ -316,6 +316,62 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params,
 	}
 
 	return (bestType != ErrorType::CORRECT);
+}
+
+/*
+ * For all error types (including no error), check how many k-mers would still be untrusted... then take the one with the lowest number of untrusted k-mers remaining
+ */
+bool tryFixingPosition2(io::Read& read, size_t pos, CorrectionParameters& params, size_t minK) {
+	if (minK >= read.seq.size()) {
+		return false;
+	}
+
+	std::pair<size_t, size_t> affectedArea = affectedReadArea(pos, read.seq.size(), minK);
+
+	uint8_t untrustedNormal = numUntrustedKmers(read.seq, affectedArea.first, affectedArea.second, params, minK);
+	uint8_t lowestCount = untrustedNormal;
+	ErrorType bestType = ErrorType::CORRECT;
+
+	for (ErrorType type : ErrorOnlyTypeIterator()) {
+		if (params.correctSingleIndels == false && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
+			continue;
+		}
+		if ((pos == 0 || pos == read.seq.size() - 1) && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
+			continue;
+		}
+		if (params.correctMultidels == false && type == ErrorType::MULTIDEL) {
+			continue;
+		}
+		if (type == ErrorType::SUB_OF_A && read.seq[pos] == 'A') {
+			continue;
+		}
+		if (type == ErrorType::SUB_OF_C && read.seq[pos] == 'C') {
+			continue;
+		}
+		if (type == ErrorType::SUB_OF_G && read.seq[pos] == 'G') {
+			continue;
+		}
+		if (type == ErrorType::SUB_OF_T && read.seq[pos] == 'T') {
+			continue;
+		}
+
+		std::string readAfterError = kmerAfterError(read.seq, type, pos);
+		uint8_t untrustedCount = numUntrustedKmers(readAfterError, affectedArea.first, affectedArea.second, params, minK);
+		if (untrustedCount < lowestCount) {
+			lowestCount = untrustedCount;
+			bestType = type;
+		} else if (untrustedCount == lowestCount && lowestCount < untrustedNormal) {
+			return tryFixingPosition2(read, pos, params, minK + 2);
+		}
+	}
+
+	if (bestType != ErrorType::CORRECT && lowestCount == 0) {
+		read.seq = kmerAfterError(read.seq, bestType, pos);
+
+		//std::cout << errorTypeToString(bestType) << " at " << pos << "\n";
+	}
+
+	return (bestType != ErrorType::CORRECT && lowestCount == 0);
 }
 
 /*
@@ -386,7 +442,7 @@ Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params)
 			ranking.pop_back();
 
 			if (best.second > 0) {
-				changed = tryFixingPosition(correctedRead, best.first, params, params.minK);
+				changed = tryFixingPosition2(correctedRead, best.first, params, params.minK);
 				if (changed) {
 					cov = badKmerCoverage(correctedRead.seq, params);
 					ranking = rankPotentialErrorPositions(cov);
@@ -471,7 +527,7 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 	bool correctSingleIndels = true;
 	bool correctMultidels = false;
 
-	std::cout << "correctSIngleIndels: " << correctSingleIndels << "\n";
+	std::cout << "correctSingleIndels: " << correctSingleIndels << "\n";
 
 	io::ReadOutput printer;
 	printer.createFile(outputPath);
@@ -480,12 +536,12 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 	HashClassifier classifier(kmerCounter, pusm, biasUnit, pathToOriginalReads);
 	biasUnit.preprocess(kmerSize, pathToOriginalReads, kmerCounter, pusm);
 	biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
-	biasUnit.preprocess(kmerSize+2, pathToOriginalReads, kmerCounter, pusm);
-		biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
-		biasUnit.preprocess(kmerSize+4, pathToOriginalReads, kmerCounter, pusm);
-			biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
-			biasUnit.preprocess(kmerSize+6, pathToOriginalReads, kmerCounter, pusm);
-						biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
+	biasUnit.preprocess(kmerSize + 2, pathToOriginalReads, kmerCounter, pusm);
+	biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
+	biasUnit.preprocess(kmerSize + 4, pathToOriginalReads, kmerCounter, pusm);
+	biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
+	biasUnit.preprocess(kmerSize + 6, pathToOriginalReads, kmerCounter, pusm);
+	biasUnit.plotMedianCoverageBiases(outputPath + "_biases");
 	CorrectionParameters params(kmerSize, kmerCounter, pusm, biasUnit, pathToOriginalReads, classifier,
 			correctSingleIndels, correctMultidels);
 
@@ -497,7 +553,9 @@ void correctReads(const std::string& pathToOriginalReads, CorrectionAlgorithm al
 				io::Read uncorrected = reader.readNext(true, false, true);
 #pragma omp task shared(printer, params) firstprivate(uncorrected)
 				{
+					std::cout << "Correcting read: " << uncorrected.name << "\n";
 					io::Read corrected = correctRead(uncorrected, algo, params);
+					std::cout << "Read " << uncorrected.name << " has been corrected\n";
 #pragma omp critical
 					printer.write(corrected);
 				}

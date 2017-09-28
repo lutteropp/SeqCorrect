@@ -40,10 +40,17 @@ using namespace util;
  * @param bias The G/C bias
  */
 inline KmerType classifyKmer(size_t observedCount, double expectedCount, double bias) {
-	double correctedCount = (double) 1.0 / bias * observedCount;
-	if ((correctedCount < 2) || (correctedCount < 0.1 * expectedCount)) {
+	double lower = 0.5;
+	double upper = 1.5;
+
+	// manually optimized values for ebola dataset
+	//lower = 0.08;
+	//upper = 1.8;
+
+	double correctedCount = (double) (1.0 / bias) * observedCount;
+	if ((correctedCount <= 1) || (correctedCount < lower * expectedCount)) {
 		return KmerType::UNTRUSTED;
-	} else if (correctedCount <= 1.8 * expectedCount) {
+	} else if (correctedCount <= upper * expectedCount) {
 		return KmerType::UNIQUE;
 	} else {
 		return KmerType::REPEAT;
