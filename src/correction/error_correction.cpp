@@ -133,7 +133,7 @@ std::vector<uint8_t> badKmerCoverage(const std::string& read, CorrectionParamete
 	return res;
 }
 
-bool readIsPerfect(const std::string& read, CorrectionParameters& params, size_t from, size_t to) {
+bool readIsPerfect(const std::string& read, CorrectionParameters& params, size_t from, size_t to, size_t minK) {
 	bool perfect = true;
 	size_t i = from;
 
@@ -142,8 +142,8 @@ bool readIsPerfect(const std::string& read, CorrectionParameters& params, size_t
 				"from: " + std::to_string(from) + ", to: " + std::to_string(to) + ", read size: "
 						+ std::to_string(read.size()));
 	}
-	while (i + params.minK <= to) {
-		size_t k = params.minK;
+	while (i + minK <= to) {
+		size_t k = minK;
 		std::string kmer = read.substr(i, k);
 		KmerType type = classifyKmer(kmer, params.kmerCounter, params.pusm, params.biasUnit,
 				params.pathToOriginalReads);
@@ -257,7 +257,11 @@ void performSimpleCorrections(const io::Read& read, CorrectionParameters& params
 /*
  * For all error types (including no error), check how many k-mers would still be untrusted... then take the one with the lowest number of untrusted k-mers remaining
  */
-bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params) {
+bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params, size_t minK) {
+	if (minK >= read.seq.size()) {
+		return false;
+	}
+
 	std::pair<size_t, size_t> affectedArea = affectedReadArea(pos, read.seq.size(), params.minK);
 	uint8_t untrustedNormal = numUntrustedKmers(read.seq, affectedArea.first, affectedArea.second, params);
 	uint8_t lowestCount = untrustedNormal;
@@ -288,7 +292,11 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params)
 		}
 
 		std::string readAfterError = kmerAfterError(read.seq, type, pos);
-		if (readIsPerfect(readAfterError, params, affectedArea.first, affectedArea.second) && lowestCount > 0) {
+		if (readIsPerfect(readAfterError, params, affectedArea.first, affectedArea.second, minK)) {
+			if (lowestCount == 0) { // already found another correction candidate
+				return tryFixingPosition(read, pos, params, minK+1);
+			}
+
 			lowestCount = 0;
 			bestType = type;
 			break;
@@ -378,7 +386,7 @@ Read correctRead_simple_kmer(const io::Read& read, CorrectionParameters& params)
 			ranking.pop_back();
 
 			if (best.second > 0) {
-				changed = tryFixingPosition(correctedRead, best.first, params);
+				changed = tryFixingPosition(correctedRead, best.first, params, params.minK);
 				if (changed) {
 					cov = badKmerCoverage(correctedRead.seq, params);
 					ranking = rankPotentialErrorPositions(cov);
