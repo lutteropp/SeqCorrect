@@ -199,7 +199,8 @@ uint8_t numUntrustedKmers(const std::string& read, size_t minK, Matcher& kmerCou
 /*
  * Compute the number of UNTRUSTED k-mers covering a read[start..end] sequence.
  */
-uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, CorrectionParameters& params, size_t minK) {
+uint8_t numUntrustedKmers(const std::string& read, size_t start, size_t end, CorrectionParameters& params,
+		size_t minK) {
 	uint8_t num = 0;
 	size_t i = start;
 	while (i + minK <= end) {
@@ -254,6 +255,31 @@ void performSimpleCorrections(const io::Read& read, CorrectionParameters& params
 	throw std::runtime_error("not implemented yet");
 }
 
+bool skipType(const CorrectionParameters& params, ErrorType type, size_t pos, const std::string& sequence) {
+	if (params.correctSingleIndels == false && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
+		return true;
+	}
+	if ((pos == 0 || pos == sequence.size() - 1) && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
+		return true;
+	}
+	if (params.correctMultidels == false && type == ErrorType::MULTIDEL) {
+		return true;
+	}
+	if (type == ErrorType::SUB_OF_A && sequence[pos] == 'A') {
+		return true;
+	}
+	if (type == ErrorType::SUB_OF_C && sequence[pos] == 'C') {
+		return true;
+	}
+	if (type == ErrorType::SUB_OF_G && sequence[pos] == 'G') {
+		return true;
+	}
+	if (type == ErrorType::SUB_OF_T && sequence[pos] == 'T') {
+		return true;
+	}
+	return false;
+}
+
 /*
  * For all error types (including no error), check how many k-mers would still be untrusted... then take the one with the lowest number of untrusted k-mers remaining
  */
@@ -261,7 +287,6 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params,
 	if (minK >= read.seq.size()) {
 		return false;
 	}
-
 	std::pair<size_t, size_t> affectedArea = affectedReadArea(pos, read.seq.size(), minK);
 
 	uint8_t untrustedNormal = numUntrustedKmers(read.seq, affectedArea.first, affectedArea.second, params, minK);
@@ -269,49 +294,22 @@ bool tryFixingPosition(io::Read& read, size_t pos, CorrectionParameters& params,
 	ErrorType bestType = ErrorType::CORRECT;
 
 	for (ErrorType type : ErrorOnlyTypeIterator()) {
-		if (params.correctSingleIndels == false && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
+		if (skipType(params, type, pos, read.seq)) {
 			continue;
 		}
-		if ((pos == 0 || pos == read.seq.size() - 1) && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
-			continue;
-		}
-		if (params.correctMultidels == false && type == ErrorType::MULTIDEL) {
-			continue;
-		}
-		if (type == ErrorType::SUB_OF_A && read.seq[pos] == 'A') {
-			continue;
-		}
-		if (type == ErrorType::SUB_OF_C && read.seq[pos] == 'C') {
-			continue;
-		}
-		if (type == ErrorType::SUB_OF_G && read.seq[pos] == 'G') {
-			continue;
-		}
-		if (type == ErrorType::SUB_OF_T && read.seq[pos] == 'T') {
-			continue;
-		}
-
 		std::string readAfterError = kmerAfterError(read.seq, type, pos);
 		if (readIsPerfect(readAfterError, params, affectedArea.first, affectedArea.second, minK)) {
 			if (lowestCount == 0) { // already found another correction candidate
 				return tryFixingPosition(read, pos, params, minK + 2);
 			}
-
 			lowestCount = 0;
 			bestType = type;
 			break;
 		}
-
-		/*uint8_t untrustedCount = numUntrustedKmers(readAfterError, affectedArea.first, affectedArea.second, params);
-		 if (untrustedCount < lowestCount) {
-		 lowestCount = untrustedCount;
-		 bestType = type;
-		 }*/
 	}
 
-	if (bestType != ErrorType::CORRECT /*&& lowestCount == 0*/) {
+	if (bestType != ErrorType::CORRECT) {
 		read.seq = kmerAfterError(read.seq, bestType, pos);
-
 		//std::cout << errorTypeToString(bestType) << " at " << pos << "\n";
 	}
 
@@ -333,30 +331,12 @@ bool tryFixingPosition2(io::Read& read, size_t pos, CorrectionParameters& params
 	ErrorType bestType = ErrorType::CORRECT;
 
 	for (ErrorType type : ErrorOnlyTypeIterator()) {
-		if (params.correctSingleIndels == false && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
+		if (skipType(params, type, pos, read.seq)) {
 			continue;
 		}
-		if ((pos == 0 || pos == read.seq.size() - 1) && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
-			continue;
-		}
-		if (params.correctMultidels == false && type == ErrorType::MULTIDEL) {
-			continue;
-		}
-		if (type == ErrorType::SUB_OF_A && read.seq[pos] == 'A') {
-			continue;
-		}
-		if (type == ErrorType::SUB_OF_C && read.seq[pos] == 'C') {
-			continue;
-		}
-		if (type == ErrorType::SUB_OF_G && read.seq[pos] == 'G') {
-			continue;
-		}
-		if (type == ErrorType::SUB_OF_T && read.seq[pos] == 'T') {
-			continue;
-		}
-
 		std::string readAfterError = kmerAfterError(read.seq, type, pos);
-		uint8_t untrustedCount = numUntrustedKmers(readAfterError, affectedArea.first, affectedArea.second, params, minK);
+		uint8_t untrustedCount = numUntrustedKmers(readAfterError, affectedArea.first, affectedArea.second, params,
+				minK);
 		if (untrustedCount < lowestCount) {
 			lowestCount = untrustedCount;
 			bestType = type;
@@ -367,7 +347,6 @@ bool tryFixingPosition2(io::Read& read, size_t pos, CorrectionParameters& params
 
 	if (bestType != ErrorType::CORRECT && lowestCount == 0) {
 		read.seq = kmerAfterError(read.seq, bestType, pos);
-
 		//std::cout << errorTypeToString(bestType) << " at " << pos << "\n";
 	}
 
@@ -389,26 +368,7 @@ bool tryFixingKmer(io::Read& read, size_t pos, size_t k, CorrectionParameters& p
 		}
 
 		for (ErrorType type : ErrorOnlyTypeIterator()) {
-			if (params.correctSingleIndels == false && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
-				continue;
-			}
-			if ((i == 0 || i == kmer.size() - 1) && (isGapErrorType(type) || type == ErrorType::INSERTION)) {
-				continue;
-			}
-			if (params.correctMultidels == false && type == ErrorType::MULTIDEL) {
-				continue;
-			}
-
-			if (type == ErrorType::SUB_OF_A && kmer[i] == 'A') {
-				continue;
-			}
-			if (type == ErrorType::SUB_OF_C && kmer[i] == 'C') {
-				continue;
-			}
-			if (type == ErrorType::SUB_OF_G && kmer[i] == 'G') {
-				continue;
-			}
-			if (type == ErrorType::SUB_OF_T && kmer[i] == 'T') {
+			if (skipType(params, type, i, read.seq)) {
 				continue;
 			}
 
