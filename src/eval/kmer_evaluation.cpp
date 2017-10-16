@@ -197,7 +197,7 @@ void classifyKmersVariants(size_t k, GenomeType genomeType, const std::string& p
 		std::vector<KmerType> predictedTypesThesisRead1(seq.size() - k);
 		std::vector<KmerType> predictedTypesThesisRead2(seq.size() - k);
 		std::vector<KmerType> predictedTypesRead(seq.size() - k);
-#pragma omp parallel for
+//#pragma omp parallel for
 		for (size_t i = 0; i < seq.size() - k; ++i) {
 			std::string kmer = seq.substr(i, k);
 
@@ -278,7 +278,7 @@ void classifyKmers(size_t k, GenomeType genomeType, const std::string& pathToOri
 		std::vector<KmerType> trueTypes = computeTrueTypes(k, seq, clsfyGenome);
 
 		std::vector<KmerType> predictedTypesThesis(seq.size() - k);
-#pragma omp parallel for
+//#pragma omp parallel for
 		for (size_t i = 0; i < seq.size() - k; ++i) {
 			std::string kmer = seq.substr(i, k);
 			predictedTypesThesis[i] = clsfyReads.classifyKmer(kmer);
